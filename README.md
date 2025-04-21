@@ -33,6 +33,33 @@ Npm install pg --save
 npm run dev
 ```
 
+## Make sure these compiler options are in tsconfig.json
+Check to make sure of the following in tsconfig.json
+```typescript
+{
+  "compilerOptions": {
+    ...
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "target": "ES6",
+    "module": "commonjs"
+  }
+}
+```
+
+## Import reflect-metadata at the very top of your entry point
+At the top of ```src/index.ts``` or ```main.ts``` (before anything else):
+```typescript
+import 'reflect-metadata';
+```
+
+
+## Setup basic Auth (JWT & Bcrypt)
+```bash
+npm install bcrypt jsonwebtoken
+npm install --save-dev @types/bcrypt @types/jsonwebtoken
+```
+
 # Dev Env Setup on Different OSs
 
 ## MacOS

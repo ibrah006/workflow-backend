@@ -2,6 +2,8 @@ import express from 'express';
 import { AppDataSource } from './data-source';
 import dotenv from 'dotenv';
 
+import authRoutes from './routes/auth';
+
 const app = express();
 
 dotenv.config();
@@ -32,6 +34,8 @@ AppDataSource.initialize()
 app.get('/', (req, res) => {
   res.send('Hello from Express + TypeScript backend for workflow!');
 });
+
+app.use('/', authRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
