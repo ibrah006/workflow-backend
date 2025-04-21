@@ -1,8 +1,14 @@
 import express from 'express';
 import { AppDataSource } from './data-source';
+import dotenv from 'dotenv';
 
 const app = express();
-const PORT = 3000;
+
+dotenv.config();
+
+const PORT = process.env.PORT;
+
+console.log("port:", PORT);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -20,7 +26,7 @@ AppDataSource.initialize()
         console.log("Connected to PostgreSQL Database ");
     })
     .catch((error)=> {
-        console.error("Database connection error: ", error);
+        console.error("Database connection error:", error);
     })
 
 app.get('/', (req, res) => {
