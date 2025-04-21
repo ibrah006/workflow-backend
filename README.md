@@ -31,3 +31,28 @@ npm install --save-dev typescript ts-node @types/express @types/node nodemon
 npm install typorm dotenv
 npm run dev
 ```
+
+## Dev Env Setup on Different OSs
+
+# MacOS
+
+1. Install Postgresql
+```bash
+brew install postgresql
+# Start postgresql service
+brew services start postgresql
+```
+Check brew services status
+```bash
+brew services list
+```
+
+2. Create DB user and DB
+```bash
+psql postgres
+# Then inside the psql shell:
+CREATE USER myuser WITH PASSWORD 'mypassword';
+CREATE DATABASE mydb OWNER myuser;
+\q
+```
+
