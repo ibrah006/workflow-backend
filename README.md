@@ -32,9 +32,9 @@ npm install typorm dotenv
 npm run dev
 ```
 
-## Dev Env Setup on Different OSs
+# Dev Env Setup on Different OSs
 
-# MacOS
+## MacOS
 
 1. Install Postgresql
 ```bash
