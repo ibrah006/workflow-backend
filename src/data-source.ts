@@ -3,5 +3,12 @@ import dotenv from 'dotenv';
 
 export const AppDataSource = new DataSource({
     type: 'postgres',
-    // host: 
+    host: process.env.DB_HOST,
+    port: Number(process.env.PORT),
+    username: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    synchronize: true,
+    entities: ["src/models/*.ts"],
+    migrations: ["src/migration/**/*.ts"]
 });
