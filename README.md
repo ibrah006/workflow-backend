@@ -36,6 +36,7 @@ npm run dev
 
 ## MacOS
 
+### Setup PostgreSQL in just 2 steps!
 1. Install Postgresql
 ```bash
 brew install postgresql
