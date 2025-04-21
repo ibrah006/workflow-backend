@@ -26,4 +26,8 @@ This is the Express.js + TypeScript backend for **Work Flow**, a productivity an
 ## 📦 Getting Started
 ```bash
 npm install
+npm install express
+npm install --save-dev typescript ts-node @types/express @types/node nodemon
+npm install typorm dotenv
 npm run dev
+```
