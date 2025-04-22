@@ -9,6 +9,8 @@ import usersRoutes from './routes/users';
 import guestsRoutes from './routes/guests';
 import projectRoutes from './routes/project';
 import activityAndAttendance from './routes/activityAndAttendance';
+import tasksRoutes from './routes/tasks';
+import analyticsRoutes from './routes/analytics';
 
 const app = express();
 
@@ -45,7 +47,11 @@ app.use('/users', authMiddleware, usersRoutes);
 app.use('/', guestsRoutes);
 app.use('/projects', authMiddleware, projectRoutes);
 // Activity & Attendance routes
-app.use('/', authMiddleware, activityAndAttendance);
+app.use('/', authMiddleware, activityAndAttendance)
+// Task state
+app.use('/tasks', authMiddleware, tasksRoutes)
+// Analytics
+app.use('/analytics', authMiddleware, analyticsRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

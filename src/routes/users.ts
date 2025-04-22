@@ -19,20 +19,20 @@ router.get("/", async (req, res)=> {
 
 router.get('/me', async (req: Request, res: Response) => {
     try {
-      const userRepo = AppDataSource.getRepository(User);
-      const user = await userRepo.findOneBy({ id: (req as any).user!.id });
-  
-      if (!user) {
-        res.status(404).json({ message: 'User not found' });
-        return;
-      }
-  
-      // Optionally, omit sensitive fields like password
-      const { password, ...safeUser } = user;
-      res.json(safeUser);
+        const userRepo = AppDataSource.getRepository(User);
+        const user = await userRepo.findOneBy({ id: (req as any).user!.id });
+    
+        if (!user) {
+            res.status(404).json({ message: 'User not found' });
+            return;
+        }
+    
+        // Optionally, omit sensitive fields like password
+        const { password, ...safeUser } = user;
+        res.json(safeUser);
     } catch (err) {
-      console.error('Failed to fetch user profile:', err);
-      res.status(500).json({ message: 'Internal server error' });
+        console.error('Failed to fetch user profile:', err);
+        res.status(500).json({ message: 'Internal server error' });
     }
   });
   

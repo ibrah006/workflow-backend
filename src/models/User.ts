@@ -6,6 +6,7 @@ import { Message } from "./Message";
 import { WorkActivityLog } from "./WorkActivityLog";
 import { Project } from "./Project";
 import { AttendanceLog } from "./AttendanceLog";
+import { LayoffLog } from "./LayoffLog";
 
 @Entity()
 export class User {
@@ -69,5 +70,14 @@ export class User {
     workActivityLogs?: WorkActivityLog[];
 
     @OneToMany(()=> AttendanceLog, (log)=> log.user, { nullable: true })
-    attendanceLog?: WorkActivityLog[];
+    attendanceLogs?: WorkActivityLog[];
+    
+    @OneToMany(()=> LayoffLog, (log)=> log.user, { nullable: true })
+    layoffLogs?: WorkActivityLog[];
+
+    // Backend logic functions
+
+    isAdmin(): boolean {
+        return this.role === UserRole.MANAGER;
+    }
 }

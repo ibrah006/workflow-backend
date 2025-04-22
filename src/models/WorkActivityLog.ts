@@ -18,11 +18,6 @@ export class WorkActivityLog {
     @Column({ type: 'date' })
     start!: Date;
 
-    @Column({ type: 'date' })
-    end!: Date;
-
-    // Other attributes
-
-    @ManyToMany(()=> LayoffLog, (layoffLog)=> layoffLog.workActivityLogs)
-    layoffLogs!: LayoffLog[];
+    @Column({ type: 'date', nullable: true })
+    end!: Date | undefined;
 }

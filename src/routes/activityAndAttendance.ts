@@ -3,22 +3,25 @@ import { AttendanceLog } from "../models/AttendanceLog";
 import { AppDataSource } from "../data-source";
 import { User } from "../models/User";
 import { authMiddleware } from "../middleware/authMiddleware";
+import { WorkActivityLog } from "../models/WorkActivityLog";
+import { Task } from "../models/Task";
+import { LayoffLog } from "../models/LayoffLog";
 
 const router = Router();
 
 
-// Clock in
+// Clock in POST
 //users/me/clock-in
-// Clock out
+// Clock out POST
 //users/me/clock-out
-// Start Layoff time
+// Start Layoff time POST
 //users/me/layoff/start
-// End Layoff time
+// End Layoff time POST
 //users/me/layoff/end
-// Start Task
+// Start Task POST
 //tasks/:taskId/start
-// End Task
-//tasks/:taskId/end for ending task
+// End Task POST
+//tasks/:taskId/end
 
 // Conditions
 // when clocking in
@@ -26,6 +29,10 @@ const router = Router();
 
 const attendanceLogRepo = AppDataSource.getRepository(AttendanceLog);
 const userRepo = AppDataSource.getRepository(User);
+const taskRepo = AppDataSource.getRepository(Task);
+
+const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
+const layoffLogRepo = AppDataSource.getRepository(LayoffLog);
 
 // Clock in User into attendance
 // Clocks in with current time
@@ -89,8 +96,7 @@ router.post("/users/me/clock-in", async (req, res) => {
     }
 });
 
-// Clock out User from attendance
-router.post("/users/me/clock-out", async (req, res) => {
+router.post("/users/me/clock-out", async (req, res): Promise<any> => {
     const userId = (req as any).user.id;
 
     const user = await userRepo.findOneBy({ id: userId });
@@ -101,50 +107,173 @@ router.post("/users/me/clock-out", async (req, res) => {
     };
 
     if (!user) {
-        res.status(404).json({
+        return res.status(404).json({
             message: `User with id ${userId} not found`,
             "debug info": debugInfo,
         });
-        return;
-    }
-
-    // Find the open attendance log (checkOut is null)
-    const openLog = await attendanceLogRepo.findOne({
-        where: {
-            // user: { id: userId },
-            // checkOut: null,
-            user: { id: userId },
-            checkOut: undefined
-        },
-        relations: ["user"],
-        order: {
-            checkIn: "DESC", // in case there are multiple (which ideally shouldn't happen)
-        },
-    });
-
-    if (!openLog) {
-        res.status(400).json({
-            message: `User ${userId} is not currently clocked in.`,
-            "debug info": debugInfo,
-        });
-        return;
     }
 
     try {
-        openLog.checkOut = new Date();
-        await attendanceLogRepo.save(openLog);
+        const now = new Date();
 
-        res.status(200).json({
-            message: `User ${userId} clocked out successfully.`,
-            attendanceLog: openLog,
+        // =====================
+        // ✅ Attendance Checkout
+        // =====================
+        const openAttendanceLog = await attendanceLogRepo.findOne({
+            where: {
+                user: { id: userId },
+                checkOut: undefined,
+            },
+            relations: ["user"],
+            order: {
+                checkIn: "DESC",
+            },
         });
+
+        if (!openAttendanceLog) {
+            return res.status(400).json({
+                message: `User ${userId} is not currently clocked in.`,
+                "debug info": debugInfo,
+            });
+        }
+
+        openAttendanceLog.checkOut = now;
+        await attendanceLogRepo.save(openAttendanceLog);
+
+        // =====================
+        // ✅ Active Task Log End
+        // =====================
+        const activeTaskLog = await workActivityLogRepo.findOne({
+            where: {
+                user: { id: userId },
+                end: undefined,
+            },
+            relations: ["task"],
+            order: {
+                start: "DESC",
+            },
+        });
+
+        if (activeTaskLog) {
+            activeTaskLog.end = now;
+            await workActivityLogRepo.save(activeTaskLog);
+
+            const task = activeTaskLog.task;
+            if (task && task.status === "in_progress") {
+                task.status = "in_review";
+                await taskRepo.save(task);
+            }
+        }
+
+        // =====================
+        // ✅ End Layoff (if any)
+        // =====================
+        const activeLayoffLog = await layoffLogRepo.findOne({
+            where: {
+                user: { id: userId },
+                end: undefined,
+            },
+            order: {
+                start: "DESC",
+            },
+        });
+
+        if (activeLayoffLog) {
+            activeLayoffLog.end = now;
+            await layoffLogRepo.save(activeLayoffLog);
+        }
+
+        return res.status(200).json({
+            message: `User ${userId} clocked out successfully.`,
+            attendanceLog: openAttendanceLog,
+            taskLog: activeTaskLog || null,
+            layoffLog: activeLayoffLog || null,
+        });
+
     } catch (err) {
         console.error(err);
-        res.status(400).json({
+        return res.status(500).json({
             message: `Failed to clock out user ${userId}`,
             error: err,
             "debug info": debugInfo,
         });
+    }
+});
+
+// Start Layoff
+router.post('/users/me/layoff/start', async (req, res): Promise<any> => {
+    const userId = (req as any).user.id;
+
+    try {
+        const user = await userRepo.findOne({ where: { id: userId } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Check if there's an active layoff (end is still undefined)
+        const activeLayoff = await layoffLogRepo.findOne({
+            where: {
+                user: { id: userId },
+                end: undefined
+            },
+            relations: ['user']
+        });
+
+        if (activeLayoff) {
+            return res.status(400).json({ error: 'You are already in a layoff period' });
+        }
+
+        // Create a new layoff log with start time
+        const layoffLog = layoffLogRepo.create({
+            user,
+            start: new Date()
+        });
+
+        await layoffLogRepo.save(layoffLog);
+
+        return res.status(201).json({
+            message: 'Layoff started successfully',
+            layoffLog
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// End Layoff
+router.post('/users/me/layoff/end', async (req, res): Promise<any> => {
+    const userId = (req as any).user.id;
+
+    try {
+        const user = await userRepo.findOne({ where: { id: userId } });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Find active layoff for this user
+        const activeLayoff = await layoffLogRepo.findOne({
+            where: {
+                user: { id: userId },
+                end: undefined
+            },
+            relations: ['user']
+        });
+
+        if (!activeLayoff) {
+            return res.status(400).json({ error: 'You are not currently in a layoff period' });
+        }
+
+        activeLayoff.end = new Date();
+        await layoffLogRepo.save(activeLayoff);
+
+        return res.status(200).json({
+            message: 'Layoff ended successfully',
+            layoffLog: activeLayoff
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Internal server error' });
     }
 });
 
