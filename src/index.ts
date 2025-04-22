@@ -2,7 +2,10 @@ import express from 'express';
 import { AppDataSource } from './data-source';
 import dotenv from 'dotenv';
 
-import authRoutes from './routes/auth';
+import { authMiddleware } from './middleware/authMiddleware';
+
+import usersRoutes from './routes/users';
+import guestsRoutes from './routes/guests';
 
 const app = express();
 
@@ -35,7 +38,8 @@ app.get('/', (req, res) => {
   res.send('Hello from Express + TypeScript backend for workflow!');
 });
 
-app.use('/', authRoutes);
+app.use('/users', authMiddleware, usersRoutes);
+app.use('/', guestsRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

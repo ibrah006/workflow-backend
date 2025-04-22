@@ -40,7 +40,7 @@ export class Task {
     @Column({ type: 'date', nullable: true })
     dateCompleted?: Date;
 
-    @OneToMany(()=> Message, (message)=> message)
+    @OneToMany(()=> Message, (message)=> message.task)
     discussionThreads!: Message[];
 
     // derived attributes (NOTE FOR THE FRONT-END):
@@ -49,6 +49,7 @@ export class Task {
 
     // Other relations
 
+    // All the work activity logs by all users, checking into this task
     @OneToMany(()=> WorkActivityLog, (log)=> log.task)
     workActivityLogs?: WorkActivityLog[];
 

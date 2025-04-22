@@ -1,6 +1,8 @@
-import { Column, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./User";
+import { Task } from "./Task";
 
+@Entity()
 export class Message {
     @PrimaryGeneratedColumn()
     id!: number;
@@ -13,4 +15,7 @@ export class Message {
 
     @Column({ type: 'date' })
     date!: Date;
+
+    @ManyToOne(()=> Task, (task)=> task.discussionThreads)
+    task!: Task;
 }

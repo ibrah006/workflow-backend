@@ -29,7 +29,7 @@ export class User {
     password!: string;
 
     @Column({ nullable: true })
-    phone: number | undefined;
+    phone?: number;
 
     @ManyToOne(()=> Team, (team)=> team.members)
     department!: Team;
