@@ -16,7 +16,7 @@ export class AttendanceLog {
     @Column({ type: 'date' })
     checkOut!: Date;
 
-    @Column()
-    reason!: string;
+    // @Column()
+    // reason!: string;
 
 }

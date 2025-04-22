@@ -8,6 +8,7 @@ import { authMiddleware } from './middleware/authMiddleware';
 import usersRoutes from './routes/users';
 import guestsRoutes from './routes/guests';
 import projectRoutes from './routes/project';
+import activityAndAttendance from './routes/activityAndAttendance';
 
 const app = express();
 
@@ -42,7 +43,9 @@ app.get('/', (req, res) => {
 
 app.use('/users', authMiddleware, usersRoutes);
 app.use('/', guestsRoutes);
-app.use('/', projectRoutes);
+app.use('/projects', authMiddleware, projectRoutes);
+// Activity & Attendance routes
+app.use('/', authMiddleware, activityAndAttendance);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

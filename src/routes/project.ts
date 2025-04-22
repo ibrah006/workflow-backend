@@ -43,7 +43,7 @@ router.get("/", async (req, res) => {
 /// Manage Project tasks
 
 // Add task for project with ID: [params.id]
-router.post("/:id", async (req, res) => {
+router.post("/:id", adminOnlyMiddleware, async (req, res) => {
     const projectId = parseInt(req.params.id);
     const {
         name,
@@ -198,6 +198,32 @@ router.put("tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
         res.status(400).json({
             message: `Failed to assign task ${taskId} to users`,
             error: err,
+        });
+    }
+});
+
+// Get Project by Id
+router.get("/:id", async (req, res) => {
+    const id = parseInt(req.params.id);
+
+    try {
+        const project = await projectRepo.findOneOrFail({
+            relations: [
+                "tasks",
+                "tasks.assignees",
+                "tasks.wastageLog",
+                "tasks.discussionThreads",
+                "tasks.workActivityLogs",
+                "assignedManagers"
+            ],
+            where: { id: id }
+        });
+
+        res.json(project);
+    } catch(err) {
+        res.status(404).json({
+            message: `Project with ${id} not found`,
+            error: err
         });
     }
 });

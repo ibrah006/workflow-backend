@@ -5,7 +5,7 @@ import { Task } from "./Task";
 import { Message } from "./Message";
 import { WorkActivityLog } from "./WorkActivityLog";
 import { Project } from "./Project";
-import { AttendanceLog } from "./AttendamceLog";
+import { AttendanceLog } from "./AttendanceLog";
 
 @Entity()
 export class User {
