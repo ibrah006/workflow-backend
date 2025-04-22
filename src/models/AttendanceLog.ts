@@ -13,10 +13,9 @@ export class AttendanceLog {
     @Column({ type: 'date' })
     checkIn!: Date;
 
-    @Column({ type: 'date' })
+    @Column({ type: 'date', nullable: true })
     checkOut?: Date | undefined;
 
     // @Column()
     // reason!: string;
-
 }
