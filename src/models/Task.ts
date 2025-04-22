@@ -1,8 +1,9 @@
-import { Column, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { Project } from "./Project";
 import { User } from "./User";
 import { WastageLog } from "./WastageLog";
 import { Message } from "./Message";
+import { WorkActivityLog } from "./WorkActivityLog";
 
 
 @Entity()
@@ -44,5 +45,11 @@ export class Task {
 
     // derived attributes (NOTE FOR THE FRONT-END):
     // task efficiency
+
+
+    // Other relations
+
+    @OneToMany(()=> WorkActivityLog, (log)=> log.task)
+    workActivityLogs?: WorkActivityLog[];
 
 }

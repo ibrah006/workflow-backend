@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./User";
 
 @Entity()
@@ -15,7 +15,7 @@ export class Team {
     @OneToMany(()=> User, (user)=> user.department)
     members!: User[];
 
-    @OneToMany(()=> User, (user)=> user)
+    @ManyToOne(()=> User, (user)=> user)
     createdBy!: User;
 
     @CreateDateColumn()

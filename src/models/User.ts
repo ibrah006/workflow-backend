@@ -3,7 +3,9 @@ import { UserRole } from "../enums/UserRoles";
 import { Team } from "./Team";
 import { Task } from "./Task";
 import { Message } from "./Message";
-
+import { WorkActivityLog } from "./WorkActivityLog";
+import { Project } from "./Project";
+import { AttendanceLog } from "./AttendamceLog";
 
 @Entity()
 export class User {
@@ -53,13 +55,19 @@ export class User {
 
     // Other Attributes
 
-    @ManyToOne(()=> Team, (team)=> team.createdBy, { nullable: true })
+    @OneToMany(()=> Team, (team)=> team.createdBy, { nullable: true })
     teamsCreated?: Team[];
 
-    @ManyToOne(()=> Message, (message)=> message.user, { nullable: true })
+    @OneToMany(()=> Message, (message)=> message.user, { nullable: true })
     messages?: Message[];
 
     // List of projects the user has been part of, as a manager
-    @ManyToOne(()=> Message, (message)=> message.user, { nullable: true })
-    managedProjects?: Message[];
+    @ManyToMany(()=> Project, (project)=> project.assignedManagers, { nullable: true })
+    managedProjects?: Project[];
+
+    @OneToMany(()=> WorkActivityLog, (log)=> log.user, { nullable: true })
+    workActivityLogs?: WorkActivityLog[];
+
+    @OneToMany(()=> AttendanceLog, (log)=> log.user, { nullable: true })
+    attendanceLog?: WorkActivityLog[];
 }

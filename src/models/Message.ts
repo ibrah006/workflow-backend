@@ -1,11 +1,11 @@
-import { Column, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./User";
 
 export class Message {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @OneToMany(()=> User, (user)=> user.messages)
+    @ManyToOne(()=> User, (user)=> user.messages)
     user!: User;
 
     @Column()
