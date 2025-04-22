@@ -31,7 +31,7 @@ export class Task {
 
     // IDs of Stock Entries that have been use in the project
     @Column('text', { array: true })
-    materialsUsed!: string[];
+    materialsUsed?: string[];
 
     // List of IDs of InvoiceItems 
     @OneToMany(()=> WastageLog, (log)=> log.task)

@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { User } from "../models/User";
 import { authMiddleware } from "../middleware/authMiddleware";
-import { adminOnlyMiddleware } from "../middleware/authOnlyMiddleware";
+import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
 import { registerUser } from "../services/authService";
 
 
