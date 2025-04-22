@@ -35,13 +35,33 @@ router.post("/users/me/clock-in", async (req, res) => {
     const user = await userRepo.findOneBy({ id: userId });
 
     const debugInfo = {
-        "current user entity": JSON.stringify(req.body.user)
+        "current user entity from JWT": JSON.stringify((req as any).user),
+        "request body": JSON.stringify(req.body),
     };
 
     if (!user) {
         res.status(404).json({
             message: `User with id ${userId} not found`,
-            "debug info": debugInfo
+            "debug info": debugInfo,
+        });
+        return;
+    }
+
+    // Check for an existing attendance log without a checkOut
+    const openLog = await attendanceLogRepo.findOne({
+        where: {
+            user: { id: userId },
+            checkOut: undefined,
+        },
+        relations: ["user"],
+    });
+
+    if (openLog) {
+        res.status(400).json({
+            message: `User ${userId} is already clocked in.`,
+            "existing log id": openLog.id,
+            "check in time": openLog.checkIn,
+            "debug info": debugInfo,
         });
         return;
     }
@@ -51,16 +71,23 @@ router.post("/users/me/clock-in", async (req, res) => {
             user,
             checkIn: new Date(),
         });
-        
+
         await attendanceLogRepo.save(attendanceLog);
-    } catch(err) {
+
+        res.status(201).json({
+            message: `User ${userId} clocked in successfully.`,
+            attendanceLog,
+        });
+    } catch (err) {
         console.error(err);
         res.status(400).json({
             message: `Failed to log clock in for user ${userId}`,
             error: err,
-            "debug info": debugInfo
+            "debug info": debugInfo,
         });
     }
 });
+
+
 
 export default router;
