@@ -7,6 +7,7 @@ import { authMiddleware } from './middleware/authMiddleware';
 
 import usersRoutes from './routes/users';
 import guestsRoutes from './routes/guests';
+import projectRoutes from './routes/project';
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.get('/', (req, res) => {
 
 app.use('/users', authMiddleware, usersRoutes);
 app.use('/', guestsRoutes);
+app.use('/', projectRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
