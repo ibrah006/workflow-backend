@@ -18,8 +18,6 @@ dotenv.config();
 
 const PORT = process.env.PORT;
 
-console.log("port:", PORT);
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -47,7 +45,7 @@ app.use('/users', authMiddleware, usersRoutes);
 app.use('/', guestsRoutes);
 app.use('/projects', authMiddleware, projectRoutes);
 // Activity & Attendance routes
-app.use('/', authMiddleware, activityAndAttendance)
+app.use('/activity', authMiddleware, activityAndAttendance)
 // Task state
 app.use('/tasks', authMiddleware, tasksRoutes)
 // Analytics
@@ -56,3 +54,5 @@ app.use('/analytics', authMiddleware, analyticsRoutes);
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
+export default app;

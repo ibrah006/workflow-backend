@@ -3,6 +3,7 @@ import { AppDataSource } from "../data-source";
 import { User } from "../models/User";
 import { Task } from "../models/Task";
 import { WorkActivityLog } from "../models/WorkActivityLog";
+import { IsNull } from "typeorm";
 
 const router = Router();
 
@@ -33,12 +34,14 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
         }
 
         // Fetch user
-        const user = await userRepo.findOne(userId);
+        const user = await userRepo.findOne({
+            where: { id: userId }
+        });
         if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
         // Check if user is already working on another task
         const activeLog = await workActivityLogRepo.findOne({
-            where: { user, end: undefined }
+            where: { user, end: IsNull() }
         });
         if (activeLog) {
             return res.status(400).json({ error: 'You are already working on another task' });
@@ -82,33 +85,44 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
 // - Task must exist
 // - User must be authenticated
 // - User must have started the task (i.e., have a log entry without an end time)
-router.post('/:taskId/end', async (req, res): Promise<any> => {
+router.post('/end', async (req, res): Promise<any> => {
     const userId = (req as any).user.id;
-    const taskId = parseInt(req.params.taskId);
+
+    const { status, isCompleted } = req.query;
+
+    const statusValue = status? String(status) : null;
+    const isCompletedValue = Boolean(isCompleted?? false);
 
     try {
-        // Fetch the task
-        const task = await taskRepo.findOne({ where: { id: taskId } });
-        if (!task) return res.status(404).json({ error: 'Task not found' });
-
-        // Fetch user
-        const user = await userRepo.findOne(userId);
-        if (!user) return res.status(401).json({ error: 'Unauthorized' });
-
-        // Find the user's active work log on this task
+        // Get the active work log for the current user
         const activeLog = await workActivityLogRepo.findOne({
-            where: { task, user, end: undefined }
+            where: {
+                user: { id: userId },
+                end: IsNull(),
+            },
+            relations: ['task'],
+            order: {
+                start: 'DESC',
+            }
         });
+
+        // No active task found
         if (!activeLog) {
-            return res.status(400).json({ error: 'You have not started this task yet' });
+            return res.status(404).json({ error: 'No active task found for the user' });
         }
 
-        // Set end time to now and save
+        const task = activeLog.task;
+
+        // End the task
         activeLog.end = new Date();
         await workActivityLogRepo.save(activeLog);
 
-        // Update task status to in_review
-        task.status = 'in_review';
+        // Update task status
+        if (statusValue) task.status = statusValue;
+        // Check if task is completed and update it to be an completed task in record
+        if (isCompletedValue) {
+            task.dateCompleted = new Date();
+        }
         await taskRepo.save(task);
 
         return res.json({ message: 'Task ended successfully' });

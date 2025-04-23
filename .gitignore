@@ -10,3 +10,5 @@ logs/
 
 # Build output
 dist/
+
+test/

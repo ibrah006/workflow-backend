@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { UserRole } from "../enums/UserRoles";
 import { Team } from "./Team";
 import { Task } from "./Task";
@@ -17,11 +17,10 @@ export class User {
     name!: string;
 
     @Column({
-        type: 'enum',
-        enum: UserRole,
-        default: UserRole.VIEWER
+        // enum: UserRole,
+        default: 'viewer'
     })
-    role!: UserRole;
+    role!: string;
 
     @Column({ unique: true })
     email!: string;
@@ -33,21 +32,22 @@ export class User {
     phone?: number;
 
     @ManyToOne(()=> Team, (team)=> team.members)
-    department!: Team;
+    department?: Team;
 
     @CreateDateColumn()
     createdAt!: Date;
 
     // Skill tags
     // will be useful in the app for auto assigning users to tasks/projects
-    @Column('text', { array: true })
+    @Column('text', { array: true, default: [] })
     skills!: string[];
 
     @Column('decimal', { default: 0.0 })
     efficiencyScore!: number;
 
-    @Column({ type: 'interval' })
-    duration: any;
+    // Total work duration
+    @Column({ type: "int", default: 0 })
+    duration!: number;
 
     // Tasks History relations
     @ManyToMany(()=> Task, (task)=> task.assignees)
@@ -70,14 +70,18 @@ export class User {
     workActivityLogs?: WorkActivityLog[];
 
     @OneToMany(()=> AttendanceLog, (log)=> log.user, { nullable: true })
-    attendanceLogs?: WorkActivityLog[];
+    attendanceLogs?: AttendanceLog[];
     
     @OneToMany(()=> LayoffLog, (log)=> log.user, { nullable: true })
-    layoffLogs?: WorkActivityLog[];
+    layoffLogs?: LayoffLog[];
 
     // Backend logic functions
 
     isAdmin(): boolean {
-        return this.role === UserRole.MANAGER;
+        return this.role === "admin" || this.role === "manager";
+    }
+
+    static isAdmin(role: string) : boolean {
+        return role === "admin" || role === "manager";
     }
 }

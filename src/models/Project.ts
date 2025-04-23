@@ -12,19 +12,19 @@ export class Project {
     name!: string;
 
     @Column()
-    description!: string;
+    description?: string;
 
     @Column()
     status!: string;
 
     @Column({ type: 'date' })
-    dueDate!: Date;
+    dueDate?: Date;
 
-    @Column({ type: 'date' })
-    estimatedProductionStart!: Date;
+    @Column({ type: 'date', nullable: true })
+    estimatedProductionStart?: Date;
 
-    @Column({ type: 'date' })
-    estimatedSiteFixing!: Date;
+    @Column({ type: 'date', nullable: true })
+    estimatedSiteFixing?: Date;
 
     @OneToMany(()=> Task, (task)=> task.project)
     tasks!: Task[];

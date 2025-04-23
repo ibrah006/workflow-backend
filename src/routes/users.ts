@@ -44,15 +44,4 @@ router.put("/:id/role", adminOnlyMiddleware, async (req, res) => {
     await userRepo.update(userId, { role: role });
 });
 
-router.post('/register', adminOnlyMiddleware, async (req, res)=> {
-    const { email, password } = req.body;
-
-    try {
-        const user = await registerUser(email, password);
-        res.json({ message: 'User registered', user });
-    } catch(err) {
-        res.status(400).json({ error: err });
-    }
-});
-
 export default router;

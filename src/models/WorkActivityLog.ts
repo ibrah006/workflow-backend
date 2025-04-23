@@ -19,5 +19,5 @@ export class WorkActivityLog {
     start!: Date;
 
     @Column({ type: 'date', nullable: true })
-    end!: Date | undefined;
+    end!: Date | null;
 }

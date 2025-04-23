@@ -29,7 +29,8 @@ router.post("/", adminOnlyMiddleware, async (req, res) => {
     } catch(err) {
         console.error("error:", err);
         res.status(400).json({
-            error: `Failed to create project ${data}`
+            message: `Failed to create project ${JSON.stringify(data)}`,
+            // error: err
         });
     }
 });
@@ -98,7 +99,7 @@ router.post("/:id", adminOnlyMiddleware, async (req, res) => {
 });
 
 // Edit Task endpoint
-function entityField(key: string, value: any | undefined): {} {
+function entityField(key: string, value: any | null): {} {
     return value !== undefined? {[key]: value} : {};
 }
 router.post("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
@@ -166,7 +167,9 @@ router.delete("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
 
 
 // Assign task to users
-router.put("tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
+router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
+
+    const taskRepo = AppDataSource.getRepository(Task);
 
     const taskId = parseInt(req.params.taskId);
     const userIds: string[] = req.body.users;
@@ -185,7 +188,10 @@ router.put("tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
 
         const users = await userRepo.findBy({ id: In(userIds) });
 
-        task.assignees = users;
+        task.assignees = [
+            ...task.assignees,
+            ...users
+        ];
 
         await taskRepo.save(task); // Triggers relation updates
 
@@ -196,7 +202,7 @@ router.put("tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(400).json({
-            message: `Failed to assign task ${taskId} to users`,
+            message: `Failed to assign task ${taskId} to user(s)`,
             error: err,
         });
     }

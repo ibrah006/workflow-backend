@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { AppDataSource } from "../data-source";
-import { loginUser } from "../services/authService";
+import { loginUser, registerUser } from "../services/authService";
 
 const router = Router();
 
@@ -12,6 +12,17 @@ router.post('/login', async (req, res)=> {
         res.json({ token, user });
     } catch(err) {
         res.status(401).json({ error: err })
+    }
+});
+
+router.post('/register', async (req, res)=> {
+    const { email, password, name, role } = req.body;
+
+    try {
+        const user = await registerUser(email, password, name, role);
+        res.json({ message: 'User registered', user });
+    } catch(err) {
+        res.status(400).json({ error: err });
     }
 });
 

@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Project } from "./Project";
 import { User } from "./User";
 import { WastageLog } from "./WastageLog";
@@ -24,13 +24,14 @@ export class Task {
     dueDate!: Date;
 
     @ManyToMany(()=> User, (user)=> user.tasks)
+    @JoinTable()
     assignees!: User[];
 
     @Column()
     status!: string;
 
     // IDs of Stock Entries that have been use in the project
-    @Column('text', { array: true })
+    @Column('text', { array: true, default: [] })
     materialsUsed?: string[];
 
     // List of IDs of InvoiceItems 

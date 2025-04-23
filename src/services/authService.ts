@@ -10,9 +10,9 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 
 const userRepo = AppDataSource.getRepository(User);
 
-export const registerUser = async (email: string, plainPassword: string) => {
+export const registerUser = async (email: string, plainPassword: string, name: string, role?: string) => {
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
-    const user = userRepo.create({ email, password: hashedPassword });
+    const user = userRepo.create({ email, password: hashedPassword, name:  name, ... role? {role: role} : {} });
     return await userRepo.save(user);
 };
 

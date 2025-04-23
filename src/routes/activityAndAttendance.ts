@@ -6,6 +6,7 @@ import { authMiddleware } from "../middleware/authMiddleware";
 import { WorkActivityLog } from "../models/WorkActivityLog";
 import { Task } from "../models/Task";
 import { LayoffLog } from "../models/LayoffLog";
+import { IsNull } from "typeorm";
 
 const router = Router();
 
@@ -43,7 +44,7 @@ router.post("/users/me/clock-in", async (req, res) => {
     const user = await userRepo.findOneBy({ id: userId });
 
     const debugInfo = {
-        "current user entity from JWT": JSON.stringify((req as any).user),
+        "current user id": userId,
         "request body": JSON.stringify(req.body),
     };
 
@@ -59,7 +60,7 @@ router.post("/users/me/clock-in", async (req, res) => {
     const openLog = await attendanceLogRepo.findOne({
         where: {
             user: { id: userId },
-            checkOut: undefined,
+            checkOut: IsNull(),
         },
         relations: ["user"],
     });
@@ -122,13 +123,15 @@ router.post("/users/me/clock-out", async (req, res): Promise<any> => {
         const openAttendanceLog = await attendanceLogRepo.findOne({
             where: {
                 user: { id: userId },
-                checkOut: undefined,
+                checkOut: IsNull(),
             },
             relations: ["user"],
-            order: {
-                checkIn: "DESC",
-            },
+            // order: {
+            //     checkIn: "DESC",
+            // },
         });
+
+        console.log("active attendance log:", openAttendanceLog);
 
         if (!openAttendanceLog) {
             return res.status(400).json({
@@ -141,12 +144,12 @@ router.post("/users/me/clock-out", async (req, res): Promise<any> => {
         await attendanceLogRepo.save(openAttendanceLog);
 
         // =====================
-        // ✅ Active Task Log End
+        // ✅ Active Task Log (Work Activity Log) End
         // =====================
         const activeTaskLog = await workActivityLogRepo.findOne({
             where: {
                 user: { id: userId },
-                end: undefined,
+                end: IsNull(),
             },
             relations: ["task"],
             order: {
@@ -171,7 +174,7 @@ router.post("/users/me/clock-out", async (req, res): Promise<any> => {
         const activeLayoffLog = await layoffLogRepo.findOne({
             where: {
                 user: { id: userId },
-                end: undefined,
+                end: IsNull(),
             },
             order: {
                 start: "DESC",
@@ -214,7 +217,7 @@ router.post('/users/me/layoff/start', async (req, res): Promise<any> => {
         const activeLayoff = await layoffLogRepo.findOne({
             where: {
                 user: { id: userId },
-                end: undefined
+                end: IsNull()
             },
             relations: ['user']
         });
@@ -255,7 +258,7 @@ router.post('/users/me/layoff/end', async (req, res): Promise<any> => {
         const activeLayoff = await layoffLogRepo.findOne({
             where: {
                 user: { id: userId },
-                end: undefined
+                end: IsNull()
             },
             relations: ['user']
         });
