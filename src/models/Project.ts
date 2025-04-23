@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Task } from "./Task";
 import { User } from "./User";
 
@@ -30,6 +30,7 @@ export class Project {
     tasks!: Task[];
 
     @ManyToMany(()=> User, (user)=> user.managedProjects)
+    @JoinTable()
     assignedManagers!: User[];
 
     // derived attributes (NOTE FOR THE FRONT-END):

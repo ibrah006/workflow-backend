@@ -37,7 +37,9 @@ router.post("/", adminOnlyMiddleware, async (req, res) => {
 
 // Get Projects listing
 router.get("/", async (req, res) => {
-    const projects = await projectRepo.find({ relations: ["tasks", "assignedManagers"] });
+    const projects = await projectRepo.find(
+        { relations: ["tasks", "assignedManagers"] }
+    );
     res.json(projects);
 });
 
