@@ -16,6 +16,8 @@ export class Message {
     @Column({ type: 'date' })
     date!: Date;
 
-    @ManyToOne(()=> Task, (task)=> task.discussionThreads)
+    @ManyToOne(()=> Task, (task)=> task.discussionThreads, {
+        onDelete: 'CASCADE'
+    })
     task!: Task;
 }

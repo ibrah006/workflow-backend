@@ -4,7 +4,8 @@ import { Project } from "../models/Project";
 import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
 import { Task } from "../models/Task";
 import { User } from "../models/User";
-import { In } from "typeorm";
+import { In, IsNull } from "typeorm";
+import { WorkActivityLog } from "../models/WorkActivityLog";
 
 
 const router = Router();
@@ -12,6 +13,8 @@ const router = Router();
 const projectRepo = AppDataSource.getRepository(Project);
 const taskRepo = AppDataSource.getRepository(Task);
 const userRepo = AppDataSource.getRepository(User);
+
+const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 
 // Create a project
 router.post("/", adminOnlyMiddleware, async (req, res) => {
@@ -104,7 +107,7 @@ router.post("/:id", adminOnlyMiddleware, async (req, res) => {
 function entityField(key: string, value: any | null): {} {
     return value !== undefined? {[key]: value} : {};
 }
-router.post("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
+router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
     const taskId = parseInt(req.params.taskId);
     const updatedTaskData = req.body;
 
@@ -154,6 +157,18 @@ router.delete("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
     const taskId = parseInt(req.params.taskId);
     
     try {
+
+        // Check out all active users from the task before deleting
+        await workActivityLogRepo.update(
+            {
+              task: { id: taskId },
+              end: IsNull(),
+            },
+            {
+              end: new Date(),
+            }
+        );
+
         await taskRepo.delete(taskId);
 
         res.json({

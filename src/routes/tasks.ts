@@ -111,7 +111,7 @@ router.post('/end', async (req, res): Promise<any> => {
             return res.status(404).json({ error: 'No active task found for the user' });
         }
 
-        const task = activeLog.task;
+        const task = activeLog.task!;
 
         // End the task
         activeLog.end = new Date();
@@ -131,5 +131,24 @@ router.post('/end', async (req, res): Promise<any> => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 });
+
+router.get('/', async (req, res) : Promise<any> => {
+    const tasks = await taskRepo.find();
+
+    return res.json(tasks);
+})
+
+router.get('/:id', async (req, res) : Promise<any> => {
+    const taskId = parseInt(req.params.id);
+
+    const task = await taskRepo.findOneBy({ id: taskId });
+    if (!task) {
+        return res.status(404).json({
+            message: "Task not found!"
+        });
+    }
+
+    return res.json(task);
+})
 
 export default router;

@@ -7,9 +7,9 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+console.log("JWT SECRET (from auth middleware):", JWT_SECRET);
 
-    // console.log("JWT SECRET:", JWT_SECRET);
+export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
 
     const authHeader = req.headers.authorization;
     if (!authHeader) {

@@ -12,8 +12,8 @@ export class LayoffLog {
     @Column({ type: 'date' })
     start!: Date;
 
-    @Column({ type: 'date' })
-    end!: Date;
+    @Column({ type: 'date', nullable: true })
+    end!: Date | null;
 
     @ManyToOne(()=> User, (user)=> user.layoffLogs)
     user!: User;

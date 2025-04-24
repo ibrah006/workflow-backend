@@ -53,7 +53,6 @@ export class User {
     @ManyToMany(()=> Task, (task)=> task.assignees)
     tasks!: Task[];
 
-
     // Other Attributes
 
     @OneToMany(()=> Team, (team)=> team.createdBy, { nullable: true })

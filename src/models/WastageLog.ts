@@ -15,6 +15,6 @@ export class WastageLog {
     // Other attributes
 
     // The task associated with this material wastage
-    @ManyToOne(()=> Task, (task)=> task.wastageLog)
+    @ManyToOne(()=> Task, (task)=> task.wastageLog, { onDelete: 'SET NULL' })
     task!: Task;
 }

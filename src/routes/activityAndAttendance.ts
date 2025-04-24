@@ -213,6 +213,19 @@ router.post('/users/me/layoff/start', async (req, res): Promise<any> => {
             return res.status(404).json({ error: 'User not found' });
         }
 
+        // Check if user is clocked in (attendance log with no 'end')
+        const activeAttendance = await attendanceLogRepo.findOne({
+            where: {
+                user: { id: userId },
+                checkOut: IsNull()
+            },
+            relations: ['user']
+        });
+
+        if (!activeAttendance) {
+            return res.status(400).json({ error: 'You must be clocked in to start a layoff period' });
+        }
+
         // Check if there's an active layoff (end is still undefined)
         const activeLayoff = await layoffLogRepo.findOne({
             where: {

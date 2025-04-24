@@ -41,7 +41,10 @@ export class Task {
     @Column({ type: 'date', nullable: true })
     dateCompleted?: Date;
 
-    @OneToMany(()=> Message, (message)=> message.task)
+    @OneToMany(()=> Message, (message)=> message.task, {
+        cascade: ['remove'],
+        onDelete: 'CASCADE'
+    })
     discussionThreads!: Message[];
 
     // derived attributes (NOTE FOR THE FRONT-END):
