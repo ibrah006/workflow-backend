@@ -8,8 +8,6 @@ dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-console.log("JWT SECRET (from auth service):", JWT_SECRET);;
-
 const userRepo = AppDataSource.getRepository(User);
 
 export const registerUser = async (email: string, plainPassword: string, name: string, role?: string) => {

@@ -14,9 +14,9 @@ export class WorkActivityLog {
     @ManyToOne(()=> Task, (task)=> task.workActivityLogs, { onDelete: 'SET NULL', nullable: true })
     task!: Task | null;
     
-    @Column({ type: 'date' })
+    @Column({ type: 'timestamp' })
     start!: Date;
 
-    @Column({ type: 'date', nullable: true })
+    @Column({ type: 'timestamp', nullable: true })
     end!: Date | null;
 }

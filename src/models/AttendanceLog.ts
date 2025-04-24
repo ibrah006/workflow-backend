@@ -10,10 +10,10 @@ export class AttendanceLog {
     @ManyToOne(()=> User, (user)=> user.attendanceLogs)
     user!: User;
 
-    @Column({ type: 'date' })
+    @Column({ type: 'timestamp' })
     checkIn!: Date;
 
-    @Column({ type: 'date', nullable: true, default: null })
+    @Column({ type: 'timestamp', nullable: true, default: null })
     checkOut?: Date | null;
 
     // @Column()

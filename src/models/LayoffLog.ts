@@ -9,11 +9,11 @@ export class LayoffLog {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @Column({ type: 'date' })
+    @Column({ type: 'timestamp' })
     start!: Date;
 
-    @Column({ type: 'date', nullable: true })
-    end!: Date | null;
+    @Column({ type: 'timestamp', nullable: true })
+    end?: Date | null;
 
     @ManyToOne(()=> User, (user)=> user.layoffLogs)
     user!: User;

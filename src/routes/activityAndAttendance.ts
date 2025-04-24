@@ -131,8 +131,6 @@ router.post("/users/me/clock-out", async (req, res): Promise<any> => {
             // },
         });
 
-        console.log("active attendance log:", openAttendanceLog);
-
         if (!openAttendanceLog) {
             return res.status(400).json({
                 message: `User ${userId} is not currently clocked in.`,
