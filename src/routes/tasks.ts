@@ -132,16 +132,42 @@ router.post('/end', async (req, res): Promise<any> => {
     }
 });
 
+// Get all tasks assigned to current user
+router.get('/me', async (req, res) : Promise<any> => {
+    
+    const userId = (req as any).user.id;
+
+    const user = await userRepo.findOne({
+        where: { id: userId },
+        relations: ["tasks", "tasks.project", "tasks.assignees"]
+    })
+
+    if (!user) {
+        return res.status(401).json({
+            message: "Forbidden, tried to fetch user that doesn't exist."
+        });
+    }
+
+    return res.json(user.tasks);
+});
+
+// Get all tasks
 router.get('/', async (req, res) : Promise<any> => {
-    const tasks = await taskRepo.find();
+    const tasks = await taskRepo.find({
+        relations: ["assignees", "project"]
+    });
 
     return res.json(tasks);
 })
 
+// Get task by ID
 router.get('/:id', async (req, res) : Promise<any> => {
     const taskId = parseInt(req.params.id);
 
-    const task = await taskRepo.findOneBy({ id: taskId });
+    const task = await taskRepo.findOne({
+        where: { id: taskId },
+        relations: ["assignees", "project"]
+    });
     if (!task) {
         return res.status(404).json({
             message: "Task not found!"

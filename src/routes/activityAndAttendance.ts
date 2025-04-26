@@ -8,6 +8,8 @@ import { Task } from "../models/Task";
 import { LayoffLog } from "../models/LayoffLog";
 import { IsNull } from "typeorm";
 
+import { startOfToday, startOfWeek, startOfMonth, subDays } from 'date-fns';
+
 const router = Router();
 
 
@@ -289,6 +291,74 @@ router.post('/users/me/layoff/end', async (req, res): Promise<any> => {
         console.error(err);
         return res.status(500).json({ error: 'Internal server error' });
     }
+});
+
+// Attendance log analysis
+// 1. Calculate how long AttendanceLog periods have lasted for
+router.get("/attendance/analysis", async (req, res) : Promise<any> => {    
+    const dataFor = req.query.for;
+
+    const now = new Date();
+
+    // How long the attendance has lasted today
+    var attendanceSeconds: number;
+
+    if (dataFor == "today") {
+        const todayStart = startOfToday();
+
+        attendanceSeconds = (await attendanceLogRepo.createQueryBuilder('log')
+            .select('SUM(EXTRACT(EPOCH FROM ("log"."checkOut" - "log"."checkIn")))', 'duration')
+            .where('log.checkIn >= :start AND log.checkIn <= :end', {
+            start: todayStart,
+            end: now,
+            })
+            .getRawOne())?? 0;
+    } else if (dataFor == "pastWeek") {
+        const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
+
+        attendanceSeconds = (await attendanceLogRepo
+            .createQueryBuilder('log')
+            .select('SUM(EXTRACT(EPOCH FROM ("log"."checkOut" - "log"."checkIn")))', 'duration')
+            .where('log.checkIn >= :start AND log.checkIn <= :end', {
+                start: weekStart,
+                end: now,
+            })
+            .getRawOne())?? 0;
+    } else if (dataFor == "pastMonth") {
+        const monthStart = startOfMonth(now);
+
+        attendanceSeconds = (await attendanceLogRepo
+            .createQueryBuilder('log')
+            .select('SUM(EXTRACT(EPOCH FROM ("log"."checkOut" - "log"."checkIn")))', 'duration')
+            .where('log.checkIn >= :start AND log.checkIn <= :end', {
+                start: monthStart,
+                end: now,
+            })
+            .getRawOne())?? 0;
+    } else {
+        return res.status(400).json({
+            message: `Unsupported data-for: '${dataFor}' not supported. only 'today', 'lastWeek' and 'lastMonth' are currently supported`
+        });
+    }
+
+    res.json({
+        "attendanceInSeconds": attendanceSeconds
+    });
+});
+
+// Get all Attendance logs
+router.get("/attendance", async (req, res)=> {
+    const logs = attendanceLogRepo.find({
+        relations: ["user"]
+    });
+
+    res.json(logs);
+});
+
+// Get All layoff logs
+router.get("/layoff", async (req, res) => {
+    const logs = await layoffLogRepo.find();
+    res.json(logs);
 });
 
 export default router;

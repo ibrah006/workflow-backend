@@ -4,6 +4,8 @@ import { AppDataSource } from "../data-source";
 import { LayoffLog } from "../models/LayoffLog";
 import { User } from "../models/User";
 import { AttendanceLog } from "../models/AttendanceLog";
+import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
+import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -13,47 +15,61 @@ const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 const layoffLogRepo = AppDataSource.getRepository(LayoffLog);
 
 // Staff Productivity Summary
-router.get('/staff-productivity-summary', async (_req, res) : Promise<any> => {
+async function getUserProductivitySummary(user: User) {
+    const attendance = await attendanceLogRepo.find({
+        where: { user: { id: user.id } },
+        relations: ['user']
+    });
+
+    const workLogs = await workActivityLogRepo.find({
+        where: { user: { id: user.id } },
+        relations: ['user']
+    });
+
+    let totalAttendanceTime = 0;
+    for (const log of attendance) {
+        if (log.checkIn && log.checkOut) {
+            totalAttendanceTime += (log.checkOut.getTime() - log.checkIn.getTime());
+        }
+    }
+
+    let totalWorkTime = 0;
+    for (const log of workLogs) {
+        if (log.start && log.end) {
+            totalWorkTime += (log.end.getTime() - log.start.getTime());
+        }
+    }
+
+    const productivity = totalAttendanceTime > 0
+        ? ((totalWorkTime / totalAttendanceTime) * 100).toFixed(2)
+        : "0";
+
+    return {
+        user: user.name,
+        totalAttendanceTimeMs: totalAttendanceTime,
+        totalWorkTimeMs: totalWorkTime,
+        // Productivity score in %
+        productivity: parseFloat(productivity)
+    }
+}
+router.get('/me/staff-productivity-summary', async (req, res)=> {
+    const userId = (req as any).user.id;
+
+    const user = await userRepo.findOne({
+        where: { id: userId }
+    });
+
+    console.log("user:", user);
+
+    res.json(await getUserProductivitySummary(user!));
+})
+router.get('/staff-productivity-summary', adminOnlyMiddleware, async (_req, res) : Promise<any> => {
     try {
         const users = await userRepo.find();
         const productivitySummary = [];
 
         for (const user of users) {
-            const attendance = await attendanceLogRepo.find({
-                where: { user: { id: user.id } },
-                relations: ['user']
-            });
-
-            const workLogs = await workActivityLogRepo.find({
-                where: { user: { id: user.id } },
-                relations: ['user']
-            });
-
-            let totalAttendanceTime = 0;
-            for (const log of attendance) {
-                if (log.checkIn && log.checkOut) {
-                    console.log(`type of checkout time: ${log.checkOut}`);
-                    totalAttendanceTime += (log.checkOut.getTime() - log.checkIn.getTime());
-                }
-            }
-
-            let totalWorkTime = 0;
-            for (const log of workLogs) {
-                if (log.start && log.end) {
-                    totalWorkTime += (log.end.getTime() - log.start.getTime());
-                }
-            }
-
-            const productivity = totalAttendanceTime > 0
-                ? ((totalWorkTime / totalAttendanceTime) * 100).toFixed(2)
-                : "0";
-
-            productivitySummary.push({
-                user: user.name,
-                totalAttendanceTimeMs: totalAttendanceTime,
-                totalWorkTimeMs: totalWorkTime,
-                productivity: `${productivity}%`
-            });
+            productivitySummary.push(await getUserProductivitySummary(user));
         }
 
         return res.json({ productivitySummary });

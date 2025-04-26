@@ -213,7 +213,7 @@ router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
         await taskRepo.save(task); // Triggers relation updates
 
         res.json({
-            message: `Successfully assigned task ${taskId} to ${users.length} users`,
+            message: `Successfully assigned task ${taskId} to ${users.length} user(s)`,
         });
 
     } catch (err) {
