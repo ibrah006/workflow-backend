@@ -9,6 +9,7 @@ import { LayoffLog } from "../models/LayoffLog";
 import { IsNull } from "typeorm";
 
 import { startOfToday, startOfWeek, startOfMonth, subDays } from 'date-fns';
+import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
 
 const router = Router();
 
@@ -87,7 +88,10 @@ router.post("/users/me/clock-in", async (req, res) => {
 
         res.status(201).json({
             message: `User ${userId} clocked in successfully.`,
-            attendanceLog,
+            log: {
+                ...attendanceLog,
+                userId: userId
+            },
         });
     } catch (err) {
         console.error(err);
@@ -347,12 +351,41 @@ router.get("/attendance/analysis", async (req, res) : Promise<any> => {
 });
 
 // Get all Attendance logs
-router.get("/attendance", async (req, res)=> {
+router.get("/attendance", adminOnlyMiddleware, async (req, res)=> {
     const logs = attendanceLogRepo.find({
         relations: ["user"]
     });
 
     res.json(logs);
+});
+
+router.get("/me/attendance/active", async (req, res) : Promise<any> => {
+    const userId = (req as any).user.id;
+    const activeLog = await attendanceLogRepo.findOne({
+        where: { user: { id: userId }, checkOut: IsNull() }
+    });
+
+    return res.status( activeLog? 200 : 404 ).json({
+        active: activeLog? {
+            ...activeLog,
+            "userId": userId
+        } : null
+    });
+});
+
+router.get("/me/workActivity/active", async (req, res) => {
+    const userId = (req as any).user.id;
+    const activeLog = await workActivityLogRepo.findOne({
+        where: {
+            user: { id: userId },
+            end: IsNull()
+        },
+        relations: ["task"]
+    });
+
+    res.status(activeLog? 200 : 404).json({
+        "active": activeLog
+    })
 });
 
 // Get All layoff logs

@@ -4,6 +4,7 @@ import { User } from "../models/User";
 import { Task } from "../models/Task";
 import { WorkActivityLog } from "../models/WorkActivityLog";
 import { IsNull } from "typeorm";
+import { AttendanceLog } from "../models/AttendanceLog";
 
 const router = Router();
 
@@ -11,6 +12,7 @@ const userRepo = AppDataSource.getRepository(User);
 const taskRepo = AppDataSource.getRepository(Task);
 
 const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
+const attendanceLogRepo = AppDataSource.getRepository(AttendanceLog);
 
 // Route: Start working on a task
 // Requirements:
@@ -59,6 +61,21 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
             await taskRepo.save(task);
         }
 
+        // Check and make sure the user is clocked into attendance
+        var activeAttendanceLog = await attendanceLogRepo.findOneBy({
+            user: { id: userId },
+            checkOut: IsNull()
+        });
+        // If user is not clocked in, then log them into attendance
+        if (!activeAttendanceLog) {
+            activeAttendanceLog = attendanceLogRepo.create({
+                user,
+                checkIn: new Date(),
+            });
+    
+            await attendanceLogRepo.save(activeAttendanceLog);
+        }
+
         // Create a new work log entry for the task
         const log = workActivityLogRepo.create({
             user,
@@ -72,7 +89,11 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
         task.status = 'in_progress';
         await taskRepo.save(task);
 
-        return res.json({ message: 'Task started successfully' });
+        return res.json({
+            message: 'Task started successfully',
+            attendanceLogLog: activeAttendanceLog,
+            workActivityLog: workActivityLogRepo
+        });
     } catch (err) {
         console.error(err);
         return res.status(500).json({ error: 'Internal server error' });
@@ -149,6 +170,24 @@ router.get('/me', async (req, res) : Promise<any> => {
     }
 
     return res.json(user.tasks);
+});
+
+// Get user's active/current task
+router.get('/active', async (req, res) : Promise<any> => {
+
+    const userId = (req as any).user.id;
+
+    const activeLog = await workActivityLogRepo.findOne({
+        where: {
+          user: { id: userId },
+          end: IsNull()
+        },
+        relations: ["task", "tasks.discussionThreads", "tasks.project"]
+    });
+
+    res.status(activeLog? 200 : 404).json({
+        active: activeLog?.task
+    });
 });
 
 // Get all tasks
