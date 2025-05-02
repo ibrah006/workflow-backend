@@ -27,7 +27,7 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
 
     try {
         // Fetch task with assignees loaded
-        const task = await taskRepo.findOne({ relations: ['assignees'], where: { id: taskId } });
+        const task = await taskRepo.findOne({ relations: ['assignees', "project"], where: { id: taskId } });
         if (!task) return res.status(404).json({ error: 'Task not found' });
 
         // Prevent starting a task that's already completed
@@ -89,10 +89,15 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
         task.status = 'in_progress';
         await taskRepo.save(task);
 
+        console.log(`work activity log starting task:`, log);
+
+        if (log.task != null)
+            log.task.project = task.project;
+
         return res.json({
             message: 'Task started successfully',
-            attendanceLogLog: activeAttendanceLog,
-            workActivityLog: workActivityLogRepo
+            attendanceLog: activeAttendanceLog,
+            workActivityLog: log
         });
     } catch (err) {
         console.error(err);

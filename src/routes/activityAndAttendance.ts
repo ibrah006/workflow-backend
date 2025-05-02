@@ -299,54 +299,49 @@ router.post('/users/me/layoff/end', async (req, res): Promise<any> => {
 
 // Attendance log analysis
 // 1. Calculate how long AttendanceLog periods have lasted for
-router.get("/attendance/analysis", async (req, res) : Promise<any> => {    
+router.get("/attendance/analysis", async (req, res): Promise<any> => {
     const dataFor = req.query.for;
-
     const now = new Date();
 
-    // How long the attendance has lasted today
-    var attendanceSeconds: number;
-
-    if (dataFor == "today") {
-        const todayStart = startOfToday();
-
-        attendanceSeconds = (await attendanceLogRepo.createQueryBuilder('log')
-            .select('SUM(EXTRACT(EPOCH FROM ("log"."checkOut" - "log"."checkIn")))', 'duration')
-            .where('log.checkIn >= :start AND log.checkIn <= :end', {
-            start: todayStart,
-            end: now,
-            })
-            .getRawOne())?? 0;
-    } else if (dataFor == "pastWeek") {
-        const weekStart = startOfWeek(now, { weekStartsOn: 1 }); // Monday
-
-        attendanceSeconds = (await attendanceLogRepo
-            .createQueryBuilder('log')
-            .select('SUM(EXTRACT(EPOCH FROM ("log"."checkOut" - "log"."checkIn")))', 'duration')
-            .where('log.checkIn >= :start AND log.checkIn <= :end', {
-                start: weekStart,
-                end: now,
-            })
-            .getRawOne())?? 0;
-    } else if (dataFor == "pastMonth") {
-        const monthStart = startOfMonth(now);
-
-        attendanceSeconds = (await attendanceLogRepo
-            .createQueryBuilder('log')
-            .select('SUM(EXTRACT(EPOCH FROM ("log"."checkOut" - "log"."checkIn")))', 'duration')
-            .where('log.checkIn >= :start AND log.checkIn <= :end', {
-                start: monthStart,
-                end: now,
-            })
-            .getRawOne())?? 0;
+    let start: Date;
+    if (dataFor === "today") {
+        start = startOfToday();
+    } else if (dataFor === "pastWeek") {
+        start = startOfWeek(now, { weekStartsOn: 1 });
+    } else if (dataFor === "pastMonth") {
+        start = startOfMonth(now);
     } else {
         return res.status(400).json({
-            message: `Unsupported data-for: '${dataFor}' not supported. only 'today', 'lastWeek' and 'lastMonth' are currently supported`
+            message: `Unsupported data-for: '${dataFor}'. Only 'today', 'pastWeek', and 'pastMonth' are supported.`
         });
     }
 
+    // Get all logs that overlap with the time window
+    const overlappingLogs = await attendanceLogRepo
+        .createQueryBuilder("log")
+        .where('"log"."checkOut" IS NULL OR ("log"."checkOut" >= :start AND "log"."checkIn" <= :end)', {
+            start,
+            end: now,
+        })
+        .getMany();
+
+    let attendanceSeconds = 0;
+
+    for (const log of overlappingLogs) {
+        const checkIn = new Date(log.checkIn);
+        const checkOut = log.checkOut ? new Date(log.checkOut) : now;
+
+        const clippedStart = checkIn < start ? start : checkIn;
+        const clippedEnd = checkOut > now ? now : checkOut;
+
+        const duration = (clippedEnd.getTime() - clippedStart.getTime()) / 1000;
+        if (duration > 0) {
+            attendanceSeconds += duration;
+        }
+    }
+
     res.json({
-        "attendanceInSeconds": attendanceSeconds
+        attendanceInSeconds: Math.floor(attendanceSeconds),
     });
 });
 
@@ -380,7 +375,7 @@ router.get("/me/workActivity/active", async (req, res) => {
             user: { id: userId },
             end: IsNull()
         },
-        relations: ["task"]
+        relations: ["task", "task.assignees", "task.project"]
     });
 
     res.status(activeLog? 200 : 404).json({
