@@ -34,7 +34,7 @@ export const loginUser = async (email: string, plainPassword: string) => {
         },
         JWT_SECRET,
         {
-            expiresIn: '1d'
+            expiresIn: '3d'
         });
 
     return { token, user };

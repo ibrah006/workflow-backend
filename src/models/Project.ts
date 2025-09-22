@@ -1,23 +1,28 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Task } from "./Task";
 import { User } from "./User";
+import { Company } from "./Company";
+import { ProgressLog } from "./ProgressLog";
 
 
 @Entity()
 export class Project {
-    @PrimaryGeneratedColumn()
-    id!: number;
+    @PrimaryGeneratedColumn("uuid")
+    id!: string;
 
     @Column()
     name!: string;
 
-    @Column()
+    @Column({nullable: true})
     description?: string;
 
     @Column()
     status!: string;
 
-    @Column({ type: 'date' })
+    @CreateDateColumn({ type: 'date', nullable: true })
+    dateStarted!: Date;
+
+    @Column({ type: 'date', nullable: true })
     dueDate?: Date;
 
     @Column({ type: 'date', nullable: true })
@@ -33,7 +38,16 @@ export class Project {
     @JoinTable()
     assignedManagers!: User[];
 
+    @ManyToOne(()=> Company, (company)=> company.projects)
+    client!: Company;
+
+    @Column({default: 0})
+    priority!: number;
+
     // derived attributes (NOTE FOR THE FRONT-END):
     // project efficiency
 
+    @OneToMany(()=> ProgressLog, log=> log.project)
+    progressLogs?: ProgressLog[];
+    
 }

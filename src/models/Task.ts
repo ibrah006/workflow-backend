@@ -4,6 +4,7 @@ import { User } from "./User";
 import { WastageLog } from "./WastageLog";
 import { Message } from "./Message";
 import { WorkActivityLog } from "./WorkActivityLog";
+import { MaterialLog } from "./MaterialLog";
 
 
 @Entity()
@@ -31,8 +32,12 @@ export class Task {
     status!: string;
 
     // IDs of Stock Entries that have been use in the project
-    @Column('text', { array: true, default: [] })
-    materialsUsed?: string[];
+    @OneToMany(()=> MaterialLog, (log)=> log.materialsUsedTask)
+    materialsUsed?: MaterialLog[];
+
+    // IDs of Stock Entries that have been use in the project
+    @OneToMany(()=> MaterialLog, (log)=> log.materialsEstimatedTask)
+    materialsEstimated?: MaterialLog[];
 
     // List of IDs of InvoiceItems 
     @OneToMany(()=> WastageLog, (log)=> log.task)
@@ -46,6 +51,10 @@ export class Task {
         onDelete: 'CASCADE'
     })
     discussionThreads!: Message[];
+
+    // All the Material logs initiated for this task
+    // @OneToMany(()=> MaterialLog, (log)=> log.task)
+    // materialLogs!: MaterialLog[];
 
     // derived attributes (NOTE FOR THE FRONT-END):
     // task efficiency

@@ -7,6 +7,7 @@ import { WorkActivityLog } from "./WorkActivityLog";
 import { Project } from "./Project";
 import { AttendanceLog } from "./AttendanceLog";
 import { LayoffLog } from "./LayoffLog";
+import { MaterialLog } from "./MaterialLog";
 
 @Entity()
 export class User {
@@ -73,6 +74,10 @@ export class User {
     
     @OneToMany(()=> LayoffLog, (log)=> log.user, { nullable: true })
     layoffLogs?: LayoffLog[];
+
+    // List of Material logs initiated by the User
+    @OneToMany(()=> MaterialLog, (log)=> log.loggedBy)
+    materialLogs!: MaterialLog[];
 
     // Backend logic functions
 

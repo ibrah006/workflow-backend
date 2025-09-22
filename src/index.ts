@@ -11,6 +11,11 @@ import projectRoutes from './routes/project';
 import activityAndAttendance from './routes/activityAndAttendance';
 import tasksRoutes from './routes/tasks';
 import analyticsRoutes from './routes/analytics';
+import materialLogRoutes from './routes/materialLog';
+import companyRoutes from './routes/company';
+
+import os from 'os';
+
 
 const app = express();
 
@@ -43,16 +48,34 @@ app.get('/', (req, res) => {
 
 app.use('/users', authMiddleware, usersRoutes);
 app.use('/', guestsRoutes);
-app.use('/projects', authMiddleware, projectRoutes);
+app.use('/projects', projectRoutes);
 // Activity & Attendance routes
 app.use('/activity', authMiddleware, activityAndAttendance)
 // Task state
 app.use('/tasks', authMiddleware, tasksRoutes)
 // Analytics
 app.use('/analytics', authMiddleware, analyticsRoutes);
+// Material Logs
+app.use('/materialLogs', authMiddleware, materialLogRoutes);
+// Companies routes
+app.use('/companies', companyRoutes)
 
 app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
+  const ip = getLocalExternalIp();
+  console.log(`Server is running at http://${ip || 'localhost'}:${PORT}`);
 });
+
+function getLocalExternalIp(): string | undefined {
+  const interfaces = os.networkInterfaces();
+  for (const iface of Object.values(interfaces)) {
+    if (!iface) continue;
+    for (const net of iface) {
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  return undefined;
+}
 
 export default app;

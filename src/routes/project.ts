@@ -6,6 +6,7 @@ import { Task } from "../models/Task";
 import { User } from "../models/User";
 import { In, IsNull } from "typeorm";
 import { WorkActivityLog } from "../models/WorkActivityLog";
+import { ProgressLog } from "../models/ProgressLog";
 
 
 const router = Router();
@@ -16,8 +17,12 @@ const userRepo = AppDataSource.getRepository(User);
 
 const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 
+const progressLogRepo = AppDataSource.getRepository(ProgressLog);
+
+export const PROJECT_GET_RELATIONS = ["progressLogs", "tasks", "assignedManagers", "tasks.assignees", "tasks.materialsUsed", "tasks.materialsEstimated", "client", "client.createdBy"];
+
 // Create a project
-router.post("/", adminOnlyMiddleware, async (req, res) => {
+router.post("/", async (req, res) => {
     const data = req.body as Partial<Project>;
 
     try {
@@ -41,16 +46,97 @@ router.post("/", adminOnlyMiddleware, async (req, res) => {
 // Get Projects listing
 router.get("/", async (req, res) => {
     const projects = await projectRepo.find(
-        { relations: ["tasks", "assignedManagers"] }
+        { relations: PROJECT_GET_RELATIONS }
     );
     res.json(projects);
 });
+
+// Get progress logs by project
+router.get("/:id/progressLogs", (req, res)=> {
+
+    const projectId = req.params.id;
+
+    const progressLogs = progressLogRepo.findBy({
+        project: { id: projectId }
+    })
+
+    if (!progressLogs) {
+        res.status(404).send("no progress logs found for this project");
+    }
+
+    res.json(progressLogs);
+});
+
+// Create Progress log
+router.post("/:id/progressLogs", async (req, res) : Promise<any> => {
+
+    const projectId = req.params.id;
+
+    // Required body from user: { id, project, status, description?, isError? (db default: false) }
+    let body;
+    try {
+        body = { ...req.body, project: { id: projectId } } as Partial<ProgressLog>;
+    } catch(err) {
+        return res.status(400).send("Invalid body params, check the ProjectLog schema");
+    }
+
+    try {
+        const log = progressLogRepo.create(body);
+        
+        await progressLogRepo.save(log);
+    } catch(err) {
+        return res.status(500).send("Unexpected error from server side");
+    }
+
+    res.status(201).send("Successfully created progress log");
+})
+
+// Update Progress Log
+router.put('/progressLogs/:logId', async (req, res)=> {
+    const logId = req.params.logId;
+
+    try {
+        const { isCompleted, description, issue } = req.body;
+
+        await progressLogRepo.update(logId, {
+            ... isCompleted != undefined? {isCompleted: isCompleted} : {},
+            ... isCompleted != undefined? {description: description} : {},
+            ...isCompleted != undefined? {issue: issue} : {},
+        })
+
+        res.send("Successfully updated progress log")
+    } catch(err) {
+        res.status(400).send("Make sure to pass in valid inputs { isCompleted: bool, description: string, issue }.\nYou may pass in one or many of the mentioned body key-value pairs");
+    }
+})
+
+
+// required query parameter: status
+router.put("/:id", async (req, res) : Promise<any> => {
+    const id = req.params.id;
+
+    let newStatus;
+    try {
+        newStatus = req.body.status;
+
+        if (!newStatus) {
+            return res.status(400).send(`Invalid status provided`);
+        }
+    } catch(e) {
+        return res.status(400).send(`Failed to update status of project ${id}`);
+    }
+    await projectRepo.update(id, {
+        status: newStatus.toString()
+    });
+
+    res.status(200).send(`Successfully updated status`);
+})
 
 /// Manage Project tasks
 
 // Add task for project with ID: [params.id]
 router.post("/:id", adminOnlyMiddleware, async (req, res) => {
-    const projectId = parseInt(req.params.id);
+    const projectId = req.params.id;
     const {
         name,
         description,
@@ -63,7 +149,9 @@ router.post("/:id", adminOnlyMiddleware, async (req, res) => {
   
     try {
         // Fetch related project
-        const project = await projectRepo.findOneBy({ id: projectId });
+        const project = await projectRepo.findOne({
+            relations: PROJECT_GET_RELATIONS, where: { id: projectId }
+        });
         if (!project) {
             res.status(404).json({ message: "Project not found" });
             return;
@@ -227,7 +315,7 @@ router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
 
 // Get Project by Id
 router.get("/:id", async (req, res) => {
-    const id = parseInt(req.params.id);
+    const id = req.params.id;
 
     try {
         const project = await projectRepo.findOneOrFail({
@@ -237,6 +325,8 @@ router.get("/:id", async (req, res) => {
                 "tasks.wastageLog",
                 "tasks.discussionThreads",
                 "tasks.workActivityLogs",
+                "tasks.materialsUsed",
+                "tasks.materialsEstimated",
                 "assignedManagers"
             ],
             where: { id: id }
