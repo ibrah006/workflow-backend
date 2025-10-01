@@ -1,6 +1,6 @@
 
 import request from 'supertest';
-import app from '../../src/index'; // Adjust if app is exported differently
+import app from '../../index' // Adjust if app is exported differently
 import { describe, it } from 'node:test';
 
 let adminToken = '';

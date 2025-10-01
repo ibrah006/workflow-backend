@@ -65,7 +65,7 @@ app.use('/progressLogs', progressLogRoutes)
 
 app.listen(PORT, () => {
   const ip = getLocalExternalIp();
-  console.log(`Server is running at http://${ip || 'localhost'}:${PORT}`);
+  // console.log(`Server is running at http://${ip || 'localhost'}:${PORT}`);
 });
 
 function getLocalExternalIp(): string | undefined {
