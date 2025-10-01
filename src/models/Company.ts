@@ -20,7 +20,7 @@ export class Company {
     @Column()
     name!: string;
   
-    @Column()
+    @Column({nullable: true})
     description!: string;
   
     // Whether company profile ACTIVE or CLOSED
@@ -33,7 +33,7 @@ export class Company {
     @UpdateDateColumn()
     updatedAt!: Date;
   
-    @ManyToOne(()=> User)
+    @ManyToOne(()=> User, { nullable: false })
     createdBy!: User;
 
     @OneToMany(()=> Project, (project)=> project.client)

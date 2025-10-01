@@ -1,10 +1,11 @@
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
 import { Project } from "./Project";
 import { User } from "./User";
 import { WastageLog } from "./WastageLog";
 import { Message } from "./Message";
 import { WorkActivityLog } from "./WorkActivityLog";
 import { MaterialLog } from "./MaterialLog";
+import { ProgressLog } from "./ProgressLog";
 
 
 @Entity()
@@ -21,14 +22,14 @@ export class Task {
     @Column({ nullable: true })
     description?: string;
 
-    @Column({ type: 'timestamp' })
-    dueDate!: Date;
+    @Column({ type: 'timestamp', nullable: true })
+    dueDate?: Date;
 
     @ManyToMany(()=> User, (user)=> user.tasks)
     @JoinTable()
     assignees!: User[];
 
-    @Column()
+    @Column({ default: "pending" })
     status!: string;
 
     // IDs of Stock Entries that have been use in the project
@@ -51,6 +52,10 @@ export class Task {
         onDelete: 'CASCADE'
     })
     discussionThreads!: Message[];
+
+    @ManyToOne(() => ProgressLog, { nullable: false })
+    @JoinColumn({ name: 'progressLogId' })
+    progressLog!: ProgressLog;
 
     // All the Material logs initiated for this task
     // @OneToMany(()=> MaterialLog, (log)=> log.task)

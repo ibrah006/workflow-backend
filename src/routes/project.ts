@@ -7,6 +7,7 @@ import { User } from "../models/User";
 import { In, IsNull } from "typeorm";
 import { WorkActivityLog } from "../models/WorkActivityLog";
 import { ProgressLog } from "../models/ProgressLog";
+import projectController from "../controller/project";
 
 
 const router = Router();
@@ -19,7 +20,32 @@ const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 
-export const PROJECT_GET_RELATIONS = ["progressLogs", "tasks", "assignedManagers", "tasks.assignees", "tasks.materialsUsed", "tasks.materialsEstimated", "client", "client.createdBy"];
+export const PROJECT_GET_RELATIONS = ["progressLogs", "tasks", "assignedManagers", "tasks.assignees", "tasks.progressLog", "tasks.materialsUsed", "tasks.materialsEstimated", "client", "client.createdBy"];
+
+/**
+ * Update the progressLogLastModifiedAt column of project model
+ * @param progressLogId
+ */
+export async function updateProgressLogLastModifiedAt(progressLogId: string) : Promise<void> {
+    const subQuery = AppDataSource
+        .createQueryBuilder()
+        .subQuery()
+        .select('pl.projectId')
+        .from(ProgressLog, 'pl')
+        .where('pl.id = :progressLogId')
+        .getQuery(); // returns raw SQL
+
+    await AppDataSource
+        .createQueryBuilder()
+        .update(Project)
+        .set({ progressLogLastModifiedAt: new Date() })
+        .where(`id = ${subQuery}`)
+        .setParameter('progressLogId', progressLogId)
+        .execute();
+
+}
+
+router.get("/get-recent", projectController.getMostRecentlyActiveProjects);
 
 // Create a project
 router.post("/", async (req, res) => {
@@ -43,6 +69,11 @@ router.post("/", async (req, res) => {
     }
 });
 
+// Get project finish rate
+router.get('/:id/progress-rate', projectController.getProjectProgressRate);
+// Get avg progress rate of all projects
+router.get('/progress-rate', projectController.getProjectsProgressRate);
+
 // Get Projects listing
 router.get("/", async (req, res) => {
     const projects = await projectRepo.find(
@@ -52,20 +83,9 @@ router.get("/", async (req, res) => {
 });
 
 // Get progress logs by project
-router.get("/:id/progressLogs", (req, res)=> {
+router.get("/:id/progressLogs", projectController.getProgressLogsByProject);
 
-    const projectId = req.params.id;
-
-    const progressLogs = progressLogRepo.findBy({
-        project: { id: projectId }
-    })
-
-    if (!progressLogs) {
-        res.status(404).send("no progress logs found for this project");
-    }
-
-    res.json(progressLogs);
-});
+router.get("/:id/progressLogs/last-modified", projectController.getProgressLogLastModified);
 
 // Create Progress log
 router.post("/:id/progressLogs", async (req, res) : Promise<any> => {
@@ -75,39 +95,25 @@ router.post("/:id/progressLogs", async (req, res) : Promise<any> => {
     // Required body from user: { id, project, status, description?, isError? (db default: false) }
     let body;
     try {
-        body = { ...req.body, project: { id: projectId } } as Partial<ProgressLog>;
+        body = { ...req.body, project: { id: projectId }, updatedAt: undefined } as Partial<ProgressLog>;
     } catch(err) {
         return res.status(400).send("Invalid body params, check the ProjectLog schema");
     }
+    delete body.updatedAt;
+    
 
+    let savedLog;
     try {
         const log = progressLogRepo.create(body);
         
-        await progressLogRepo.save(log);
+        savedLog = await progressLogRepo.save(log);
     } catch(err) {
         return res.status(500).send("Unexpected error from server side");
     }
 
+    await updateProgressLogLastModifiedAt(savedLog.id);
+
     res.status(201).send("Successfully created progress log");
-})
-
-// Update Progress Log
-router.put('/progressLogs/:logId', async (req, res)=> {
-    const logId = req.params.logId;
-
-    try {
-        const { isCompleted, description, issue } = req.body;
-
-        await progressLogRepo.update(logId, {
-            ... isCompleted != undefined? {isCompleted: isCompleted} : {},
-            ... isCompleted != undefined? {description: description} : {},
-            ...isCompleted != undefined? {issue: issue} : {},
-        })
-
-        res.send("Successfully updated progress log")
-    } catch(err) {
-        res.status(400).send("Make sure to pass in valid inputs { isCompleted: bool, description: string, issue }.\nYou may pass in one or many of the mentioned body key-value pairs");
-    }
 })
 
 
@@ -135,7 +141,8 @@ router.put("/:id", async (req, res) : Promise<any> => {
 /// Manage Project tasks
 
 // Add task for project with ID: [params.id]
-router.post("/:id", adminOnlyMiddleware, async (req, res) => {
+// adminOnlyMiddleware
+router.post("/:id",  async (req, res) => {
     const projectId = req.params.id;
     const {
         name,
@@ -145,6 +152,7 @@ router.post("/:id", adminOnlyMiddleware, async (req, res) => {
         assignees: assigneeIds,
         materialsUsed,
         dateCompleted,
+        progressLog
       } = req.body;
   
     try {
@@ -173,13 +181,14 @@ router.post("/:id", adminOnlyMiddleware, async (req, res) => {
             dateCompleted,
             project, // Set resolved project
             assignees, // Set resolved user entities
+            progressLog
         });
     
         const savedTask = await taskRepo.save(newTask);
         
         res.status(201).json({
             message: `Task created successfully for project ${projectId}`,
-            task: savedTask,
+            taskId: savedTask.id,
         });
 
     } catch (err) {

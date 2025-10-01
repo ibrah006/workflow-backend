@@ -158,6 +158,27 @@ router.post('/end', async (req, res): Promise<any> => {
     }
 });
 
+// Mark the task status as completed
+// no body required at all
+router.put('/:id/markCompleted', async (req, res) : Promise<any> => {
+    let dateCompleted = new Date();
+    try {
+        const taskId = parseInt(req.params.id);
+        await taskRepo.update({
+            id: taskId
+        }, {
+            status: 'completed',
+            dateCompleted
+        });
+    } catch(err) {
+        return res.status(400).send({message: "Error trying to mark task as completed"});
+    }
+
+    res.json({
+        dateCompleted
+    });
+})
+
 // Get all tasks assigned to current user
 router.get('/me', async (req, res) : Promise<any> => {
     

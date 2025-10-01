@@ -20,7 +20,10 @@ router.get("/", async (req, res)=> {
 router.get('/me', async (req: Request, res: Response) => {
 
     try {
-        const user = await userRepo.findOneBy({ id: (req as any).user!.id });
+        const user = await userRepo.findOne({
+            where: { id: (req as any).user!.id },
+            relations: ["department"]
+        });
     
         if (!user) {
             res.status(404).json({ message: 'User not found' });
@@ -30,7 +33,7 @@ router.get('/me', async (req: Request, res: Response) => {
         // omit sensitive fields like password
         const { password, ...safeUser } = user;
         res.json({
-            ...safeUser,
+            user: safeUser,
         });
     } catch (err) {
         console.error('Failed to fetch user profile:', err);

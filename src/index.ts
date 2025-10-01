@@ -13,6 +13,7 @@ import tasksRoutes from './routes/tasks';
 import analyticsRoutes from './routes/analytics';
 import materialLogRoutes from './routes/materialLog';
 import companyRoutes from './routes/company';
+import progressLogRoutes from './routes/progressLog';
 
 import os from 'os';
 
@@ -52,13 +53,15 @@ app.use('/projects', projectRoutes);
 // Activity & Attendance routes
 app.use('/activity', authMiddleware, activityAndAttendance)
 // Task state
-app.use('/tasks', authMiddleware, tasksRoutes)
+app.use('/tasks', tasksRoutes)
 // Analytics
 app.use('/analytics', authMiddleware, analyticsRoutes);
 // Material Logs
 app.use('/materialLogs', authMiddleware, materialLogRoutes);
 // Companies routes
-app.use('/companies', companyRoutes)
+app.use('/companies', authMiddleware, companyRoutes)
+// Progress log routes
+app.use('/progressLogs', progressLogRoutes)
 
 app.listen(PORT, () => {
   const ip = getLocalExternalIp();

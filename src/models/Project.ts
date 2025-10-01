@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Task } from "./Task";
 import { User } from "./User";
 import { Company } from "./Company";
@@ -43,6 +43,13 @@ export class Project {
 
     @Column({default: 0})
     priority!: number;
+
+    @Column({ type: 'timestamptz', nullable: true })
+    progressLogLastModifiedAt?: Date | null;
+
+    @UpdateDateColumn({ type: 'timestamptz' })
+    updatedAt!: Date;
+
 
     // derived attributes (NOTE FOR THE FRONT-END):
     // project efficiency

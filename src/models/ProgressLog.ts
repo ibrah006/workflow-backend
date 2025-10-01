@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "./Project";
 
 
@@ -31,4 +31,10 @@ export class ProgressLog {
         default: () => 'CURRENT_DATE',
     })
     startDate!: string; // or Date — both work, but string avoids timezone confusion    
+
+    @UpdateDateColumn({ type: 'timestamptz' })
+    updatedAt!: Date;
+
+    @Column({ type: 'timestamptz', nullable: true, name: "completedAt" })
+    completedAt?: Date | null;
 }
