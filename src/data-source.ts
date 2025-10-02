@@ -16,7 +16,7 @@ export const AppDataSource = new DataSource({
     entities: ["src/models/*.ts"],
     migrations: ["src/migration/**/*.ts"],
     ssl: {
-        rejectUnauthorized: false
+        rejectUnauthorized: true
     }
 });
 
