@@ -5,16 +5,26 @@ dotenv.config();
 
 // console.log("database name:", process.env.DB_NAME);
 
+// export const AppDataSource = new DataSource({
+//     type: 'postgres',
+//     host: process.env.DB_HOST_PRODUCTION,
+//     port: 5432,
+//     username: process.env.DB_USER,
+//     password: process.env.DB_PASSWORD,
+//     database: process.env.DB_NAME,
+//     url: process.env.DB_URL,
+//     synchronize: true,
+//     entities: ["src/models/*.ts"],
+//     migrations: ["src/migration/**/*.ts"],
+// });
+
 export const AppDataSource = new DataSource({
     type: 'postgres',
-    host: process.env.DB_HOST_PRODUCTION,
-    port: 5432,
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
     url: process.env.DB_URL,
+    ssl: {
+      rejectUnauthorized: false
+    },
     synchronize: true,
-    entities: ["src/models/*.ts"],
-    migrations: ["src/migration/**/*.ts"],
-    ssl: false
-});
+    entities: [__dirname + '/entities/*.ts']
+  });
+
