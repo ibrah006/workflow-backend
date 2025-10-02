@@ -14,7 +14,7 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME,
     url: process.env.DB_URL,
     entities: ["src/models/*.ts"],
-    // migrations: ["src/migration/**/*.ts"],
+    migrations: ["src/migration/**/*.ts"],
 });
 
 // export const AppDataSource = new DataSource({
