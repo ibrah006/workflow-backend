@@ -7,8 +7,6 @@ const router = Router();
 router.post('/login', async (req, res)=> {
     const { email, password } = req.body;
 
-    console.log("body: email, password,", email, password);
-
     try {
         const { token, user } = await loginUser(String(email), String(password));
         res.json({ token, user });
