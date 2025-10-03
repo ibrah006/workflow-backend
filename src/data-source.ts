@@ -13,8 +13,8 @@ export const AppDataSource = new DataSource({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     url: process.env.DB_URL,
-    entities: ["src/models/*.ts"],
-    migrations: ["src/migration/**/*.ts"],
+    entities: ["dist/models/*.ts"],
+    migrations: ["dist/migration/**/*.ts"],
     ssl: {
         rejectUnauthorized: false
     }
