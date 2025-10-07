@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { UserRole } from "../enums/UserRoles";
 import { Team } from "./Team";
 import { Task } from "./Task";
@@ -8,6 +8,7 @@ import { Project } from "./Project";
 import { AttendanceLog } from "./AttendanceLog";
 import { LayoffLog } from "./LayoffLog";
 import { MaterialLog } from "./MaterialLog";
+import { Organization } from "./Orgnization";
 
 @Entity()
 export class User {
@@ -78,6 +79,12 @@ export class User {
     // List of Material logs initiated by the User
     @OneToMany(()=> MaterialLog, (log)=> log.loggedBy)
     materialLogs!: MaterialLog[];
+
+    @OneToOne(() => Organization, organization => organization.users, {
+        nullable: false,
+        onDelete: 'CASCADE',
+      })
+    organization!: Organization;
 
     // Backend logic functions
 

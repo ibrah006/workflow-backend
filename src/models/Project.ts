@@ -3,6 +3,7 @@ import { Task } from "./Task";
 import { User } from "./User";
 import { Company } from "./Company";
 import { ProgressLog } from "./ProgressLog";
+import { Organization } from "./Orgnization";
 
 
 @Entity()
@@ -50,6 +51,11 @@ export class Project {
     @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt!: Date;
 
+    @ManyToOne(() => Organization, organization => organization.projects, {
+        nullable: false,
+        onDelete: 'CASCADE',
+      })
+    organization?: Organization;
 
     // derived attributes (NOTE FOR THE FRONT-END):
     // project efficiency

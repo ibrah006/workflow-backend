@@ -8,6 +8,7 @@ import { In, IsNull } from "typeorm";
 import { WorkActivityLog } from "../models/WorkActivityLog";
 import { ProgressLog } from "../models/ProgressLog";
 import projectController from "../controller/project";
+import { Organization } from "../models/Orgnization";
 
 
 const router = Router();
@@ -19,6 +20,8 @@ const userRepo = AppDataSource.getRepository(User);
 const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
+
+const organizationRepo = AppDataSource.getRepository(Organization);
 
 export const PROJECT_GET_RELATIONS = ["progressLogs", "tasks", "assignedManagers", "tasks.assignees", "tasks.progressLog", "tasks.materialsUsed", "tasks.materialsEstimated", "client", "client.createdBy"];
 
@@ -51,8 +54,19 @@ router.get("/get-recent", projectController.getMostRecentlyActiveProjects);
 router.post("/", async (req, res) => {
     const data = req.body as Partial<Project>;
 
+    const userId = (req as any).user.id;
+
     try {
-        const project = projectRepo.create(data);
+
+        const user = await userRepo.findOne({
+            where: { id: userId },
+            relations: ['organization']
+        });
+
+        const project = projectRepo.create({
+            ...data,
+            organization: user!.organization
+        });
         
         const savedProject = await projectRepo.save(project);
 
