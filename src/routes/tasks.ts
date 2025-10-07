@@ -245,7 +245,7 @@ router.get('/:id', async (req, res) : Promise<any> => {
 router.get('/:projectId', async (req, res) : Promise<any> => {
     const projectId = req.params.projectId;
 
-    const task = await taskRepo.findOne({
+    const task = await taskRepo.find({
         where: { project: { id: projectId } },
         relations: ["assignees", "project"]
     });
