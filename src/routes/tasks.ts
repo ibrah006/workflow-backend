@@ -17,6 +17,9 @@ const attendanceLogRepo = AppDataSource.getRepository(AttendanceLog);
 
 const projectRepo = AppDataSource.getRepository(Project);
 
+// --- define any task relations you want eagerly loaded
+const TASK_RELATIONS = ["assignees", "project", "progressLog"];
+
 export async function notifyProjectAboutLastTaskChange(projectId: string, lastModified: Date) : Promise<void> {
     await projectRepo.update(
         projectId,
@@ -286,9 +289,7 @@ router.get("/project/:projectId", async (req: Request, res: Response): Promise<a
         }
         whereClause.updatedAt = MoreThan(sinceDate);
       }
-  
-      // --- define any task relations you want eagerly loaded
-      const TASK_RELATIONS = ["assignees", "project"];
+
   
       // --- perform query
       const tasks = await taskRepo.find({
