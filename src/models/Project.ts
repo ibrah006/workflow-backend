@@ -46,6 +46,9 @@ export class Project {
 
     @Column({ type: 'timestamptz', nullable: true })
     progressLogLastModifiedAt?: Date | null;
+    
+    @Column({ type: 'timestamptz', nullable: true })
+    tasksLastModifiedAt?: Date | null;
 
     @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt!: Date;

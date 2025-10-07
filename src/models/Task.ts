@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "./Project";
 import { User } from "./User";
 import { WastageLog } from "./WastageLog";
@@ -31,6 +31,9 @@ export class Task {
 
     @Column({ default: "pending" })
     status!: string;
+
+    @UpdateDateColumn({ type: 'timestamptz' })
+    updatedAt!: Date;
 
     // IDs of Stock Entries that have been use in the project
     @OneToMany(()=> MaterialLog, (log)=> log.materialsUsedTask)

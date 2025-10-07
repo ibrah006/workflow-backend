@@ -3,8 +3,9 @@ import { AppDataSource } from "../data-source";
 import { User } from "../models/User";
 import { Task } from "../models/Task";
 import { WorkActivityLog } from "../models/WorkActivityLog";
-import { IsNull } from "typeorm";
+import { IsNull, MoreThan } from "typeorm";
 import { AttendanceLog } from "../models/AttendanceLog";
+import { Project } from "../models/Project";
 
 const router = Router();
 
@@ -13,6 +14,17 @@ const taskRepo = AppDataSource.getRepository(Task);
 
 const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 const attendanceLogRepo = AppDataSource.getRepository(AttendanceLog);
+
+const projectRepo = AppDataSource.getRepository(Project);
+
+export async function notifyProjectAboutLastTaskChange(projectId: string, lastModified: Date) : Promise<void> {
+    await projectRepo.update(
+        projectId,
+        {
+            tasksLastModifiedAt: lastModified
+        }
+    )
+}
 
 // Route: Start working on a task
 // Requirements:
@@ -85,9 +97,9 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
 
         await workActivityLogRepo.save(log);
 
-        // Update task status to in_progress
-        task.status = 'in_progress';
         await taskRepo.save(task);
+
+        await notifyProjectAboutLastTaskChange(task.project.id, new Date());
 
         console.log(`work activity log starting task:`, log);
 
@@ -97,7 +109,8 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
         return res.json({
             message: 'Task started successfully',
             attendanceLog: activeAttendanceLog,
-            workActivityLog: log
+            workActivityLog: log,
+            updatedAt: task.updatedAt
         });
     } catch (err) {
         console.error(err);
@@ -170,12 +183,20 @@ router.put('/:id/markCompleted', async (req, res) : Promise<any> => {
             status: 'completed',
             dateCompleted
         });
+
+        const task = await taskRepo.findOne({
+            where:{id: taskId},
+            relations: ["project"]
+        });
+
+        await notifyProjectAboutLastTaskChange(task!.project.id, task!.updatedAt);
     } catch(err) {
         return res.status(400).send({message: "Error trying to mark task as completed"});
     }
 
     res.json({
-        dateCompleted
+        dateCompleted,
+        updatedAt: dateCompleted
     });
 })
 
@@ -242,20 +263,73 @@ router.get('/:id', async (req, res) : Promise<any> => {
     return res.json(task);
 })
 
-router.get('/:projectId', async (req, res) : Promise<any> => {
-    const projectId = req.params.projectId;
-
-    const tasks = await taskRepo.find({
-        where: { project: { id: projectId } },
-        relations: ["assignees", "project"]
-    });
-    if (!tasks) {
-        return res.status(404).json({
-            message: "Tasks not found for this project!"
-        });
+/**
+ * GET /tasks/project/:projectId
+ * Optional query param: ?since=<ISO timestamp>
+ *
+ * Returns all tasks for a project, or only those updated after the "since" timestamp.
+ */
+router.get("/project/:projectId", async (req: Request, res: Response): Promise<any> => {
+    try {
+      const projectId = req.params.projectId;
+      const sinceParam = req.query.since as string | undefined;
+  
+      // --- validate timestamp if provided
+      let whereClause: any = {
+        project: { id: projectId },
+      };
+  
+      if (sinceParam) {
+        const sinceDate = new Date(sinceParam);
+        if (isNaN(sinceDate.getTime())) {
+          return res.status(400).json({ message: 'Invalid "since" timestamp format' });
+        }
+        whereClause.updatedAt = MoreThan(sinceDate);
+      }
+  
+      // --- define any task relations you want eagerly loaded
+      const TASK_RELATIONS = ["assignees", "project"];
+  
+      // --- perform query
+      const tasks = await taskRepo.find({
+        where: whereClause,
+        relations: TASK_RELATIONS,
+        order: { updatedAt: "DESC" },
+      });
+  
+      return res.status(200).json(tasks);
+    } catch (error) {
+      console.error("Error fetching tasks by project:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
     }
+  });
 
-    return res.json(tasks);
-})
+/**
+ * GET /tasks/:projectId/last-modified
+ * Returns the project's tasksLastModifiedAt timestamp.
+ */
+router.get("/:projectId/last-modified", async (req, res) : Promise<any> => {
+    try {
+      const projectId = req.params.projectId;
+  
+      const project = await projectRepo.findOne({
+        where: { id: projectId },
+        select: ["id", "tasksLastModifiedAt"],
+      });
+  
+      if (!project) {
+        return res.status(404).json({ message: "Project not found" });
+      }
+  
+      return res.json({
+        lastModified: project.tasksLastModifiedAt,
+      });
+    } catch (error) {
+      console.error("Error fetching project's task lastModified:", error);
+      return res
+        .status(500)
+        .json({ message: "Internal server error" });
+    }
+});  
 
 export default router;

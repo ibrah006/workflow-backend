@@ -8,6 +8,7 @@ import { In, IsNull } from "typeorm";
 import { WorkActivityLog } from "../models/WorkActivityLog";
 import { ProgressLog } from "../models/ProgressLog";
 import projectController from "../controller/project";
+import { notifyProjectAboutLastTaskChange } from "./tasks";
 
 
 const router = Router();
@@ -307,7 +308,9 @@ router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
             ...users
         ];
 
-        await taskRepo.save(task); // Triggers relation updates
+        const savedTask = await taskRepo.save(task); // Triggers relation updates
+
+        await notifyProjectAboutLastTaskChange(task.project.id, savedTask.updatedAt);
 
         res.json({
             message: `Successfully assigned task ${taskId} to ${users.length} user(s)`,
