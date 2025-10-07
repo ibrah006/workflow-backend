@@ -242,4 +242,20 @@ router.get('/:id', async (req, res) : Promise<any> => {
     return res.json(task);
 })
 
+router.get('/:projectId', async (req, res) : Promise<any> => {
+    const projectId = req.params.projectId;
+
+    const task = await taskRepo.findOne({
+        where: { project: { id: projectId } },
+        relations: ["assignees", "project"]
+    });
+    if (!task) {
+        return res.status(404).json({
+            message: "Tasks not found for this project!"
+        });
+    }
+
+    return res.json(task);
+})
+
 export default router;
