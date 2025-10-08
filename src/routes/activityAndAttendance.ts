@@ -11,6 +11,8 @@ import { IsNull } from "typeorm";
 import { startOfToday, startOfWeek, startOfMonth, subDays } from 'date-fns';
 import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
 
+import activityController from "../controller/activity";
+
 const router = Router();
 
 
@@ -37,6 +39,10 @@ const taskRepo = AppDataSource.getRepository(Task);
 
 const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 const layoffLogRepo = AppDataSource.getRepository(LayoffLog);
+
+
+// GET all work activity logs for a specific task
+router.get("/task/:taskId/", activityController.getWorkActivityLogsByTask);
 
 // Clock in User into attendance
 // Clocks in with current time

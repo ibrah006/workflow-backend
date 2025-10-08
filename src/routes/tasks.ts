@@ -18,7 +18,7 @@ const attendanceLogRepo = AppDataSource.getRepository(AttendanceLog);
 const projectRepo = AppDataSource.getRepository(Project);
 
 // --- define any task relations you want eagerly loaded
-const TASK_RELATIONS = ["assignees", "project", "progressLog"];
+const TASK_RELATIONS = ["assignees", "project", "progressLog", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task"];
 
 export async function notifyProjectAboutLastTaskChange(projectId: string, lastModified: Date) : Promise<void> {
     await projectRepo.update(
