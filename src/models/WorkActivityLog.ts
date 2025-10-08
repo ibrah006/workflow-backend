@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { User } from "./User";
 import { Task } from "./Task";
 import { LayoffLog } from "./LayoffLog";
@@ -19,4 +19,7 @@ export class WorkActivityLog {
 
     @Column({ type: 'timestamp', nullable: true })
     end!: Date | null;
+
+    @UpdateDateColumn({ type: 'timestamptz' })
+    updatedAt!: Date;
 }
