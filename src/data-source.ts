@@ -1,5 +1,6 @@
 import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
+import { TaskSubscriber } from './subscribers/task.subscriber';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ dotenv.config();
 //     ssl: {
 //         rejectUnauthorized: false
 //     }
+//     subscribers: [TaskSubscriber],
 // });
 
 export const AppDataSource = new DataSource({
@@ -31,4 +33,5 @@ export const AppDataSource = new DataSource({
     database: process.env.DB_NAME,
     entities: ["src/models/*.ts"],
     migrations: ["src/migration/*.ts"],
+    subscribers: [TaskSubscriber],
   });

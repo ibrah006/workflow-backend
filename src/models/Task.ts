@@ -35,6 +35,9 @@ export class Task {
     @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt!: Date;
 
+    @Column({ type: 'timestamptz', nullable: true })
+    workActivityLogsLastModifiedAt?: Date | null;
+
     // IDs of Stock Entries that have been use in the project
     @OneToMany(()=> MaterialLog, (log)=> log.materialsUsedTask)
     materialsUsed?: MaterialLog[];
