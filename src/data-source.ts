@@ -1,6 +1,5 @@
 import { DataSource } from 'typeorm';
 import dotenv from 'dotenv';
-import { TaskSubscriber } from './subscribers/task.subscriber';
 
 dotenv.config();
 
@@ -21,17 +20,17 @@ export const AppDataSource = isProduction? new DataSource({
     ssl: {
         rejectUnauthorized: false
     },
-    subscribers: [TaskSubscriber],
+    subscribers: ['dist/subscribers/*.ts'],
 }) : new DataSource({
   type: 'postgres',
-  synchronize: true, // only for dev
-  logging: true,
   host: process.env.DB_HOST_DEV,
   port: Number(process.env.DB_PORT),
   username: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  entities: ["src/models/*.ts"],
-  migrations: ["src/migration/*.ts"],
-  subscribers: [TaskSubscriber],
+  entities: ['src/models/*.ts'],
+  migrations: ['src/migration/*.ts'],
+  subscribers: ['src/subscribers/*.ts'],
+  synchronize: true,
+  logging: true,
 });
