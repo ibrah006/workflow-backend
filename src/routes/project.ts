@@ -236,6 +236,7 @@ router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
         if (updatedTaskData.assignees) {
             const users = await userRepo.findBy({id: In(updatedTaskData.assignees as string[])});
             task.assignees = users;
+            task.assigneesLastAdded = new Date();
             await taskRepo.save(task); // Update relation
         }
 
@@ -307,6 +308,7 @@ router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
             ...task.assignees,
             ...users
         ];
+        task.assigneesLastAdded = new Date();
 
         const savedTask = await taskRepo.save(task); // Triggers relation updates
 

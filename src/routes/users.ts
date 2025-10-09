@@ -4,17 +4,26 @@ import { User } from "../models/User";
 import { authMiddleware } from "../middleware/authMiddleware";
 import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
 import { registerUser } from "../services/authService";
+import { Task } from "../models/Task";
+import usersController from '../controller/users';
 
 
 const router = Router();
 
 const userRepo = AppDataSource.getRepository(User);
+const taskRepo = AppDataSource.getRepository(Task);
 
 router.get("/", async (req, res)=> {
     const users = await userRepo.find();
 
     res.json(users);
 });
+
+/// GET assignees for a specific task
+/// If the client's timestamp is newer or equal, return empty array because no new assignees since client's last sync
+/// Otherwise, return all assignees for this task
+router.get("/task/:taskId", usersController.getTaskAssignees);
+
 
 router.get('/me', async (req: Request, res: Response) => {
 

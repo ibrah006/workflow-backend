@@ -44,7 +44,7 @@ const layoffLogRepo = AppDataSource.getRepository(LayoffLog);
 // GET all work activity logs for a specific task
 router.get("/task/:taskId/", activityController.getWorkActivityLogsByTask);
 
-router.get("/task/:taskId/last", activityController.getWorkActivityLogLastModifiedByTask);
+router.get("/task/:taskId/last-modified", activityController.getWorkActivityLogLastModifiedByTask);
 
 // Clock in User into attendance
 // Clocks in with current time

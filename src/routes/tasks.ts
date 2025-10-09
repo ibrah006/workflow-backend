@@ -76,6 +76,7 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
         //     await taskRepo.save(task);
         // }
         task.assignees.push(user);
+        task.assigneesLastAdded = new Date();
         await taskRepo.save(task);
 
         // Check and make sure the user is clocked into attendance
