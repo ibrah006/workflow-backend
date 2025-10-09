@@ -38,7 +38,7 @@ export default {
       // Fetch logs with relations
       const logs = await workActivityLogRepo.find({
         where: whereClause,
-        relations: ["user", "task"],
+        relations: ["user", "task", "user.department"],
         order: {
           start: "DESC",
         },
