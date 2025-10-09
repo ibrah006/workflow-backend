@@ -29,6 +29,9 @@ export class Task {
     @JoinTable()
     assignees!: User[];
 
+    @Column({ type: 'timestamptz', nullable: true })
+    assigneesLastAdded?: Date | null;
+
     @Column({ default: "pending" })
     status!: string;
 

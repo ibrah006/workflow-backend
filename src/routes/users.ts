@@ -16,7 +16,6 @@ router.get("/", async (req, res)=> {
     res.json(users);
 });
 
-
 router.get('/me', async (req: Request, res: Response) => {
 
     try {

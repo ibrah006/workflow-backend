@@ -65,16 +65,18 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
         }
 
         // Ensure user is assigned to the task or is an admin
-        const isAssignee = task.assignees.some(assignee => assignee.id === user.id);
-        if (!isAssignee && !user.isAdmin()) {
-            return res.status(403).json({ error: 'You are not assigned to this task' });
-        }
+        // const isAssignee = task.assignees.some(assignee => assignee.id === user.id);
+        // if (!isAssignee && !user.isAdmin()) {
+        //     return res.status(403).json({ error: 'You are not assigned to this task' });
+        // }
 
         // Auto-assign admin if they're not already assigned
-        if (!isAssignee && user.isAdmin()) {
-            task.assignees.push(user);
-            await taskRepo.save(task);
-        }
+        // if (!isAssignee && user.isAdmin()) {
+        //     task.assignees.push(user);
+        //     await taskRepo.save(task);
+        // }
+        task.assignees.push(user);
+        await taskRepo.save(task);
 
         // Check and make sure the user is clocked into attendance
         var activeAttendanceLog = await attendanceLogRepo.findOneBy({
