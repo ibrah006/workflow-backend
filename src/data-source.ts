@@ -29,7 +29,7 @@ export const AppDataSource = isProduction? new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   entities: ['src/models/*.ts'],
-  migrations: ['src/migration/*.ts'],
+  migrations: ['src/migrations/*.ts'],
   subscribers: ['src/subscribers/*.ts'],
   synchronize: true,
   logging: true,
