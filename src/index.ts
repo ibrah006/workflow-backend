@@ -53,7 +53,7 @@ app.use('/projects', projectRoutes);
 // Activity & Attendance routes
 app.use('/activity', authMiddleware, activityAndAttendance)
 // Task state
-app.use('/tasks', tasksRoutes)
+app.use('/tasks', authMiddleware, tasksRoutes)
 // Analytics
 app.use('/analytics', authMiddleware, analyticsRoutes);
 // Material Logs

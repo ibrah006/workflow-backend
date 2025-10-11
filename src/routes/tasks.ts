@@ -6,6 +6,7 @@ import { WorkActivityLog } from "../models/WorkActivityLog";
 import { IsNull, MoreThan } from "typeorm";
 import { AttendanceLog } from "../models/AttendanceLog";
 import { Project } from "../models/Project";
+import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router();
 
@@ -44,7 +45,7 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
         // Fetch task with assignees loaded
         const task = await taskRepo.findOne({ relations: ['assignees', "project"], where: { id: taskId } });
         if (!task) return res.status(404).json({ error: 'Task not found' });
-
+        
         // Prevent starting a task that's already completed
         if (task.dateCompleted) {
             return res.status(400).json({ error: 'Cannot start a completed task' });
@@ -58,14 +59,14 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
 
         // Check if user is already working on another task
         const activeLog = await workActivityLogRepo.findOne({
-            where: { user, end: IsNull() }
+            where: { user: { id: user.id }, end: IsNull() }
         });
         if (activeLog) {
             return res.status(400).json({ error: 'You are already working on another task' });
         }
 
         // Ensure user is assigned to the task or is an admin
-        // const isAssignee = task.assignees.some(assignee => assignee.id === user.id);
+        const isAssignee = task.assignees.some(assignee => assignee.id === user.id);
         // if (!isAssignee && !user.isAdmin()) {
         //     return res.status(403).json({ error: 'You are not assigned to this task' });
         // }
@@ -75,8 +76,12 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
         //     task.assignees.push(user);
         //     await taskRepo.save(task);
         // }
-        task.assignees.push(user);
-        task.assigneesLastAdded = new Date();
+        
+        if (!isAssignee) {
+            task.assignees.push(user);
+            task.assigneesLastAdded = new Date();
+        }
+
         await taskRepo.save(task);
 
         // Check and make sure the user is clocked into attendance
