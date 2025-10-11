@@ -101,7 +101,7 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
             start: new Date(),
         });
 
-        await workActivityLogRepo.save(log);
+        const savedLog = await workActivityLogRepo.save(log);
 
         await taskRepo.save(task);
 
@@ -115,7 +115,7 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
         return res.json({
             message: 'Task started successfully',
             attendanceLog: activeAttendanceLog,
-            workActivityLog: log,
+            workActivityLog: savedLog,
             updatedAt: task.updatedAt
         });
     } catch (err) {
