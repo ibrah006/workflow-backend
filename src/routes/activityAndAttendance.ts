@@ -376,7 +376,7 @@ router.get("/me/attendance/active", async (req, res) : Promise<any> => {
     });
 });
 
-router.get("/me/workActivity/active", async (req, res) => {
+router.get("/me/work-activity/active", async (req, res) => {
     const userId = (req as any).user.id;
     const activeLog = await workActivityLogRepo.findOne({
         where: {
