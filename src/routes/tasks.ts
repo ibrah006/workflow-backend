@@ -240,7 +240,7 @@ router.get('/active', async (req, res) : Promise<any> => {
           user: { id: userId },
           end: IsNull()
         },
-        relations: ["task", "tasks.discussionThreads", "tasks.project"]
+        // relations: ["task", "tasks.discussionThreads", "task.project"]
     });
 
     res.status(activeLog? 200 : 404).json({
