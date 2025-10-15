@@ -7,6 +7,7 @@ import { IsNull, MoreThan } from "typeorm";
 import { AttendanceLog } from "../models/AttendanceLog";
 import { Project } from "../models/Project";
 import { authMiddleware } from "../middleware/authMiddleware";
+import taskController from '../controller/task';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ const attendanceLogRepo = AppDataSource.getRepository(AttendanceLog);
 const projectRepo = AppDataSource.getRepository(Project);
 
 // --- define any task relations you want eagerly loaded
-const TASK_RELATIONS = ["assignees", "project", "progressLog", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task"];
+export const TASK_RELATIONS = ["assignees", "project", "progressLog", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task"];
 
 export async function notifyProjectAboutLastTaskChange(projectId: string, lastModified: Date) : Promise<void> {
     await projectRepo.update(
@@ -259,21 +260,7 @@ router.get('/', async (req, res) : Promise<any> => {
 })
 
 // Get task by ID
-router.get('/:id', async (req, res) : Promise<any> => {
-    const taskId = parseInt(req.params.id);
-
-    const task = await taskRepo.findOne({
-        where: { id: taskId },
-        relations: ["assignees", "project"]
-    });
-    if (!task) {
-        return res.status(404).json({
-            message: "Task not found!"
-        });
-    }
-
-    return res.json(task);
-})
+router.get("/:taskId", (req, res) => taskController.getTaskById(req, res));
 
 /**
  * GET /tasks/project/:projectId
