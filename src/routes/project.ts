@@ -21,7 +21,7 @@ const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 
-export const PROJECT_GET_RELATIONS = ["progressLogs", "tasks", "assignedManagers", "tasks.assignees", "tasks.progressLog", "tasks.materialsUsed", "tasks.materialsEstimated", "client", "client.createdBy"];
+export const PROJECT_GET_RELATIONS = ["progressLogs", "tasks", "assignedManagers", "tasks.assignees", "tasks.progressLog", "tasks.materialsEstimated", "client", "client.createdBy"];
 
 /**
  * Update the progressLogLastModifiedAt column of project model
@@ -82,10 +82,7 @@ router.get("/", async (req, res) => {
         relations: [
           ...PROJECT_GET_RELATIONS, // your existing relations
           "tasks",                         // ensure tasks are loaded
-          "tasks.materialsEstimated",      // estimated material logs
-          "tasks.materialsUsed",           // used material logs
-          "tasks.materialsEstimated.loggedBy", // optional: who logged
-          "tasks.materialsUsed.loggedBy"       // optional: who logged
+          "materialLogs"
         ],
       });
   
@@ -237,7 +234,6 @@ router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
             ...entityField("description", updatedTaskData.description),
             ...entityField("dueDate", updatedTaskData.dueDate),
             ...entityField("status", updatedTaskData.status),
-            ...entityField("materialsUsed", updatedTaskData.materialsUsed),
             ...entityField("dateCompleted", updatedTaskData.dateCompleted),
         };
 
@@ -350,7 +346,6 @@ router.get("/:id", async (req, res) => {
                 "tasks.wastageLog",
                 "tasks.discussionThreads",
                 "tasks.workActivityLogs",
-                "tasks.materialsUsed",
                 "tasks.materialsEstimated",
                 "assignedManagers"
             ],

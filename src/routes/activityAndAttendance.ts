@@ -383,7 +383,7 @@ router.get("/me/work-activity/active", async (req, res) => {
             user: { id: userId },
             end: IsNull()
         },
-        relations: ["task", "task.assignees", "task.project", "task.materialsEstimated", "task.materialsUsed"]
+        relations: ["task", "task.assignees", "task.project"]
     });
 
     res.status(activeLog? 200 : 404).json({
