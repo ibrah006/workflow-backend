@@ -113,8 +113,6 @@ router.post('/:taskId/start', async (req, res): Promise<any> => {
 
         await notifyProjectAboutLastTaskChange(task.project.id, new Date());
 
-        console.log(`work activity log starting task:`, log);
-
         if (log.task != null)
             log.task.project = task.project;
 

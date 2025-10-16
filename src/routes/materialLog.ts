@@ -4,6 +4,7 @@ import { MaterialLog } from "../models/MaterialLog";
 
 import materialLogController from "../controller/materialLog";
 import { authMiddleware } from "../middleware/authMiddleware";
+import { MaterialLogType } from "../enums/MaterialLogType";
 
 const router = Router()
 
@@ -42,13 +43,17 @@ router.post("/", async (req, res)=> {
             width: width,
             height: height,
             project: project,
-            loggedBy: { id: userId }
+            loggedBy: { id: userId },
+            type: MaterialLogType.MATERIAL_OUT
         });
         const savedLog = await materialLogRepo.save(log);
         
         res.status(201).json(savedLog)
     } catch(e) {
-        res.status(400).send("Invalid request, please check the request body");
+        res.status(400).json({
+            message: "Invalid request, please check the request body",
+            error: e
+        });
     }
 });
 
