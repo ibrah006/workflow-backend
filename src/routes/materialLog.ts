@@ -44,11 +44,9 @@ router.post("/", async (req, res)=> {
             task: task,
             loggedBy: { id: userId }
         });
-        await materialLogRepo.save(log);
+        const savedLog = await materialLogRepo.save(log);
         
-        res.status(201).json({
-            message: "Successfully created material log"
-        })
+        res.status(201).json(savedLog)
     } catch(e) {
         res.status(400).send("Invalid request, please check the request body");
     }

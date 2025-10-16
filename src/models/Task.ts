@@ -42,7 +42,7 @@ export class Task {
     workActivityLogsLastModifiedAt?: Date | null;
 
     // IDs of Stock Entries that have been use in the project
-    @OneToMany(()=> MaterialLog, (log)=> log.materialsUsedTask)
+    @OneToMany(()=> MaterialLog, (log)=> log.task)
     materialsUsed?: MaterialLog[];
 
     // List of IDs of InvoiceItems 
