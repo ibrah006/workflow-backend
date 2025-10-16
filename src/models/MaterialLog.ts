@@ -8,8 +8,8 @@ export class MaterialLog {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @Column()
-    itemId!: string;
+    @Column() // for description
+    description!: string;
 
     // quantity or roll meter
     @Column({ type: 'decimal' })
