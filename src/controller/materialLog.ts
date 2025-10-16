@@ -16,7 +16,6 @@ export default {
           const projectId = req.params.projectId;
           const sinceParam = req.query.since as string | undefined;
     
-      
           // Fetch all task IDs belonging to this project
           const tasks = await taskRepo.find({
             where: { project: { id: projectId } },

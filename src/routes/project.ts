@@ -77,11 +77,24 @@ router.get('/progress-rate', projectController.getProjectsProgressRate);
 
 // Get Projects listing
 router.get("/", async (req, res) => {
-    const projects = await projectRepo.find(
-        { relations: PROJECT_GET_RELATIONS }
-    );
-    res.json(projects);
-});
+    try {
+      const projects = await projectRepo.find({
+        relations: [
+          ...PROJECT_GET_RELATIONS, // your existing relations
+          "tasks",                         // ensure tasks are loaded
+          "tasks.materialsEstimated",      // estimated material logs
+          "tasks.materialsUsed",           // used material logs
+          "tasks.materialsEstimated.loggedBy", // optional: who logged
+          "tasks.materialsUsed.loggedBy"       // optional: who logged
+        ],
+      });
+  
+      res.json(projects);
+    } catch (error) {
+      console.error("Error fetching projects with material logs:", error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
 
 // Get progress logs by project
 router.get("/:id/progressLogs", projectController.getProgressLogsByProject);
