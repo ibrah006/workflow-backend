@@ -11,9 +11,14 @@ export class MaterialLog {
     @Column() // for description
     description!: string;
 
-    // quantity or roll meter
+    @Column()
+    quantity!: number;
+
     @Column({ type: 'decimal' })
-    measure!: number;
+    width!: number;
+    
+    @Column({ type: 'decimal' })
+    height!: number;
 
     @ManyToOne(()=> User, (user)=> user.materialLogs)
     loggedBy!: User;

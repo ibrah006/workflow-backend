@@ -49,7 +49,7 @@ export default {
           const logs = await materialLogRepo.find({
             where: whereClause,
             relations: ["loggedBy", "materialsUsedTask", "materialsEstimatedTask"],
-            order: { datetime: "DESC" },
+            order: { dateCreated: "DESC" },
           });
       
           return res.status(200).json(logs);

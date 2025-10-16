@@ -3,6 +3,7 @@ import { AppDataSource } from "../data-source";
 import { MaterialLog } from "../models/MaterialLog";
 
 import materialLogController from "../controller/materialLog";
+import { authMiddleware } from "../middleware/authMiddleware";
 
 const router = Router()
 
@@ -23,15 +24,26 @@ router.get("/:id", async (req, res)=> {
 
 // add material log
 router.post("/", async (req, res)=> {
+
+    const userId = (req as any).user.id;
+
     const {
         description,
         quantity,
         task,
-
+        width,
+        height
     } = req.body;
     
     try {
-        const log = materialLogRepo.create(body);
+        const log = materialLogRepo.create({
+            description: description,
+            quantity: quantity,
+            width: width,
+            height: height,
+            materialsUsedTask: task,
+            loggedBy: { id: userId }
+        });
         await materialLogRepo.save(log);
     } catch(e) {
         res.status(400).send("Invalid request, please check the request body");

@@ -45,10 +45,6 @@ export class Task {
     @OneToMany(()=> MaterialLog, (log)=> log.materialsUsedTask)
     materialsUsed?: MaterialLog[];
 
-    // IDs of Stock Entries that have been use in the project
-    @OneToMany(()=> MaterialLog, (log)=> log.materialsEstimatedTask)
-    materialsEstimated?: MaterialLog[];
-
     // List of IDs of InvoiceItems 
     @OneToMany(()=> WastageLog, (log)=> log.task)
     wastageLog?: WastageLog[];
