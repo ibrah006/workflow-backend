@@ -21,9 +21,6 @@ export class MaterialLog {
     @ManyToOne(()=> Task, (task)=> task.materialsUsed, { nullable: true })
     materialsUsedTask?: Task;
 
-    @ManyToOne(()=> Task, (task)=> task.materialsEstimated, { nullable: true })
-    materialsEstimatedTask?: Task;
-
     @Column({ type: 'timestamp' })
     datetime!: Date;
 
