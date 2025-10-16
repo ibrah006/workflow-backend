@@ -2,6 +2,8 @@ import { Router } from "express";
 import { AppDataSource } from "../data-source";
 import { MaterialLog } from "../models/MaterialLog";
 
+import materialLogController from "../controller/materialLog";
+
 const router = Router()
 
 const materialLogRepo = AppDataSource.getRepository(MaterialLog);
@@ -30,5 +32,7 @@ router.post("/", async (req, res)=> {
         res.status(400).send("Invalid request, please check the request body");
     }
 });
+
+router.get("/project/:projectId", materialLogController.getMaterialLogsByProject)
 
 export default router;
