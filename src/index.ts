@@ -57,7 +57,7 @@ app.use('/tasks', authMiddleware, tasksRoutes)
 // Analytics
 app.use('/analytics', authMiddleware, analyticsRoutes);
 // Material Logs
-app.use('/materialLogs', authMiddleware, materialLogRoutes);
+app.use('/material-logs', authMiddleware, materialLogRoutes);
 // Companies routes
 app.use('/companies', authMiddleware, companyRoutes)
 // Progress log routes

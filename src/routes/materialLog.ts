@@ -41,7 +41,7 @@ router.post("/", async (req, res)=> {
             quantity: quantity,
             width: width,
             height: height,
-            materialsUsedTask: task,
+            task: task,
             loggedBy: { id: userId }
         });
         await materialLogRepo.save(log);

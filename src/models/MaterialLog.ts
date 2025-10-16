@@ -24,7 +24,7 @@ export class MaterialLog {
     loggedBy!: User;
 
     @ManyToOne(()=> Task, (task)=> task.materialsUsed, { nullable: true })
-    materialsUsedTask?: Task;
+    task?: Task;
 
     @CreateDateColumn({ type: 'timestamptz' })
     dateCreated!: Date;
