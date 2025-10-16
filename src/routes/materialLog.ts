@@ -23,7 +23,12 @@ router.get("/:id", async (req, res)=> {
 
 // add material log
 router.post("/", async (req, res)=> {
-    const body = req.body;
+    const {
+        description,
+        quantity,
+        task,
+
+    } = req.body;
     
     try {
         const log = materialLogRepo.create(body);

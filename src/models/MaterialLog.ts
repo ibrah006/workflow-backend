@@ -1,4 +1,4 @@
-import { BeforeInsert, BeforeUpdate, Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./User";
 import { Task } from "./Task";
 import { MaterialLogType } from "../enums/MaterialLogType";
@@ -21,8 +21,8 @@ export class MaterialLog {
     @ManyToOne(()=> Task, (task)=> task.materialsUsed, { nullable: true })
     materialsUsedTask?: Task;
 
-    @Column({ type: 'timestamp' })
-    datetime!: Date;
+    @CreateDateColumn({ type: 'timestamptz' })
+    dateCreated!: Date;
 
     @Column({
         type: 'enum',
