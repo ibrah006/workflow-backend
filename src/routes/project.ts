@@ -21,7 +21,7 @@ const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 
-export const PROJECT_GET_RELATIONS = ["progressLogs", "tasks", "assignedManagers", "tasks.assignees", "tasks.progressLog", "tasks.materialsEstimated", "client", "client.createdBy"];
+export const PROJECT_GET_RELATIONS = ["progressLogs", "tasks", "assignedManagers", "tasks.assignees", "tasks.progressLog", "client", "client.createdBy", "materialLogs"];
 
 /**
  * Update the progressLogLastModifiedAt column of project model
@@ -346,7 +346,7 @@ router.get("/:id", async (req, res) => {
                 "tasks.wastageLog",
                 "tasks.discussionThreads",
                 "tasks.workActivityLogs",
-                "tasks.materialsEstimated",
+                "materialLogs",
                 "assignedManagers"
             ],
             where: { id: id }
