@@ -2,6 +2,7 @@ import { BeforeInsert, BeforeUpdate, Column, CreateDateColumn, Entity, ManyToOne
 import { User } from "./User";
 import { Task } from "./Task";
 import { MaterialLogType } from "../enums/MaterialLogType";
+import { Project } from "./Project";
 
 @Entity()
 export class MaterialLog {
@@ -23,8 +24,8 @@ export class MaterialLog {
     @ManyToOne(()=> User, (user)=> user.materialLogs)
     loggedBy!: User;
 
-    @ManyToOne(()=> Task, (task)=> task.materialsUsed, { nullable: true })
-    task?: Task;
+    @ManyToOne(()=> Project, (project)=> project.materialLogs, { nullable: true })
+    project?: Project;
 
     @CreateDateColumn({ type: 'timestamptz' })
     dateCreated!: Date;

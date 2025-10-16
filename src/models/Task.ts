@@ -41,10 +41,6 @@ export class Task {
     @Column({ type: 'timestamptz', nullable: true })
     workActivityLogsLastModifiedAt?: Date | null;
 
-    // IDs of Stock Entries that have been use in the project
-    @OneToMany(()=> MaterialLog, (log)=> log.task)
-    materialsUsed?: MaterialLog[];
-
     // List of IDs of InvoiceItems 
     @OneToMany(()=> WastageLog, (log)=> log.task)
     wastageLog?: WastageLog[];

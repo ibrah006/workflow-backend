@@ -3,6 +3,7 @@ import { Task } from "./Task";
 import { User } from "./User";
 import { Company } from "./Company";
 import { ProgressLog } from "./ProgressLog";
+import { MaterialLog } from "./MaterialLog";
 
 
 @Entity()
@@ -53,6 +54,8 @@ export class Project {
     @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt!: Date;
 
+    @OneToMany(()=> MaterialLog, (log)=> log.project)
+    materialLogs!: MaterialLog[];
 
     // derived attributes (NOTE FOR THE FRONT-END):
     // project efficiency

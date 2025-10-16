@@ -164,7 +164,6 @@ router.post("/:id",  async (req, res) => {
         dueDate,
         status,
         assignees: assigneeIds,
-        materialsUsed,
         dateCompleted,
         progressLog
       } = req.body;
@@ -191,7 +190,6 @@ router.post("/:id",  async (req, res) => {
             description,
             dueDate,
             status,
-            materialsUsed,
             dateCompleted,
             project, // Set resolved project
             assignees, // Set resolved user entities
