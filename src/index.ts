@@ -49,7 +49,7 @@ app.get('/', (req, res) => {
 
 app.use('/users', authMiddleware, usersRoutes);
 app.use('/', guestsRoutes);
-app.use('/projects', projectRoutes);
+app.use('/projects', authMiddleware, projectRoutes);
 // Activity & Attendance routes
 app.use('/activity', authMiddleware, activityAndAttendance)
 // Task state

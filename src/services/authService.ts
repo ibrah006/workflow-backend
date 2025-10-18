@@ -29,34 +29,32 @@ export const registerUser = async (
     email: string,
     plainPassword: string,
     name: string,
-    organizationName: string,
     role?: string,
   ) => {
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
   
-    let organization = await organizationRepo.findOne({ where: { name: organizationName } });
-    if (!organization) {
-      organization = organizationRepo.create({
-          name: organizationName,
-          createdBy: { id: "temp" },
-      });
-      await organizationRepo.save(organization);
-    }
+    // let organization = await organizationRepo.findOne({ where: { name: organizationName } });
+    // if (!organization) {
+    //   organization = organizationRepo.create({
+    //       name: organizationName,
+    //       createdBy: { id: "temp" },
+    //   });
+    //   await organizationRepo.save(organization);
+    // }
   
     const user = userRepo.create({
       email,
       password: hashedPassword,
       name,
-      role: role || "member",
-      organization
+      role: role || "member"
     });
   
     await userRepo.save(user);
   
-    if (organization.createdBy.id === "temp") {
-      organization.createdBy = user;
-      await organizationRepo.save(organization);
-    }
+    // if (organization.createdBy.id === "temp") {
+    //   organization.createdBy = user;
+    //   await organizationRepo.save(organization);
+    // }
   
     return user;
   };

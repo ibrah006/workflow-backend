@@ -55,8 +55,15 @@ export class User {
     @ManyToMany(()=> Task, (task)=> task.assignees)
     tasks!: Task[];
 
-    @ManyToOne(()=> Organization, (org)=> org.users)
-    organization!: Organization;
+    @ManyToOne(
+        ()=> Organization,
+        (org)=> org.users,
+        // nullable when created, but gets replaced soon after (join/create)
+        {
+            nullable: true
+        }
+    )
+    organization?: Organization;
 
     // Other Attributes
 
