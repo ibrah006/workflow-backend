@@ -30,7 +30,7 @@ router.get('/me', async (req: Request, res: Response) => {
     try {
         const user = await userRepo.findOne({
             where: { id: (req as any).user!.id },
-            relations: ["department"]
+            relations: ["department", "organization"]
         });
     
         if (!user) {

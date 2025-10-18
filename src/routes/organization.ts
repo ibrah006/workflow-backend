@@ -72,10 +72,8 @@ router.post("/", async (req, res) : Promise<any> => {
         return res.status(201).json({
             message: 'Organization created successfully',
             organization: {
-                id: savedOrg.id,
-                name: savedOrg.name,
-                description: savedOrg.description,
-                createdAt: savedOrg.createdAt
+                ...savedOrg,
+                // TODO: make sure users are returned safe without their passwords
             }
         });
 
