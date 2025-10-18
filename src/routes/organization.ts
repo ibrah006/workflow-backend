@@ -295,7 +295,7 @@ router.get("/members", async (req, res) : Promise<any> => {
     try {
         const members = await userRepo.find({
             where: { organization: { id: organizationId } },
-            select: ['id', 'name', 'email', 'role', 'createdAt', 'skills'],
+            select: ['id', 'name', 'email', 'role', 'createdAt'],
             order: { createdAt: 'ASC' }
         });
 
