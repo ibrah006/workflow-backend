@@ -3,6 +3,7 @@ import { AppDataSource } from "../data-source";
 import { Organization } from "../models/Organization";
 import { User } from "../models/User";
 import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
+import users from "../controller/users";
 
 const router = Router();
 
@@ -234,7 +235,7 @@ router.get("/current", async (req, res) : Promise<any> => {
     try {
         const user = await userRepo.findOne({
             where: { id: userId },
-            relations: ['organization', 'organization.createdBy']
+            relations: ['organization', 'organization.createdBy', 'organization.users', 'organization.projects']
         });
 
         if (!user) {
@@ -257,11 +258,16 @@ router.get("/current", async (req, res) : Promise<any> => {
             name: user.organization.name,
             description: user.organization.description,
             createdAt: user.organization.createdAt,
+            users: user.organization.users,
+            projects: user.organization.projects,
+            companies: user.organization.companies,
             createdBy: {
                 id: user.organization.createdBy.id,
                 name: user.organization.createdBy.name,
-                email: user.organization.createdBy.email
+                email: user.organization.createdBy.email,
+                role: user.organization.createdBy.role
             },
+            updatedAt: user.organization.updatedAt,
             memberCount,
             userRole: user.role
         });
