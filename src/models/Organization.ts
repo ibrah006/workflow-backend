@@ -9,6 +9,9 @@ import {
     OneToMany,
   } from 'typeorm';
 import { User } from './User';
+import { Project } from './Project';
+import { Team } from './Team';
+import { Company } from './Company';
 
 @Entity()
 export class Organization {
@@ -37,5 +40,16 @@ export class Organization {
   
     @UpdateDateColumn()
     updatedAt!: Date;
+
+    // Other relations
+
+    @OneToMany(() => Project, (project) => project.organization)
+    projects!: Project[];
+
+    @OneToMany(() => Team, (team) => team.organization)
+    teams!: Team[];
+
+    @OneToMany(() => Company, (company) => company.organization)
+    companies!: Company[];
   }
   

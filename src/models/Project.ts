@@ -5,6 +5,7 @@ import { Company } from "./Company";
 import { ProgressLog } from "./ProgressLog";
 import { MaterialLog } from "./MaterialLog";
 import { AppDataSource } from "../data-source";
+import { Organization } from "./Organization";
 
 
 @Entity()
@@ -12,19 +13,39 @@ export class Project {
     @PrimaryColumn({ type: 'varchar' })
     id!: string;
 
+    
+    
     @BeforeInsert()
-        async generateProjectId() {
+      async generateProjectId() {
+        if (!this.organizationId) {
+          throw new Error('Project must have an organizationId before saving');
+        }
+    
         const year = new Date().getFullYear();
+    
         const projectRepo = AppDataSource.getRepository(Project);
-
-        const countThisYear = await projectRepo
-            .createQueryBuilder("project")
-            .where(`EXTRACT(YEAR FROM project."createdAt") = :year`, { year })
-            .getCount();
-
-        const sequenceNumber = String(countThisYear + 1).padStart(3, '0');
-        this.id = `PRJ-${year}-${sequenceNumber}`;
+        const countThisYearForOrg = await projectRepo
+          .createQueryBuilder('project')
+          .where('project.organizationId = :orgId', { orgId: this.organizationId })
+          .andWhere(`EXTRACT(YEAR FROM project."createdAt") = :year`, { year })
+          .getCount();
+    
+        const sequenceNumber = String(countThisYearForOrg + 1).padStart(3, '0');
+    
+        this.id = `PRJ-${this.organizationId}-${year}-${sequenceNumber}`;
     }
+    
+    @ManyToOne(() => Organization, (org) => org.projects, {
+        nullable: false,
+        onDelete: 'CASCADE',
+    })
+    organization!: Organization;
+
+    @Column('uuid')
+    organizationId!: string;
+
+    @CreateDateColumn({ type: 'timestamptz' })
+    createdAt!: Date;
 
     @Column()
     name!: string;

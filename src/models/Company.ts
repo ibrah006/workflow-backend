@@ -10,6 +10,7 @@ import {
   } from "typeorm";
   import { User } from "./User";
 import { Project } from "./Project";
+import { Organization } from "./Organization";
   
   // Made some of the required parameters (in production) as optional temporarily
 @Entity()
@@ -38,5 +39,14 @@ export class Company {
 
     @OneToMany(()=> Project, (project)=> project.client)
     projects!: Project[];
+
+    @ManyToOne(() => Organization, (org) => org.companies, {
+      nullable: false,
+      onDelete: 'CASCADE',
+    })
+    organization!: Organization;
+    
+    @Column('uuid')
+    organizationId!: string;
 }
   

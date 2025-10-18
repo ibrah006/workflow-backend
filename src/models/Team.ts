@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm";
 import { User } from "./User";
+import { Organization } from "./Organization";
 
 @Entity()
 export class Team {
@@ -20,4 +21,14 @@ export class Team {
 
     @CreateDateColumn()
     createdAt!: Date;
+
+    @ManyToOne(() => Organization, (org) => org.teams, {
+        nullable: false,
+        onDelete: 'CASCADE',
+    })
+    organization!: Organization;
+    
+    @Column('uuid')
+    organizationId!: string;
+      
 }
