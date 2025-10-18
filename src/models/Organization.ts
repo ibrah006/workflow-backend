@@ -6,6 +6,7 @@ import {
     JoinColumn,
     CreateDateColumn,
     UpdateDateColumn,
+    OneToMany,
   } from 'typeorm';
 import { User } from './User';
 
@@ -24,6 +25,9 @@ export class Organization {
     @ManyToOne(() => User, { nullable: false, onDelete: 'RESTRICT' })
     @JoinColumn({ name: 'createdById' })
     createdBy!: User;
+
+    @OneToMany(()=> User, (user)=> user.organization)
+    users!: User;
   
     @Column('uuid')
     createdById!: string;

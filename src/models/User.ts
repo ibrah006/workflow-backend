@@ -8,6 +8,7 @@ import { Project } from "./Project";
 import { AttendanceLog } from "./AttendanceLog";
 import { LayoffLog } from "./LayoffLog";
 import { MaterialLog } from "./MaterialLog";
+import { Organization } from "./Organization";
 
 @Entity()
 export class User {
@@ -53,6 +54,9 @@ export class User {
     // Tasks History relations
     @ManyToMany(()=> Task, (task)=> task.assignees)
     tasks!: Task[];
+
+    @ManyToOne(()=> Organization, (org)=> org.users)
+    organization!: Organization;
 
     // Other Attributes
 
