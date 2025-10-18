@@ -98,5 +98,4 @@ export class NewMigration1760782128005 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "message"`);
         await queryRunner.query(`DROP TABLE "wastage_log"`);
     }
-
 }

@@ -36,11 +36,11 @@ export const registerUser = async (
   
     let organization = await organizationRepo.findOne({ where: { name: organizationName } });
     if (!organization) {
-    organization = organizationRepo.create({
-        name: organizationName,
-        createdBy: { id: "temp" },
-    });
-    await organizationRepo.save(organization);
+      organization = organizationRepo.create({
+          name: organizationName,
+          createdBy: { id: "temp" },
+      });
+      await organizationRepo.save(organization);
     }
   
     const user = userRepo.create({
@@ -53,7 +53,7 @@ export const registerUser = async (
   
     await userRepo.save(user);
   
-    if (organization && organization.createdBy.id === "temp") {
+    if (organization.createdBy.id === "temp") {
       organization.createdBy = user;
       await organizationRepo.save(organization);
     }
