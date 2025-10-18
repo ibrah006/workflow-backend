@@ -15,6 +15,22 @@ export default {
     async getProgressLogsByProject(req: Request, res: Response) : Promise<any> {
         try {
             const projectId = req.params.id;
+            const organizationId = (req as any).user?.organizationId;
+
+            if (!organizationId) {
+                return res.status(401).json({ message: 'Organization context required' });
+            }
+
+            // Verify project belongs to user's organization
+            const project = await projectRepo.findOne({
+                where: { id: projectId, organizationId },
+                select: ['id']
+            });
+
+            if (!project) {
+                return res.status(404).json({ message: 'Project not found' });
+            }
+
             const sinceParam = req.query.since as string | undefined;
         
             // Initialize query conditions
@@ -50,87 +66,97 @@ export default {
     // GET /projects/:id/progress-logs/last-modified
     async getProgressLogLastModified(req: Request, res: Response) : Promise<any> {
         const projectId = req.params.id;
+        const organizationId = (req as any).user?.organizationId;
 
-        const project = await projectRepo.findOneBy({
-            id: projectId
+        if (!organizationId) {
+            return res.status(401).json({ message: 'Organization context required' });
+        }
+
+        const project = await projectRepo.findOne({
+            where: { id: projectId, organizationId }
         });
 
         if (!project) {
-            return res.status(404).send("Project not found");
+            return res.status(404).json({ message: "Project not found" });
         }
 
-        res.send({
+        res.json({
             lastModifiedAt: project?.progressLogLastModifiedAt
         })
     },
 
     async getProjectProgressRate(req: Request, res: Response) : Promise<any> {
         const { id: projectId } = req.params;
+        const organizationId = (req as any).user?.organizationId;
+
+        if (!organizationId) {
+            return res.status(401).json({ message: 'Organization context required' });
+        }
 
         try {
-            // Get project with all progress logs and tasks
+            // Get project with all progress logs and tasks (scoped to organization)
             const project = await projectRepo.findOne({
-            where: { id: projectId },
-            relations: ['progressLogs'],
+                where: { id: projectId, organizationId },
+                relations: ['progressLogs'],
             });
 
             if (!project) {
-            return res.status(404).json({ error: 'Project not found' });
+                return res.status(404).json({ error: 'Project not found' });
             }
 
             const progressLogs = project.progressLogs || [];
 
             // Fetch all tasks for the project
             const tasks = await taskRepo.find({
-            where: { project: { id: projectId } },
+                where: { project: { id: projectId } },
             });
 
             const now = new Date();
             const progressRates: number[] = [];
 
             for (const log of progressLogs) {
-            const startDate = new Date(log.startDate);
-            const dueDate = log.dueDate ? new Date(log.dueDate) : null;
+                const startDate = new Date(log.startDate);
+                const dueDate = log.dueDate ? new Date(log.dueDate) : null;
 
-            if (!startDate || !dueDate || startDate >= dueDate) {
-                continue; // Skip invalid stages
-            }
+                if (!startDate || !dueDate || startDate >= dueDate) {
+                    continue; // Skip invalid stages
+                }
 
-            const totalDuration = dueDate.getTime() - startDate.getTime();
-            const timePassed = now < startDate
-                ? 0
-                : now > dueDate
-                ? totalDuration
-                : now.getTime() - startDate.getTime();
+                const totalDuration = dueDate.getTime() - startDate.getTime();
+                const timePassed = now < startDate
+                    ? 0
+                    : now > dueDate
+                    ? totalDuration
+                    : now.getTime() - startDate.getTime();
 
-            const expected = totalDuration === 0
-                ? 1.0
-                : Math.min(timePassed / totalDuration, 1.0);
+                const expected = totalDuration === 0
+                    ? 1.0
+                    : Math.min(timePassed / totalDuration, 1.0);
 
-            // Get tasks for this progress log
-            const tasksForLog = tasks.filter(
-                (t) => t.progressLog && t.progressLog.id === log.id
-            );
+                // Get tasks for this progress log
+                const tasksForLog = tasks.filter(
+                    (t) => t.progressLog && t.progressLog.id === log.id
+                );
 
-            let actual = 0.0;
+                let actual = 0.0;
 
-            if (tasksForLog.length > 0) {
-                const completedCount = tasksForLog.filter(
-                    (t) => t.status.toLowerCase() === 'completed'
+                if (tasksForLog.length > 0) {
+                    const completedCount = tasksForLog.filter(
+                        (t) => t.status.toLowerCase() === 'completed'
                     ).length;
-                actual = completedCount / tasksForLog.length;
-            } else {
-                actual = log.isCompleted ? 1.0 : 0.0;
-            }
+                    actual = completedCount / tasksForLog.length;
+                } else {
+                    actual = log.isCompleted ? 1.0 : 0.0;
+                }
 
-            const rate = expected === 0 ? 0.0 : Math.min(actual / expected, 1.0);
+                const rate = expected === 0 ? 0.0 : Math.min(actual / expected, 1.0);
                 progressRates.push(rate);
             }
 
             const avgRate =
-            progressRates.length === 0
-                ? 0.0
-                : progressRates.reduce((a, b) => a + b, 0) / progressRates.length;
+                progressRates.length === 0
+                    ? 0.0
+                    : progressRates.reduce((a, b) => a + b, 0) / progressRates.length;
 
             return res.json({
                 projectId,
@@ -142,18 +168,144 @@ export default {
         }
     },
 
+    // Get average progress rate for all projects in the organization
+    async getOrganizationProgressRate(req: Request, res: Response) : Promise<any> {
+        const organizationId = (req as any).user?.organizationId;
+
+        if (!organizationId) {
+            return res.status(401).json({ message: 'Organization context required' });
+        }
+
+        try {
+            // Get all projects for the organization
+            const projects = await projectRepo.find({
+                where: { organizationId },
+                relations: ['progressLogs'],
+            });
+
+            let projectsProgressRatesSum: number = 0;
+
+            for (const project of projects) {
+                const progressLogs = project.progressLogs || [];
+            
+                // Fetch all tasks for the project
+                const tasks = await taskRepo.find({
+                    where: { project: { id: project.id } },
+                });
+            
+                const now = new Date();
+                const progressRates: number[] = [];
+            
+                for (const log of progressLogs) {
+                    const startDate = new Date(log.startDate);
+                    const dueDate = log.dueDate ? new Date(log.dueDate) : null;
+            
+                    if (!startDate || !dueDate || startDate >= dueDate) {
+                        continue; // Skip invalid stages
+                    }
+            
+                    const totalDuration = dueDate.getTime() - startDate.getTime();
+                    const timePassed = now < startDate
+                        ? 0
+                        : now > dueDate
+                            ? totalDuration
+                            : now.getTime() - startDate.getTime();
+            
+                    const expected = totalDuration === 0
+                        ? 1.0
+                        : Math.min(timePassed / totalDuration, 1.0);
+            
+                    // Get tasks for this progress log
+                    const tasksForLog = tasks.filter(
+                        (t) => t.progressLog && t.progressLog.id === log.id
+                    );
+            
+                    let actual = 0.0;
+            
+                    if (tasksForLog.length > 0) {
+                        const completedCount = tasksForLog.filter(
+                            (t) => t.status.toLowerCase() === 'completed'
+                        ).length;
+                        actual = completedCount / tasksForLog.length;
+                    } else {
+                        actual = log.isCompleted ? 1.0 : 0.0;
+                    }
+            
+                    const rate = expected === 0 ? 0.0 : Math.min(actual / expected, 1.0);
+                    progressRates.push(rate);
+                }
+            
+                const avgRate =
+                    progressRates.length === 0
+                        ? 0.0
+                        : progressRates.reduce((a, b) => a + b, 0) / progressRates.length;
+            
+                projectsProgressRatesSum += avgRate;
+            }
+            
+            // Final average progress rate across all projects in the organization
+            const finalAverage = projects.length === 0
+                ? 0
+                : projectsProgressRatesSum / projects.length;
+            
+            return res.json({
+                progressRate: Number(finalAverage.toFixed(2)), // Rounded for consistency
+            });
+        } catch (err) {
+            console.error(err);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
+    async getMostRecentlyActiveProjects(req: Request, res: Response) : Promise<any> {
+        const organizationId = (req as any).user?.organizationId;
+
+        if (!organizationId) {
+            return res.status(401).json({ message: 'Organization context required' });
+        }
+
+        try {
+            const recentProjects = await AppDataSource
+                .getRepository(Project)
+                .createQueryBuilder('project')
+                .select(['project.id'])
+                .addSelect(`GREATEST(
+                  COALESCE(project."updatedAt", TO_TIMESTAMP(0)),
+                  COALESCE(project."progressLogLastModifiedAt", TO_TIMESTAMP(0))
+                )`, 'lastActivity')
+                .where('project.organizationId = :organizationId', { organizationId })
+                .orderBy(`GREATEST(
+                  COALESCE(project."updatedAt", TO_TIMESTAMP(0)),
+                  COALESCE(project."progressLogLastModifiedAt", TO_TIMESTAMP(0))
+                )`, 'DESC')
+                .limit(3)
+                .getRawMany();          
+      
+            // Convert to key-value object: { "0": id1, "1": id2, ... }
+            const projectIdsByOrder: Record<number, string> = {};
+            recentProjects.forEach((p, index) => {
+                projectIdsByOrder[index] = p.project_id;
+            });
+      
+            return res.json(projectIdsByOrder);
+        } catch (error) {
+            console.error('Error fetching recent projects:', error);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+    },
+
     async getProjectsProgressRate(req: Request, res: Response) : Promise<any> {
         const { id: projectId } = req.params;
-
+    
         try {
             // Get project with all progress logs and tasks
             const projects = await projectRepo.find({
                 where: { id: projectId },
                 relations: ['progressLogs'],
             });
-
+    
             var projectsProgressRatesSum: number = 0;
-
+    
             for (const project of projects) {
                 if (!project) {
                     return res.status(404).json({ error: 'Project not found' });
@@ -229,35 +381,4 @@ export default {
             return res.status(500).json({ error: 'Internal server error' });
         }
     },
-
-    async getMostRecentlyActiveProjects(req: Request, res: Response) : Promise<any> {
-        try {
-            const recentProjects = await AppDataSource
-            .getRepository(Project)
-            .createQueryBuilder('project')
-            .select(['project.id'])
-            .addSelect(`GREATEST(
-              COALESCE(project."updatedAt", TO_TIMESTAMP(0)),
-              COALESCE(project."progressLogLastModifiedAt", TO_TIMESTAMP(0))
-            )`, 'lastActivity')
-            .orderBy(`GREATEST(
-              COALESCE(project."updatedAt", TO_TIMESTAMP(0)),
-              COALESCE(project."progressLogLastModifiedAt", TO_TIMESTAMP(0))
-            )`, 'DESC')
-            .limit(3)
-            .getRawMany();          
-      
-          // Convert to key-value object: { "0": id1, "1": id2, ... }
-          const projectIdsByOrder: Record<number, string> = {};
-          recentProjects.forEach((p, index) => {
-            projectIdsByOrder[index] = p.project_id;
-          });
-      
-          return res.json(projectIdsByOrder);
-        } catch (error) {
-          console.error('Error fetching recent projects:', error);
-          return res.status(500).json({ error: 'Internal server error' });
-        }
-    }
-
 }

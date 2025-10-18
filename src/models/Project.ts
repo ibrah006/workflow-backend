@@ -12,8 +12,6 @@ import { Organization } from "./Organization";
 export class Project {
     @PrimaryColumn({ type: 'varchar' })
     id!: string;
-
-    
     
     @BeforeInsert()
       async generateProjectId() {
