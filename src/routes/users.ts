@@ -22,7 +22,6 @@ router.get("/", async (req, res)=> {
 /// Otherwise, return all assignees for this task
 router.get("/task/:taskId", usersController.getTaskAssignees);
 
-
 router.get('/me', async (req: Request, res: Response) => {
 
     try {

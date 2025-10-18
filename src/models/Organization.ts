@@ -29,11 +29,11 @@ export class Organization {
     @JoinColumn({ name: 'createdById' })
     createdBy!: User;
 
-    @OneToMany(()=> User, (user)=> user.organization)
-    users!: User;
-  
     @Column('uuid')
     createdById!: string;
+
+    @OneToMany(()=> User, (user)=> user.organization)
+    users!: User;
   
     @CreateDateColumn()
     createdAt!: Date;
