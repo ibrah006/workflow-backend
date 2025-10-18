@@ -1,5 +1,4 @@
 import { Router } from "express";
-import { AppDataSource } from "../data-source";
 import { loginUser, registerUser } from "../services/authService";
 
 const router = Router();
