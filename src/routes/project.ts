@@ -9,6 +9,7 @@ import { WorkActivityLog } from "../models/WorkActivityLog";
 import { ProgressLog } from "../models/ProgressLog";
 import projectController from "../controller/project";
 import { notifyProjectAboutLastTaskChange } from "./tasks";
+import { Company } from "../models/Company";
 
 
 const router = Router();
@@ -16,12 +17,20 @@ const router = Router();
 const projectRepo = AppDataSource.getRepository(Project);
 const taskRepo = AppDataSource.getRepository(Task);
 const userRepo = AppDataSource.getRepository(User);
-
 const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
-
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
+const companyRepo = AppDataSource.getRepository(Company);
 
-export const PROJECT_GET_RELATIONS = ["progressLogs", "tasks", "assignedManagers", "tasks.assignees", "tasks.progressLog", "client", "client.createdBy", "materialLogs"];
+export const PROJECT_GET_RELATIONS = [
+    "progressLogs", 
+    "tasks", 
+    "assignedManagers", 
+    "tasks.assignees", 
+    "tasks.progressLog", 
+    "client", 
+    "client.createdBy", 
+    "materialLogs"
+];
 
 /**
  * Update the progressLogLastModifiedAt column of project model
@@ -43,18 +52,58 @@ export async function updateProgressLogLastModifiedAt(progressLogId: string) : P
         .where(`id = ${subQuery}`)
         .setParameter('progressLogId', progressLogId)
         .execute();
-
 }
 
 router.get("/get-recent", projectController.getMostRecentlyActiveProjects);
 
 // Create a project
-router.post("/", async (req, res) => {
+router.post("/", async (req, res) : Promise<any>=> {
     const data = req.body as Partial<Project>;
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
 
     try {
-        const project = projectRepo.create(data);
-        
+        // Verify client company belongs to the same organization (if provided)
+        if (data.client && (data.client as any).id) {
+            const clientId = (data.client as any).id;
+            const client = await companyRepo.findOne({
+                where: { id: clientId, organizationId }
+            });
+
+            if (!client) {
+                return res.status(400).json({
+                    message: 'Client company not found or does not belong to your organization'
+                });
+            }
+        }
+
+        // Verify assigned managers belong to the same organization (if provided)
+        if (data.assignedManagers && Array.isArray(data.assignedManagers)) {
+            const managerIds = data.assignedManagers.map((m: any) => m.id || m);
+            const managers = await userRepo.find({
+                where: { 
+                    id: In(managerIds),
+                    organization: { id: organizationId }
+                }
+            });
+
+            if (managers.length !== managerIds.length) {
+                return res.status(400).json({
+                    message: 'One or more assigned managers do not belong to your organization'
+                });
+            }
+        }
+
+        // Set organizationId for the project
+        const projectData = {
+            ...data,
+            organizationId
+        };
+
+        const project = projectRepo.create(projectData);
         const savedProject = await projectRepo.save(project);
 
         res.status(201).json({
@@ -64,34 +113,42 @@ router.post("/", async (req, res) => {
     } catch(err) {
         console.error("error:", err);
         res.status(400).json({
-            message: `Failed to create project ${JSON.stringify(data)}`,
-            // error: err
+            message: `Failed to create project`,
+            error: err instanceof Error ? err.message : 'Unknown error'
         });
     }
 });
 
 // Get project finish rate
 router.get('/:id/progress-rate', projectController.getProjectProgressRate);
-// Get avg progress rate of all projects
-router.get('/progress-rate', projectController.getProjectsProgressRate);
 
-// Get Projects listing
-router.get("/", async (req, res) => {
-    try {
-      const projects = await projectRepo.find({
-        relations: [
-          ...PROJECT_GET_RELATIONS, // your existing relations
-          "tasks",                         // ensure tasks are loaded
-          "materialLogs"
-        ],
-      });
-  
-      res.json(projects);
-    } catch (error) {
-      console.error("Error fetching projects with material logs:", error);
-      res.status(500).json({ error: "Internal server error" });
+// Get avg progress rate of all projects in the organization
+router.get('/progress-rate', projectController.getOrganizationProgressRate);
+
+// Get Projects listing (scoped to organization)
+router.get("/", async (req, res) : Promise<any>=> {
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
     }
-  });
+
+    try {
+        const projects = await projectRepo.find({
+            where: { organizationId },
+            relations: [
+                ...PROJECT_GET_RELATIONS,
+                "tasks",
+                "materialLogs"
+            ],
+        });
+  
+        res.json(projects);
+    } catch (error) {
+        console.error("Error fetching projects with material logs:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
 
 // Get progress logs by project
 router.get("/:id/progressLogs", projectController.getProgressLogsByProject);
@@ -100,61 +157,102 @@ router.get("/:id/progressLogs/last-modified", projectController.getProgressLogLa
 
 // Create Progress log
 router.post("/:id/progressLogs", async (req, res) : Promise<any> => {
-
     const projectId = req.params.id;
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
+
+    // Verify project belongs to user's organization
+    const project = await projectRepo.findOne({
+        where: { id: projectId, organizationId },
+        select: ['id']
+    });
+
+    if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+    }
 
     // Required body from user: { id, project, status, description?, isError? (db default: false) }
     let body;
     try {
-        body = { ...req.body, project: { id: projectId }, updatedAt: undefined } as Partial<ProgressLog>;
+        body = { 
+            ...req.body, 
+            project: { id: projectId }, 
+            updatedAt: undefined 
+        } as Partial<ProgressLog>;
     } catch(err) {
-        return res.status(400).send("Invalid body params, check the ProjectLog schema");
+        return res.status(400).json({ message: "Invalid body params, check the ProjectLog schema" });
     }
     delete body.updatedAt;
-    
 
     let savedLog;
     try {
         const log = progressLogRepo.create(body);
-        
         savedLog = await progressLogRepo.save(log);
     } catch(err) {
-        return res.status(500).send("Unexpected error from server side");
+        console.error(err);
+        return res.status(500).json({ message: "Unexpected error from server side" });
     }
 
     await updateProgressLogLastModifiedAt(savedLog.id);
 
-    res.status(201).send("Successfully created progress log");
+    res.status(201).json({ 
+        message: "Successfully created progress log",
+        id: savedLog.id
+    });
 })
 
-
-// required query parameter: status
+// Update project status
 router.put("/:id", async (req, res) : Promise<any> => {
     const id = req.params.id;
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
 
     let newStatus;
     try {
         newStatus = req.body.status;
 
         if (!newStatus) {
-            return res.status(400).send(`Invalid status provided`);
+            return res.status(400).json({ message: `Invalid status provided` });
         }
     } catch(e) {
-        return res.status(400).send(`Failed to update status of project ${id}`);
+        return res.status(400).json({ message: `Failed to update status of project ${id}` });
     }
+
+    // Verify project belongs to user's organization
+    const project = await projectRepo.findOne({
+        where: { id, organizationId }
+    });
+
+    if (!project) {
+        return res.status(404).json({ message: 'Project not found' });
+    }
+
     await projectRepo.update(id, {
         status: newStatus.toString()
     });
 
-    res.status(200).send(`Successfully updated status`);
+    res.status(200).json({ message: `Successfully updated status` });
 })
 
 /// Manage Project tasks
 
+/// Manage Project tasks
+
 // Add task for project with ID: [params.id]
-// adminOnlyMiddleware
-router.post("/:id",  async (req, res) => {
+router.post("/:id/tasks", async (req, res) : Promise<any>=> {
     const projectId = req.params.id;
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
+
     const {
         name,
         description,
@@ -163,22 +261,35 @@ router.post("/:id",  async (req, res) => {
         assignees: assigneeIds,
         dateCompleted,
         progressLog
-      } = req.body;
+    } = req.body;
   
     try {
-        // Fetch related project
+        // Fetch related project (scoped to organization)
         const project = await projectRepo.findOne({
-            relations: PROJECT_GET_RELATIONS, where: { id: projectId }
+            relations: PROJECT_GET_RELATIONS, 
+            where: { id: projectId, organizationId }
         });
+
         if (!project) {
-            res.status(404).json({ message: "Project not found" });
-            return;
+            return res.status(404).json({ message: "Project not found" });
         }
         
         // Fetch User entities from the assigneeIds (if provided)
+        // Ensure users belong to the same organization
         let assignees : User[] = [];
         if (assigneeIds && Array.isArray(assigneeIds)) {
-            assignees = await userRepo.findBy({ id: In(assigneeIds) });
+            assignees = await userRepo.find({
+                where: { 
+                    id: In(assigneeIds),
+                    organization: { id: organizationId }
+                }
+            });
+
+            if (assignees.length !== assigneeIds.length) {
+                return res.status(400).json({ 
+                    message: "One or more assignees do not belong to your organization" 
+                });
+            }
         }
 
         // Create new task with resolved relations
@@ -188,8 +299,8 @@ router.post("/:id",  async (req, res) => {
             dueDate,
             status,
             dateCompleted,
-            project, // Set resolved project
-            assignees, // Set resolved user entities
+            project,
+            assignees,
             progressLog
         });
     
@@ -204,28 +315,45 @@ router.post("/:id",  async (req, res) => {
         console.error(err);
         res.status(400).json({
             message: `Failed to create task for project ${projectId}`,
-            error: err,
+            error: err instanceof Error ? err.message : 'Unknown error',
         });
     }
 });
 
 // Edit Task endpoint
 function entityField(key: string, value: any | null): {} {
-    return value !== undefined? {[key]: value} : {};
+    return value !== undefined ? {[key]: value} : {};
 }
-router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
+
+router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<any>=> {
     const taskId = parseInt(req.params.taskId);
     const updatedTaskData = req.body;
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
 
     try {
         const task = await taskRepo.findOne({
             where: { id: taskId },
-            relations: ['assignees'], // required for updating relations
+            relations: ['assignees', 'project'],
         });
 
         if (!task) {
-            res.status(404).json({ message: "Task not found" });
-            return;
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        // Verify task's project belongs to user's organization
+        const project = await projectRepo.findOne({
+            where: { id: task.project.id, organizationId },
+            select: ['id']
+        });
+
+        if (!project) {
+            return res.status(403).json({ 
+                message: "You don't have permission to modify this task" 
+            });
         }
 
         // Update non-relation fields
@@ -241,10 +369,22 @@ router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
 
         // If assignees are passed, update relation
         if (updatedTaskData.assignees) {
-            const users = await userRepo.findBy({id: In(updatedTaskData.assignees as string[])});
+            const users = await userRepo.find({
+                where: {
+                    id: In(updatedTaskData.assignees as string[]),
+                    organization: { id: organizationId }
+                }
+            });
+
+            if (users.length !== updatedTaskData.assignees.length) {
+                return res.status(400).json({ 
+                    message: "One or more assignees do not belong to your organization" 
+                });
+            }
+
             task.assignees = users;
             task.assigneesLastAdded = new Date();
-            await taskRepo.save(task); // Update relation
+            await taskRepo.save(task);
         }
 
         res.json({ message: `Task ${taskId} updated successfully` });
@@ -253,25 +393,50 @@ router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
         console.error(err);
         res.status(400).json({
             message: `Failed to update task ${taskId}`,
-            error: err,
+            error: err instanceof Error ? err.message : 'Unknown error',
         });
     }
 });
 
 // Delete task endpoint
-router.delete("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
+router.delete("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<any>=> {
     const taskId = parseInt(req.params.taskId);
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
     
     try {
+        const task = await taskRepo.findOne({
+            where: { id: taskId },
+            relations: ['project']
+        });
+
+        if (!task) {
+            return res.status(404).json({ message: "Task not found" });
+        }
+
+        // Verify task's project belongs to user's organization
+        const project = await projectRepo.findOne({
+            where: { id: task.project.id, organizationId },
+            select: ['id']
+        });
+
+        if (!project) {
+            return res.status(403).json({ 
+                message: "You don't have permission to delete this task" 
+            });
+        }
 
         // Check out all active users from the task before deleting
         await workActivityLogRepo.update(
             {
-              task: { id: taskId },
-              end: IsNull(),
+                task: { id: taskId },
+                end: IsNull(),
             },
             {
-              end: new Date(),
+                end: new Date(),
             }
         );
 
@@ -281,35 +446,59 @@ router.delete("/tasks/:taskId", adminOnlyMiddleware, async (req, res) => {
             message: `Successfully deleted task ${taskId}`
         });
     } catch(err) {
+        console.error(err);
         res.status(400).json({
             message: `Failed to delete task ${taskId}`,
-            error: err
+            error: err instanceof Error ? err.message : 'Unknown error'
         })
     } 
 });
 
-
 // Assign task to users
-router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
-
-    const taskRepo = AppDataSource.getRepository(Task);
-
+router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) : Promise<any>=> {
     const taskId = parseInt(req.params.taskId);
     const userIds: string[] = req.body.users;
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
 
     try {
-
         const task = await taskRepo.findOne({
             where: { id: taskId },
-            relations: ['assignees'],
+            relations: ['assignees', 'project'],
         });
 
         if (!task) {
-            res.status(404).json({ message: 'Task not found' });
-            return;
+            return res.status(404).json({ message: 'Task not found' });
         }
 
-        const users = await userRepo.findBy({ id: In(userIds) });
+        // Verify task's project belongs to user's organization
+        const project = await projectRepo.findOne({
+            where: { id: task.project.id, organizationId },
+            select: ['id']
+        });
+
+        if (!project) {
+            return res.status(403).json({ 
+                message: "You don't have permission to assign this task" 
+            });
+        }
+
+        // Ensure users belong to the same organization
+        const users = await userRepo.find({
+            where: { 
+                id: In(userIds),
+                organization: { id: organizationId }
+            }
+        });
+
+        if (users.length !== userIds.length) {
+            return res.status(400).json({ 
+                message: "One or more users do not belong to your organization" 
+            });
+        }
 
         task.assignees = [
             ...task.assignees,
@@ -317,7 +506,7 @@ router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
         ];
         task.assigneesLastAdded = new Date();
 
-        const savedTask = await taskRepo.save(task); // Triggers relation updates
+        const savedTask = await taskRepo.save(task);
 
         await notifyProjectAboutLastTaskChange(task.project.id, savedTask.updatedAt);
 
@@ -329,17 +518,22 @@ router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) => {
         console.error(err);
         res.status(400).json({
             message: `Failed to assign task ${taskId} to user(s)`,
-            error: err,
+            error: err instanceof Error ? err.message : 'Unknown error',
         });
     }
 });
 
-// Get Project by Id
-router.get("/:id", async (req, res) => {
+// Get Project by Id (scoped to organization)
+router.get("/:id", async (req, res) : Promise<any>=> {
     const id = req.params.id;
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
 
     try {
-        const project = await projectRepo.findOneOrFail({
+        const project = await projectRepo.findOne({
             relations: [
                 "tasks",
                 "tasks.assignees",
@@ -349,14 +543,21 @@ router.get("/:id", async (req, res) => {
                 "materialLogs",
                 "assignedManagers"
             ],
-            where: { id: id }
+            where: { id, organizationId }
         });
+
+        if (!project) {
+            return res.status(404).json({
+                message: `Project with ${id} not found`
+            });
+        }
 
         res.json(project);
     } catch(err) {
-        res.status(404).json({
-            message: `Project with ${id} not found`,
-            error: err
+        console.error(err);
+        res.status(500).json({
+            message: `Error fetching project ${id}`,
+            error: err instanceof Error ? err.message : 'Unknown error'
         });
     }
 });
