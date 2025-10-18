@@ -1,10 +1,31 @@
 import { Request, Response } from "express";
 import { Task } from "../models/Task";
 import { AppDataSource } from "../data-source";
+import { loginUser } from "../services/authService";
 
 const taskRepo = AppDataSource.getRepository(Task);
 
 export default {
+    async relogin(req: Request, res: Response): Promise<any> {
+
+      const email = (req as any).user.email;
+
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+          res.status(401).json({ error: 'Token missing' });
+          return;
+      }
+
+      const existingJwtToken = authHeader.split(' ')[1];
+
+      try {
+        const { token, user } = await loginUser(String(email), undefined, existingJwtToken);
+        res.json({ token, user });
+      } catch(err) {
+          console.error(err);
+          res.status(401).json({ error: err })
+      }
+    },
     async getTaskAssignees(req: Request, res: Response): Promise<any> {
         try {
           const taskId = parseInt(req.params.taskId);

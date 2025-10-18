@@ -49,24 +49,37 @@ export const registerUser = async (
       role: role || "member"
     });
   
-    await userRepo.save(user);
+    const savedUser = await userRepo.save(user);
   
     // if (organization.createdBy.id === "temp") {
     //   organization.createdBy = user;
     //   await organizationRepo.save(organization);
     // }
   
-    return user;
+    return savedUser;
   };
   
-  export const loginUser = async (email: string, plainPassword: string) => {
+  export const loginUser = async (email: string, plainPassword?: string, jwtToken?: string) => {
+
+    if (!plainPassword && !jwtToken) {
+      // Either password or jwt token must be passed in for logging in
+      throw "Password must be passed in for logging in";
+    }
+
     const user = await userRepo.findOne({
       where: { email },
       relations: ["organization"],
     });
     if (!user) throw new Error("Invalid credentials");
   
-    const match = await bcrypt.compare(plainPassword, user.password);
+    let match;
+    if (plainPassword) {
+      match = await bcrypt.compare(plainPassword, user.password);
+    } else if (jwtToken) {
+      // If JWT token is passed in, then we surely reached this path after getting through authMiddleware
+      match = true;
+    }
+
     if (!match) throw new Error("Invalid credentials");
   
     const token = jwt.sign(

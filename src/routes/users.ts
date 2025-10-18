@@ -22,6 +22,9 @@ router.get("/", async (req, res)=> {
 /// Otherwise, return all assignees for this task
 router.get("/task/:taskId", usersController.getTaskAssignees);
 
+// Password-less login using existing JWT
+router.post("/me/re-login", usersController.relogin)
+
 router.get('/me', async (req: Request, res: Response) => {
 
     try {
