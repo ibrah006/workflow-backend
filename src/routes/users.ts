@@ -1,9 +1,7 @@
 import { Router, Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { User } from "../models/User";
-import { authMiddleware } from "../middleware/authMiddleware";
 import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
-import { registerUser } from "../services/authService";
 import { Task } from "../models/Task";
 import usersController from '../controller/users';
 

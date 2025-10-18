@@ -29,21 +29,18 @@ export const registerUser = async (
     email: string,
     plainPassword: string,
     name: string,
+    organizationName: string,
     role?: string,
-    organizationName?: string
   ) => {
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
   
-    let organization = null;
-    if (organizationName) {
-      organization = await organizationRepo.findOne({ where: { name: organizationName } });
-      if (!organization) {
-        organization = organizationRepo.create({
-          name: organizationName,
-          createdBy: { id: "temp" },
-        });
-        await organizationRepo.save(organization);
-      }
+    let organization = await organizationRepo.findOne({ where: { name: organizationName } });
+    if (!organization) {
+    organization = organizationRepo.create({
+        name: organizationName,
+        createdBy: { id: "temp" },
+    });
+    await organizationRepo.save(organization);
     }
   
     const user = userRepo.create({
@@ -51,7 +48,7 @@ export const registerUser = async (
       password: hashedPassword,
       name,
       role: role || "member",
-      organization,
+      organization
     });
   
     await userRepo.save(user);

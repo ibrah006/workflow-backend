@@ -17,10 +17,10 @@ router.post('/login', async (req, res)=> {
 });
 
 router.post('/register', async (req, res)=> {
-    const { email, password, name, role } = req.body;
+    const { email, password, name, role, organizationName } = req.body;
 
     try {
-        const user = await registerUser(email, password, name, role);
+        const user = await registerUser(email, password, name, organizationName, role);
         res.json({ message: 'User registered', user });
     } catch(err) {
         res.status(400).json({ error: err });
