@@ -14,6 +14,7 @@ import analyticsRoutes from './routes/analytics';
 import materialLogRoutes from './routes/materialLog';
 import companyRoutes from './routes/company';
 import progressLogRoutes from './routes/progressLog';
+import organizationRoutes from './routes/organization';
 
 import os from 'os';
 
@@ -62,6 +63,7 @@ app.use('/material-logs', authMiddleware, materialLogRoutes);
 app.use('/companies', authMiddleware, companyRoutes)
 // Progress log routes
 app.use('/progressLogs', progressLogRoutes)
+app.use('/organizations', authMiddleware, organizationRoutes)
 
 app.listen(PORT, () => {
   const ip = getLocalExternalIp();
