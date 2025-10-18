@@ -1,15 +1,30 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryColumn, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Task } from "./Task";
 import { User } from "./User";
 import { Company } from "./Company";
 import { ProgressLog } from "./ProgressLog";
 import { MaterialLog } from "./MaterialLog";
+import { AppDataSource } from "../data-source";
 
 
 @Entity()
 export class Project {
-    @PrimaryGeneratedColumn("uuid")
+    @PrimaryColumn({ type: 'varchar' })
     id!: string;
+
+    @BeforeInsert()
+        async generateProjectId() {
+        const year = new Date().getFullYear();
+        const projectRepo = AppDataSource.getRepository(Project);
+
+        const countThisYear = await projectRepo
+            .createQueryBuilder("project")
+            .where(`EXTRACT(YEAR FROM project."createdAt") = :year`, { year })
+            .getCount();
+
+        const sequenceNumber = String(countThisYear + 1).padStart(3, '0');
+        this.id = `PRJ-${year}-${sequenceNumber}`;
+    }
 
     @Column()
     name!: string;
