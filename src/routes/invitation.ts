@@ -112,7 +112,7 @@ router.post(
  */
 router.delete(
   '/:invitationId',
-  authenticate,
+  authMiddleware,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { invitationId } = req.params;
@@ -261,5 +261,59 @@ router.get(
     }
   }
 );
+
+/**
+ * GET /api/invitations/me
+ * Get all pending invitations for the current user
+ */
+router.get(
+  '/me',
+  authenticate,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const user = (req as any).user;
+      const userEmail = user.email; // Assuming email is available in user object
+
+      if (!userEmail) {
+        res.status(400).json({
+          success: false,
+          message: 'User email not found',
+        });
+        return;
+      }
+
+      const invitations = await invitationService.getUserPendingInvitations(
+        userEmail.toLowerCase()
+      );
+
+      res.status(200).json({
+        success: true,
+        data: invitations.map((inv) => ({
+          id: inv.id,
+          organizationId: inv.organizationId,
+          organizationName: inv.organization?.name,
+          role: inv.role,
+          token: inv.token,
+          expiresAt: inv.expiresAt,
+          invitedBy: inv.invitedBy
+            ? {
+                id: inv.invitedBy.id,
+                // Add other safe user fields like name, email if needed
+              }
+            : null,
+          createdAt: inv.createdAt,
+        })),
+        count: invitations.length,
+      });
+    } catch (error: any) {
+      console.error('Get user invitations error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to fetch user invitations',
+      });
+    }
+  }
+)
+
 
 export default router;

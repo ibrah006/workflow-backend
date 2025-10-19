@@ -75,7 +75,7 @@ export class InvitationService {
   ): Promise<Invitation> {
     const invitation = await this.invitationRepo.findOne({
       where: { id: invitationId },
-      relations: ['organization'],
+      relations: ['organization', 'invitedBy'],
     });
 
     if (!invitation) {
@@ -90,7 +90,7 @@ export class InvitationService {
     // Add your authorization logic here
     if (invitation.invitedBy.id !== userId) {
       // Check if user is org admin
-      // throw new Error('Unauthorized to cancel this invitation');
+      throw new Error('Unauthorized to cancel this invitation');
     }
 
     invitation.status = InvitationStatus.CANCELLED;
@@ -103,7 +103,7 @@ export class InvitationService {
     organizationId: string,
     status?: InvitationStatus
   ): Promise<Invitation[]> {
-    const where: any = { organizationId };
+    const where: any = { organizationId, status: InvitationStatus.PENDING };
     if (status) {
       where.status = status;
     }
@@ -148,5 +148,16 @@ export class InvitationService {
     // Mark invitation as accepted
     invitation.status = InvitationStatus.ACCEPTED;
     await this.invitationRepo.save(invitation);
+  }
+
+  async getUserPendingInvitations(email: string): Promise<Invitation[]> {
+    return this.invitationRepo.find({
+      where: {
+        email,
+        status: InvitationStatus.PENDING,
+      },
+      relations: ['organization', 'invitedBy'],
+      order: { createdAt: 'DESC' },
+    });
   }
 }

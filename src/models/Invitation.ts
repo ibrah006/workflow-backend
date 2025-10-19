@@ -51,7 +51,7 @@ import {
     @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
     invitedBy!: User;
   
-    @Column({ type: 'varchar', length: 100, nullable: true })
+    @Column({ type: 'varchar', length: 100 })
     role!: string;
   
     @CreateDateColumn()

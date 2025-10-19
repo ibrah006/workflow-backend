@@ -34,6 +34,9 @@ export class Organization {
 
     @OneToMany(()=> User, (user)=> user.organization)
     users!: User;
+
+    @Column()
+    isSample!: boolean;
   
     @CreateDateColumn()
     createdAt!: Date;
