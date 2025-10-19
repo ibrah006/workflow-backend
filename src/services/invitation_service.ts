@@ -94,9 +94,9 @@ export class InvitationService {
     }
 
     invitation.status = InvitationStatus.CANCELLED;
-    await this.invitationRepo.save(invitation);
+    const savedInvitation = await this.invitationRepo.save(invitation);
 
-    return invitation;
+    return savedInvitation;
   }
 
   async getOrganizationInvitations(
