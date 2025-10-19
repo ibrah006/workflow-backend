@@ -66,7 +66,6 @@ export class User {
     organization?: Organization;
 
     // Other Attributes
-
     @OneToMany(()=> Team, (team)=> team.createdBy, { nullable: true })
     teamsCreated?: Team[];
 

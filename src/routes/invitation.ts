@@ -1,0 +1,242 @@
+import { Router, Request, Response } from 'express';
+import { InvitationService } from '../services/invitation_service';
+import { InvitationStatus } from '../models/Invitation';
+
+const router = Router();
+const invitationService = new InvitationService();
+
+// Middleware to authenticate user (implement your own)
+const authenticate = (req: Request, res: Response, next: any) => {
+  // Your authentication logic
+  // req.user = { id: 'user-id', ... }
+  next();
+};
+
+// DTO interfaces for validation
+interface SendInvitationDto {
+  email: string;
+  organizationId: string;
+  role?: string;
+}
+
+interface CancelInvitationDto {
+  invitationId: string;
+}
+
+/**
+ * POST /api/invitations
+ * Send an invitation to join an organization
+ */
+router.post(
+  '/',
+  authenticate,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, organizationId, role } = req.body as SendInvitationDto;
+
+      // Validation
+      if (!email || !organizationId) {
+        res.status(400).json({
+          success: false,
+          message: 'Email and organizationId are required',
+        });
+        return;
+      }
+
+      // Email validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        res.status(400).json({
+          success: false,
+          message: 'Invalid email format',
+        });
+        return;
+      }
+
+      const userId = (req as any).user.id; // From auth middleware
+
+      const invitation = await invitationService.sendInvitation(
+        email.toLowerCase(),
+        organizationId,
+        userId,
+        role
+      );
+
+      res.status(201).json({
+        success: true,
+        message: 'Invitation sent successfully',
+        data: {
+          id: invitation.id,
+          email: invitation.email,
+          status: invitation.status,
+          expiresAt: invitation.expiresAt,
+          role: invitation.role,
+        },
+      });
+    } catch (error: any) {
+      console.error('Send invitation error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to send invitation',
+      });
+    }
+  }
+);
+
+/**
+ * DELETE /api/invitations/:invitationId
+ * Cancel a pending invitation
+ */
+router.delete(
+  '/:invitationId',
+  authenticate,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { invitationId } = req.params;
+      const userId = (req as any).user.id;
+
+      if (!invitationId) {
+        res.status(400).json({
+          success: false,
+          message: 'Invitation ID is required',
+        });
+        return;
+      }
+
+      const invitation = await invitationService.cancelInvitation(
+        invitationId,
+        userId
+      );
+
+      res.status(200).json({
+        success: true,
+        message: 'Invitation cancelled successfully',
+        data: {
+          id: invitation.id,
+          email: invitation.email,
+          status: invitation.status,
+        },
+      });
+    } catch (error: any) {
+      console.error('Cancel invitation error:', error);
+      const statusCode = error.message.includes('not found') ? 404 : 400;
+      res.status(statusCode).json({
+        success: false,
+        message: error.message || 'Failed to cancel invitation',
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/invitations/organization/:organizationId
+ * Get all invitations for an organization
+ */
+router.get(
+  '/organization/:organizationId',
+  authenticate,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { organizationId } = req.params;
+      const { status } = req.query;
+
+      const invitations = await invitationService.getOrganizationInvitations(
+        organizationId,
+        status as InvitationStatus
+      );
+
+      res.status(200).json({
+        success: true,
+        data: invitations.map((inv) => ({
+          id: inv.id,
+          email: inv.email,
+          status: inv.status,
+          role: inv.role,
+          expiresAt: inv.expiresAt,
+          invitedBy: inv.invitedBy
+            ? {
+                id: inv.invitedBy.id,
+                // Add other safe user fields
+              }
+            : null,
+          createdAt: inv.createdAt,
+        })),
+      });
+    } catch (error: any) {
+      console.error('Get invitations error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to fetch invitations',
+      });
+    }
+  }
+);
+
+/**
+ * POST /api/invitations/accept/:token
+ * Accept an invitation (public endpoint)
+ */
+router.post(
+  '/accept/:token',
+  authenticate,
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { token } = req.params;
+      const userId = (req as any).user.id;
+
+      await invitationService.acceptInvitation(token, userId);
+
+      res.status(200).json({
+        success: true,
+        message: 'Invitation accepted successfully',
+      });
+    } catch (error: any) {
+      console.error('Accept invitation error:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to accept invitation',
+      });
+    }
+  }
+);
+
+/**
+ * GET /api/invitations/verify/:token
+ * Verify an invitation token (public endpoint)
+ */
+router.get(
+  '/verify/:token',
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { token } = req.params;
+
+      const invitation = await invitationService.getInvitationByToken(token);
+
+      if (!invitation) {
+        res.status(404).json({
+          success: false,
+          message: 'Invalid or expired invitation',
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          email: invitation.email,
+          organizationName: invitation.organization.name,
+          role: invitation.role,
+          expiresAt: invitation.expiresAt,
+        },
+      });
+    } catch (error: any) {
+      console.error('Verify invitation error:', error);
+      res.status(400).json({
+        success: false,
+        message: 'Failed to verify invitation',
+      });
+    }
+  }
+);
+
+export default router;
