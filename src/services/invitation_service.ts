@@ -4,6 +4,7 @@ import { AppDataSource } from '../data-source';
 import { Organization } from '../models/Organization';
 import { User } from '../models/User';
 import { Invitation, InvitationStatus } from '../models/Invitation';
+import { v4 as uuidv4 } from 'uuid';
 
 export class InvitationService {
   private invitationRepo: Repository<Invitation>;
@@ -56,7 +57,7 @@ export class InvitationService {
     // Add your own logic here
 
     // Generate unique token
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = uuidv4();
 
     // Set expiration (7 days from now)
     const expiresAt = new Date();
@@ -66,7 +67,7 @@ export class InvitationService {
     const invitation = this.invitationRepo.create({
       email,
       organizationId,
-      invitedById,
+      invitedBy: { id: invitedById },
       token,
       expiresAt,
       role,
@@ -100,7 +101,7 @@ export class InvitationService {
 
     // Verify user has permission to cancel (org admin or the inviter)
     // Add your authorization logic here
-    if (invitation.invitedById !== userId) {
+    if (invitation.invitedBy.id !== userId) {
       // Check if user is org admin
       // throw new Error('Unauthorized to cancel this invitation');
     }

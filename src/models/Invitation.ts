@@ -44,15 +44,12 @@ import {
     @ManyToOne(() => Organization, { onDelete: 'CASCADE' })
     organization!: Organization;
   
-    @Column({ type: 'uuid' })
+    @Column()
     @Index()
     organizationId!: string;
   
     @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
     invitedBy!: User;
-  
-    @Column({ type: 'uuid', nullable: true })
-    invitedById!: string;
   
     @Column({ type: 'varchar', length: 100, nullable: true })
     role!: string;

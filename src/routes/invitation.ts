@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { InvitationService } from '../services/invitation_service';
 import { InvitationStatus } from '../models/Invitation';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 const invitationService = new InvitationService();
@@ -29,10 +30,11 @@ interface CancelInvitationDto {
  */
 router.post(
   '/',
-  authenticate,
+  authMiddleware,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { email, organizationId, role } = req.body as SendInvitationDto;
+      const { email, role } = req.body;
+      const organizationId = (req as any).user.organizationId;
 
       // Validation
       if (!email || !organizationId) {
