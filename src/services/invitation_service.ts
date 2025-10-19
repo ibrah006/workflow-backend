@@ -39,19 +39,6 @@ export class InvitationService {
       throw new Error('Inviter not found');
     }
 
-    // Check if there's already a pending invitation
-    const existingInvitation = await this.invitationRepo.findOne({
-      where: {
-        email,
-        organizationId,
-        status: InvitationStatus.PENDING,
-      },
-    });
-
-    if (existingInvitation) {
-      throw new Error('An active invitation already exists for this email');
-    }
-
     // Check if user is already a member
     // Assuming you have a membership/organization_users table
     // Add your own logic here

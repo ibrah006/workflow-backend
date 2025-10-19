@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
 import { InvitationService } from '../services/invitation_service';
-import { InvitationStatus } from '../models/Invitation';
+import { Invitation, InvitationStatus } from '../models/Invitation';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { AppDataSource } from '../data-source';
 
 const router = Router();
 const invitationService = new InvitationService();
@@ -54,6 +55,22 @@ router.post(
         });
         return;
       }
+
+       // Check if there's already a pending invitation
+        const existingInvitation = await AppDataSource.getRepository(Invitation).findOne({
+          where: {
+            email,
+            organizationId,
+            status: InvitationStatus.PENDING,
+          },
+        });
+
+        if (existingInvitation) {
+          res.status(208).json({
+            message: "An active invitation already exists for this email",
+            invitation: existingInvitation
+          });
+        }
 
       const userId = (req as any).user.id; // From auth middleware
 
@@ -135,11 +152,11 @@ router.delete(
  * Get all invitations for an organization
  */
 router.get(
-  '/organization/:organizationId',
-  authenticate,
+  '/organization',
+  authMiddleware,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { organizationId } = req.params;
+      const organizationId = (req as any).user.organizationId;
       const { status } = req.query;
 
       const invitations = await invitationService.getOrganizationInvitations(
