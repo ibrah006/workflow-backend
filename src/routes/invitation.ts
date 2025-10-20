@@ -211,11 +211,11 @@ router.get(
  * Accept an invitation (public endpoint)
  */
 router.post(
-  '/accept/:token',
+  '/accept/:invitationToken',
   authMiddleware,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { token } = req.params;
+      const token = req.params.invitationToken;
 
       await invitationService.acceptInvitation(token);
 
@@ -224,7 +224,6 @@ router.post(
         message: 'Invitation accepted successfully',
       });
     } catch (error: any) {
-      console.error('Accept invitation error:', error);
       res.status(400).json({
         success: false,
         message: error.message || 'Failed to accept invitation',
