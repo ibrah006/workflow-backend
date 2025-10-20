@@ -303,6 +303,7 @@ router.get(
           role: inv.role,
           token: inv.token,
           expiresAt: inv.expiresAt,
+          email: userEmail,
           invitedBy: inv.invitedBy
             ? {
                 id: inv.invitedBy.id,

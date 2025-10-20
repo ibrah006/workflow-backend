@@ -86,7 +86,13 @@ export class InvitationService {
     }
 
     if (invitation.status !== InvitationStatus.PENDING) {
-      throw new Error('Only pending invitations can be cancelled');
+      // Only pending invitations can be cancelled
+
+      if (invitation.status === InvitationStatus.ACCEPTED) {
+        throw new Error('This Invitation cannot be cancelled as it has already been accepted by the user');
+      }
+
+      throw new Error('This invitation has already been cancelled (by someone) or is expired');
     }
 
     // Verify user has permission to cancel (org admin or the inviter)
