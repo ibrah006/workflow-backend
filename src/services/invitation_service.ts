@@ -89,7 +89,7 @@ export class InvitationService {
       // Only pending invitations can be cancelled
 
       if (invitation.status === InvitationStatus.ACCEPTED) {
-        throw new Error('This Invitation cannot be cancelled as it has already been accepted by the user');
+        throw new Error('This Invitation cannot be cancelled as it had already been accepted by the user');
       }
 
       throw new Error('This invitation has already been cancelled (by someone) or is expired');
@@ -149,11 +149,15 @@ export class InvitationService {
 
     if (!invitation) {
       // Invalid or expired invitation or cancelled invitation
-      throw new Error('This Invitation has been cancelled or expired');
+      throw new Error('This Invitation was cancelled or expired');
     }
 
     // Add user to organization
-    // Implement your logic to add user to organization
+    await this.userRepo.update({
+      email: invitation.email
+    }, {
+      organization: invitation.organization
+    });
 
     // Mark invitation as accepted
     invitation.status = InvitationStatus.ACCEPTED;
