@@ -342,8 +342,8 @@ router.get(
           expiresAt: inv.expiresAt,
           invitedBy: inv.invitedBy
             ? {
-                id: inv.invitedBy.id,
-                // Add other safe user fields like name, email if needed
+                ...inv.invitedBy,
+                password: undefined
               }
             : null,
           createdAt: inv.createdAt,
