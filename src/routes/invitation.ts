@@ -71,6 +71,7 @@ router.post(
             message: "An active invitation already exists for this email",
             data: existingInvitation,
           });
+          return;
         }
 
       const userId = (req as any).user.id; // From auth middleware
@@ -92,7 +93,10 @@ router.post(
           expiresAt: invitation.expiresAt,
           role: invitation.role,
           invitedBy: { id: userId },
-          organizationId: organizationId,
+          organization: {
+            id: organizationId,
+            name: invitation.organization.name
+          },
           createdAt: invitation.createdAt
         },
       });
