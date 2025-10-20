@@ -3,6 +3,8 @@ import { InvitationService } from '../services/invitation_service';
 import { Invitation, InvitationStatus } from '../models/Invitation';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { AppDataSource } from '../data-source';
+import { Organization } from '../models/Organization';
+import { User } from '../models/User';
 
 const router = Router();
 const invitationService = new InvitationService();
@@ -56,27 +58,42 @@ router.post(
         return;
       }
 
-       // Check if there's already a pending invitation
-        const existingInvitation = await AppDataSource.getRepository(Invitation).findOne({
-          where: {
-            email,
-            organizationId,
-            status: InvitationStatus.PENDING,
-          },
-          relations: ['invitedBy', 'organization']
-        });
+      // Check if the user is already part of this organization
+      const user = await AppDataSource.getRepository(User).findOne({
+        where: {
+          email: email
+        },
+        relations: ['organization']
+      });
 
-        if (existingInvitation) {
-          res.status(208).json({
-            message: "An active invitation already exists for this email",
-            data: existingInvitation,
-            organization: {
-              id: existingInvitation.organization.id,
-              name: existingInvitation.organization.name
-            }
-          });
-          return;
-        }
+      if (user && user.organization && (user.organization.id === organizationId)) {
+        res.status(409).json({
+          message: "The user is already part of this organization",
+        });
+        return;
+      }
+
+      // Check if there's already a pending invitation
+      const existingInvitation = await AppDataSource.getRepository(Invitation).findOne({
+        where: {
+          email,
+          organizationId,
+          status: InvitationStatus.PENDING,
+        },
+        relations: ['invitedBy', 'organization']
+      });
+
+      if (existingInvitation) {
+        res.status(208).json({
+          message: "An active invitation already exists for this email",
+          data: existingInvitation,
+          organization: {
+            id: existingInvitation.organization.id,
+            name: existingInvitation.organization.name
+          }
+        });
+        return;
+      }
 
       const userId = (req as any).user.id; // From auth middleware
 
