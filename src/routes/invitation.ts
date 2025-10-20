@@ -63,13 +63,17 @@ router.post(
             organizationId,
             status: InvitationStatus.PENDING,
           },
-          relations: ['invitedBy']
+          relations: ['invitedBy', 'organization']
         });
 
         if (existingInvitation) {
           res.status(208).json({
             message: "An active invitation already exists for this email",
             data: existingInvitation,
+            organization: {
+              id: existingInvitation.organization.id,
+              name: existingInvitation.organization.name
+            }
           });
           return;
         }
