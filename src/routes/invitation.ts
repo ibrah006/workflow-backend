@@ -184,6 +184,7 @@ router.get(
           status: inv.status,
           role: inv.role,
           expiresAt: inv.expiresAt,
+          organization: inv.organization,
           invitedBy: inv.invitedBy
             ? {
                 id: inv.invitedBy.id,
