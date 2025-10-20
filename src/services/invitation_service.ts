@@ -61,12 +61,15 @@ export class InvitationService {
       status: InvitationStatus.PENDING,
     });
 
-    await this.invitationRepo.save(invitation);
+    const savedInvitation = await this.invitationRepo.save(invitation);
 
     // TODO: Send invitation email
     // await this.emailService.sendInvitationEmail(email, token, organization.name);
 
-    return invitation;
+    return {
+      ...savedInvitation,
+      organization: organization
+    };
   }
 
   async cancelInvitation(
@@ -110,7 +113,7 @@ export class InvitationService {
 
     return this.invitationRepo.find({
       where,
-      relations: ['invitedBy'],
+      relations: ['invitedBy', 'organization'],
       order: { createdAt: 'DESC' },
     });
   }
