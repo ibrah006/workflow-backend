@@ -156,7 +156,8 @@ export class InvitationService {
     await this.userRepo.update({
       email: invitation.email
     }, {
-      organization: invitation.organization
+      organization: invitation.organization,
+      role: invitation.role
     });
 
     // Mark invitation as accepted
