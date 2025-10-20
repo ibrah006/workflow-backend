@@ -97,6 +97,7 @@ router.post(
           expiresAt: invitation.expiresAt,
           role: invitation.role,
           invitedBy: { id: userId },
+          token: invitation.token,
           organization: {
             id: organizationId,
             name: invitation.organization.name
@@ -211,7 +212,7 @@ router.get(
  */
 router.post(
   '/accept/:token',
-  authenticate,
+  authMiddleware,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { token } = req.params;
