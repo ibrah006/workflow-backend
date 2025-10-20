@@ -144,11 +144,12 @@ export class InvitationService {
     return invitation;
   }
 
-  async acceptInvitation(token: string, userId: string): Promise<void> {
+  async acceptInvitation(token: string): Promise<void> {
     const invitation = await this.getInvitationByToken(token);
 
     if (!invitation) {
-      throw new Error('Invalid or expired invitation');
+      // Invalid or expired invitation or cancelled invitation
+      throw new Error('This Invitation has been cancelled or expired');
     }
 
     // Add user to organization

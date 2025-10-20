@@ -185,6 +185,7 @@ router.get(
           role: inv.role,
           expiresAt: inv.expiresAt,
           organization: inv.organization,
+          token: inv.token,
           invitedBy: inv.invitedBy
             ? {
                 id: inv.invitedBy.id,
@@ -214,9 +215,8 @@ router.post(
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { token } = req.params;
-      const userId = (req as any).user.id;
 
-      await invitationService.acceptInvitation(token, userId);
+      await invitationService.acceptInvitation(token);
 
       res.status(200).json({
         success: true,
@@ -238,7 +238,11 @@ router.post(
  */
 router.get(
   '/verify/:token',
+  authMiddleware,
   async (req: Request, res: Response): Promise<void> => {
+
+    const userId = (req as any).user.id;
+
     try {
       const { token } = req.params;
 
