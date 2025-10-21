@@ -291,6 +291,8 @@ router.get("/current", async (req, res) : Promise<any> => {
                 email: user.organization.createdBy.email,
                 role: user.organization.createdBy.role
             },
+            isDomainOwner: user.organization.isDomainOwner,
+            privateDomain: user.organization.privateDomain,
             updatedAt: user.organization.updatedAt,
             memberCount,
             userRole: user.role
@@ -673,6 +675,8 @@ router.put("/claim-ownership", async (req, res) => {
                 privateDomain: userDomain
             }
         });
+
+        console.log("organization with same domain exists:", organizationWithSameDomainExists);
 
         if (!organizationWithSameDomainExists) {
             // update current organization
