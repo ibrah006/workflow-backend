@@ -47,6 +47,9 @@ export class Organization {
     @Column({ type: 'timestamptz', nullable: true })
     projectsLastAdded?: Date | null;
 
+    @Column({ default: false })
+    isDomainOwner!: boolean;
+
     // Other relations
 
     @OneToMany(() => Project, (project) => project.organization)
