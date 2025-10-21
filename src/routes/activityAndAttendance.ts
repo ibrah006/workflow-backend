@@ -442,9 +442,23 @@ router.get("/me/work-activity/active", async (req, res) => {
     })
 });
 
-// Get All layoff logs
+// Get All layoff logs scoped to current organization
 router.get("/layoff", async (req, res) => {
-    const logs = await layoffLogRepo.find();
+
+    // Scoped to current organization
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        res.status(401).json({ message: 'Organization context required' });
+        return;
+    }
+
+    const logs = await layoffLogRepo.find({
+        where: {
+            user: { organization: organizationId }
+        }
+    });
+    
     res.json(logs);
 });
 

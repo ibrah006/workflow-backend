@@ -12,7 +12,20 @@ const materialLogRepo = AppDataSource.getRepository(MaterialLog);
 
 // get all logs
 router.get("/", async (req, res)=> {
-    const logs = await materialLogRepo.find();
+
+    // Scoped to current organization
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        res.status(401).json({ message: 'Organization context required' });
+        return;
+    }
+
+    const logs = await materialLogRepo.find({
+        where: {
+            project: { organization: { id: organizationId } }
+        }
+    });
     res.json(logs);
 });
 
