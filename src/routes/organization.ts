@@ -20,6 +20,8 @@ router.post("/", async (req, res) : Promise<any> => {
     const { name, description } = req.body;
     const userId = (req as any).user?.id;
 
+    const isSample = req.query.isSample === "true";
+
     if (!userId) {
         return res.status(401).json({ message: 'Authentication required' });
     }
@@ -61,7 +63,8 @@ router.post("/", async (req, res) : Promise<any> => {
             name: name.trim(),
             description: description?.trim() || null,
             createdBy: user,
-            createdById: userId
+            createdById: userId,
+            isSample: isSample
         });
 
         const savedOrg = await organizationRepo.save(organization);
@@ -89,6 +92,9 @@ router.post("/", async (req, res) : Promise<any> => {
             message: 'Organization created successfully',
             organization: {
                 ...savedOrg,
+                users: [],
+                projects: [],
+                companies: [],
                 // TODO: make sure users are returned safe without their passwords
             },
             // Is private domain available
@@ -684,7 +690,7 @@ router.put("/claim-ownership", async (req, res) => {
             });
         } else {
             res.status(403).json({
-                message: "An organization already holds ownership of this organization"
+                message: "An organization already holds ownership of this domain"
             });
         }
     }
