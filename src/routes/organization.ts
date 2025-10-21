@@ -92,7 +92,8 @@ router.post("/", async (req, res) : Promise<any> => {
                 // TODO: make sure users are returned safe without their passwords
             },
             // Is private domain available
-            privateDomainAvailable: isPrivateDomain && !organizationWithSameDomainExists
+            privateDomainAvailable: isPrivateDomain && !organizationWithSameDomainExists,
+            privateDomain: userDomain
         });
 
     } catch (error) {
@@ -645,5 +646,48 @@ router.get("/projects-last-added", async (req, res) => {
         projectsLastAdded: projectsLastAdded
     })
 }) 
+
+// endpoint to claim organization domain ownership
+router.put("/claim-ownership", async (req, res) => {
+    const userEmail = (req as any).user.email;
+    const organizationId = (req as any).user.organizationId;
+
+    if (!organizationId) {
+        res.status(401).json({ message: 'Organization context required' });
+        return;
+    }
+
+    const isPrivateDomain = isPrivateDomainEmail(userEmail);
+
+    const userDomain = getEmailDomain(userEmail)!;
+
+    if (isPrivateDomain) {
+        const organizationWithSameDomainExists = await organizationRepo.exists({
+            where: { 
+                privateDomain: userDomain
+            }
+        });
+
+        if (!organizationWithSameDomainExists) {
+            // update current organization
+            const organization = (await organizationRepo.findOne({
+                where: { id: organizationId }
+            }))!;
+
+            organization.isDomainOwner = true;
+            organization.privateDomain = userDomain;
+
+            await organizationRepo.save(organization)
+
+            res.json({
+                message: "Successfully claimed ownership for this domain"
+            });
+        } else {
+            res.status(403).json({
+                message: "An organization already holds ownership of this organization"
+            });
+        }
+    }
+})
 
 export default router;
