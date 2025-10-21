@@ -10,8 +10,20 @@ const companyRepo = AppDataSource.getRepository(Company);
 
 // Get Companies listing
 router.get("/", async (req, res) => {
+    
+    // Scoped to current organization
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        res.status(401).json({ message: 'Organization context required' });
+        return;
+    }
+
     const companies = await companyRepo.find(
-        { relations: ["projects", "createdBy", "projects.client.createdBy", ...PROJECT_GET_RELATIONS.map((item)=> `projects.${item}`)] }
+        {
+            relations: ["projects", "createdBy", "projects.client.createdBy", ...PROJECT_GET_RELATIONS.map((item)=> `projects.${item}`)],
+            where: { organization: { id: organizationId } }
+        }
     );  
     res.json(companies);
 });
@@ -19,6 +31,13 @@ router.get("/", async (req, res) => {
 // Create company profile
 router.post("/", async (req, res) : Promise<any> => {
     const userId = (req as any).user.id;
+
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        res.status(401).json({ message: 'Organization context required' });
+        return;
+    }
 
     try {
         const companyDetails = req.body as Partial<Company>;
@@ -29,17 +48,19 @@ router.post("/", async (req, res) : Promise<any> => {
         
         const existingCompany = await companyRepo.findOne({
             where: {
-              name: ILike(companyDetails.name!),
+                organization: { id: organizationId },
+                name: ILike(companyDetails.name!),
             },
           });
           
         if (existingCompany) {
-            return res.status(400).json({ error: 'Company with this name already exists.' });
+            return res.status(400).json({ error: 'Company with this name already exists in your Organization.' });
         }
         
         // Proceed to save only if not exists
         const company = companyRepo.create({
             ...companyDetails,
+            organization: { id: organizationId },
             ... { createdBy: { id: userId } }
         });
         
@@ -49,7 +70,7 @@ router.post("/", async (req, res) : Promise<any> => {
             company: savedCompany
         });
     } catch(err) {
-        res.status(500).json({error: `Failed to Create Company profile, server ERROR`})
+        res.status(500).json({error: `Failed to Create Company profile, server ERROR, ${err}`})
     } 
 });
 
