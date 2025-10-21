@@ -369,13 +369,26 @@ router.get("/attendance/analysis", async (req, res): Promise<any> => {
 
 // Get all Attendance logs
 router.get("/attendance", adminOnlyMiddleware, async (req, res)=> {
+
+    // Scoped to current organization
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        res.status(401).json({ message: 'Organization context required' });
+        return;
+    }
+
     const logs = attendanceLogRepo.find({
-        relations: ["user"]
+        relations: ["user"],
+        where: {
+            user: { organization: { id: organizationId } }
+        }
     });
 
     res.json(logs);
 });
 
+// Get current User active attendance log
 router.get("/me/attendance/active", async (req, res) : Promise<any> => {
     const userId = (req as any).user.id;
     const activeLog = await attendanceLogRepo.findOne({
@@ -390,6 +403,7 @@ router.get("/me/attendance/active", async (req, res) : Promise<any> => {
     });
 });
 
+// Get current user active work activity log
 router.get("/me/work-activity/active", async (req, res) => {
     const userId = (req as any).user.id;
     const activeLog = await workActivityLogRepo.findOne({
@@ -397,8 +411,31 @@ router.get("/me/work-activity/active", async (req, res) => {
             user: { id: userId },
             end: IsNull()
         },
-        relations: ["task", "task.assignees", "task.project"]
+        relations: ["task", "task.assignees", "task.project", "task.project.organization"]
     });
+
+    // Get current organization
+    const currentOrganizationId = (req as any).user?.organizationId;
+
+    if (!currentOrganizationId) {
+        res.status(401).json({ message: 'Organization context required' });
+        return;
+    }    
+
+    if (activeLog && activeLog.task?.project.organization.id != currentOrganizationId) {
+        // Don't remove debug log
+        console.log("USER TRIED TO FETCH AN ACTIVITY LOG THAT they started while they were part of a different organization\nEnding it....");
+
+        // End this active work activity log
+        activeLog.end = new Date();
+        await workActivityLogRepo.save(activeLog);
+
+        res.status(404).json({
+            active: null,
+            message: "TRIED TO FETCH AN ACTIVITY LOG THAT they started while they were part of a different organization\nEnding it...."
+        })
+        return;
+    }
 
     res.status(activeLog? 200 : 404).json({
         "active": activeLog
