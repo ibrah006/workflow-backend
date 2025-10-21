@@ -249,6 +249,7 @@ router.get('/active', async (req, res) : Promise<any> => {
 });
 
 // Get all tasks
+// Not scoped to current organization / all tasks across the platform
 router.get('/', async (req, res) : Promise<any> => {
     const tasks = await taskRepo.find({
         relations: ["assignees", "project"]

@@ -6,7 +6,7 @@ import { authMiddleware } from "../middleware/authMiddleware";
 import { WorkActivityLog } from "../models/WorkActivityLog";
 import { Task } from "../models/Task";
 import { LayoffLog } from "../models/LayoffLog";
-import { IsNull } from "typeorm";
+import { Brackets, IsNull } from "typeorm";
 
 import { startOfToday, startOfWeek, startOfMonth, subDays } from 'date-fns';
 import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
@@ -324,13 +324,27 @@ router.get("/attendance/analysis", async (req, res): Promise<any> => {
         });
     }
 
-    // Get all logs that overlap with the time window
+    // Scoped to current organization
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
+
+    // Get all logs that overlap with the time window — scoped to the same organization
     const overlappingLogs = await attendanceLogRepo
         .createQueryBuilder("log")
-        .where('"log"."checkOut" IS NULL OR ("log"."checkOut" >= :start AND "log"."checkIn" <= :end)', {
-            start,
-            end: now,
+        .leftJoinAndSelect("log.user", "user")
+        .where("user.organizationId = :organizationId", { organizationId })
+        .andWhere(
+        new Brackets((qb) => {
+            qb.where('"log"."checkOut" IS NULL')
+            .orWhere('"log"."checkOut" >= :start AND "log"."checkIn" <= :end', {
+                start,
+                end: now,
+            });
         })
+        )
         .getMany();
 
     let attendanceSeconds = 0;
