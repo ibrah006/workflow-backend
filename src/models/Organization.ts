@@ -47,8 +47,12 @@ export class Organization {
     @Column({ type: 'timestamptz', nullable: true })
     projectsLastAdded?: Date | null;
 
+    // With this, any verified user (with the same domain) that signs up, will be automatically invited to join their organization
     @Column({ default: false })
     isDomainOwner!: boolean;
+
+    @Column({ nullable: true })
+    privateDomain!: string;
 
     // Other relations
 

@@ -27,3 +27,10 @@ export function isPrivateDomainEmail(email: string): boolean {
   
     return !publicDomains.has(domain);
   }
+
+export function getEmailDomain(email: string): string | null {
+  const parts = email.split('@');
+  if (parts.length !== 2) return null;
+
+  return parts[1].toLowerCase();
+}

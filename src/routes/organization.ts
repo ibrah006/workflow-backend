@@ -4,6 +4,7 @@ import { Organization } from "../models/Organization";
 import { User } from "../models/User";
 import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
 import users from "../controller/users";
+import { getEmailDomain, isPrivateDomainEmail } from "../utils/email";
 
 const router = Router();
 
@@ -70,12 +71,28 @@ router.post("/", async (req, res) : Promise<any> => {
         user.role = 'admin'; // Creator becomes admin
         await userRepo.save(user);
 
+        // Check if the email address domain  of creator is private
+        const isPrivateDomain = isPrivateDomainEmail(user.email);
+
+        const userDomain = getEmailDomain(user.email)!;
+
+        var organizationWithSameDomainExists = false;
+        if (isPrivateDomain) {
+            organizationWithSameDomainExists = await organizationRepo.exists({
+                where: { 
+                    privateDomain: userDomain
+                }
+            });
+        }
+
         return res.status(201).json({
             message: 'Organization created successfully',
             organization: {
                 ...savedOrg,
                 // TODO: make sure users are returned safe without their passwords
-            }
+            },
+            // Is private domain available
+            privateDomainAvailable: isPrivateDomain && !organizationWithSameDomainExists
         });
 
     } catch (error) {
