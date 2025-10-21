@@ -44,6 +44,9 @@ export class Organization {
     @UpdateDateColumn()
     updatedAt!: Date;
 
+    @Column({ type: 'timestamptz', nullable: true })
+    projectsLastAdded?: Date | null;
+
     // Other relations
 
     @OneToMany(() => Project, (project) => project.organization)
