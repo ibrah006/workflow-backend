@@ -10,6 +10,7 @@ import { ProgressLog } from "../models/ProgressLog";
 import projectController from "../controller/project";
 import { notifyProjectAboutLastTaskChange } from "./tasks";
 import { Company } from "../models/Company";
+import { Organization } from "../models/Organization";
 
 
 const router = Router();
@@ -20,6 +21,7 @@ const userRepo = AppDataSource.getRepository(User);
 const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 const companyRepo = AppDataSource.getRepository(Company);
+const organizationRepo = AppDataSource.getRepository(Organization);
 
 export const PROJECT_GET_RELATIONS = [
     "progressLogs", 
@@ -65,6 +67,10 @@ router.post("/", async (req, res) : Promise<any>=> {
         return res.status(401).json({ message: 'Organization context required' });
     }
 
+    const organization = (await organizationRepo.findOne({
+        where: { id: organizationId }
+    }))!;
+
     try {
         // Verify client company belongs to the same organization (if provided)
         if (data.client && (data.client as any).id) {
@@ -104,7 +110,11 @@ router.post("/", async (req, res) : Promise<any>=> {
         };
 
         const project = projectRepo.create(projectData);
-        const savedProject = await projectRepo.save(project);
+        const savedProject = await projectRepo.save(project);        
+
+        // update projects last added
+        organization.projectsLastAdded = new Date;
+        await organizationRepo.save(organization)
 
         res.status(201).json({
             message: 'Successfully created project',
