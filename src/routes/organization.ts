@@ -610,4 +610,23 @@ router.get("/search", async (req, res) : Promise<any> => {
     }
 });
 
+router.get("/projects-last-added", async (req, res) => {
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        res.status(401).json({ message: 'Organization context required' });
+        return;
+    }
+
+    const organization = await organizationRepo.findOne({
+        where: { id: organizationId }
+    });
+    
+    const projectsLastAdded = organization?.projectsLastAdded;
+
+    res.json({
+        projectsLastAdded: projectsLastAdded
+    })
+}) 
+
 export default router;
