@@ -4,6 +4,7 @@ import { User } from '../models/User';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import { Organization } from '../models/Organization';
+import { getEmailDomain, isPrivateDomainEmail } from '../utils/email';
 
 dotenv.config();
 
@@ -96,3 +97,37 @@ export const registerUser = async (
     return { token, user };
   };
   
+export const autoInviteOrganizationFrom = async (organizationId: string | undefined, email: string) : Promise<any | null> => {
+  let autoInviteOrganization = null;
+
+  // Check to see if user is part of any organization
+  if (!organizationId) {
+    // if user is not part of any organization
+    // Check to see if the user's email domain is private
+    if (isPrivateDomainEmail(email)) {
+        // Get user's private domain
+        const userEmailDomain = getEmailDomain(email)!;
+        // Check to see if there is any existing organization with this user's private domain
+        const existingOrganizationWithSamePrivateDomain = await organizationRepo.findOne({
+            where: {
+                privateDomain: userEmailDomain
+            },
+            relations: ['createdBy', 'users', 'projects', 'companies']
+        });
+        
+        if (existingOrganizationWithSamePrivateDomain) {
+            autoInviteOrganization = {
+                ...existingOrganizationWithSamePrivateDomain,
+                createdBy: { id: existingOrganizationWithSamePrivateDomain.createdBy.id },
+                // Omit password field
+                users: existingOrganizationWithSamePrivateDomain.users.map((user) => {
+                    return {
+                        ...user,
+                        password: undefined
+                    }
+                })
+            }
+        }
+    }
+  }
+}
