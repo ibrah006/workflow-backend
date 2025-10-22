@@ -107,6 +107,9 @@ export const autoInviteOrganizationFrom = async (organizationId: string | undefi
     if (isPrivateDomainEmail(email)) {
         // Get user's private domain
         const userEmailDomain = getEmailDomain(email)!;
+
+        console.log("user email private domain:", userEmailDomain);
+
         // Check to see if there is any existing organization with this user's private domain
         const existingOrganizationWithSamePrivateDomain = await organizationRepo.findOne({
             where: {
@@ -114,12 +117,14 @@ export const autoInviteOrganizationFrom = async (organizationId: string | undefi
             },
             relations: ['createdBy', 'users', 'projects', 'companies']
         });
+
+        console.log("existingOrganizationWithSamePrivateDomain:", existingOrganizationWithSamePrivateDomain);
         
         if (existingOrganizationWithSamePrivateDomain) {
             autoInviteOrganization = {
                 ...existingOrganizationWithSamePrivateDomain,
                 createdBy: { id: existingOrganizationWithSamePrivateDomain.createdBy.id },
-                // Omit password field
+                // Omit password fields
                 users: existingOrganizationWithSamePrivateDomain.users.map((user) => {
                     return {
                         ...user,
@@ -130,4 +135,6 @@ export const autoInviteOrganizationFrom = async (organizationId: string | undefi
         }
     }
   }
+
+  return autoInviteOrganization;
 }

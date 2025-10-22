@@ -116,17 +116,18 @@ router.post("/", async (req, res) : Promise<any> => {
  * Join an existing organization
  * Requires organization ID or invitation code
  */
+// TODO: do not let any private domain user join organization with another private domain
 router.post("/join", async (req, res) : Promise<any> => {
-    const { organizationId, organizationName } = req.body;
+    const { organizationId } = req.body;
     const userId = (req as any).user?.id;
 
     if (!userId) {
         return res.status(401).json({ message: 'Authentication required' });
     }
 
-    if (!organizationId && !organizationName) {
+    if (!organizationId) {
         return res.status(400).json({ 
-            message: 'Either organizationId or organizationName is required' 
+            message: 'Either organizationId is required' 
         });
     }
 
@@ -149,15 +150,10 @@ router.post("/join", async (req, res) : Promise<any> => {
 
         // Find the organization
         let organization;
-        if (organizationId) {
-            organization = await organizationRepo.findOne({
-                where: { id: organizationId }
-            });
-        } else if (organizationName) {
-            organization = await organizationRepo.findOne({
-                where: { name: organizationName.trim() }
-            });
-        }
+        organization = await organizationRepo.findOne({
+            where: { id: organizationId },
+            relations: ['createdBy', 'users', 'projects', 'companies']
+        });
 
         if (!organization) {
             return res.status(404).json({ message: 'Organization not found' });
@@ -171,9 +167,15 @@ router.post("/join", async (req, res) : Promise<any> => {
         return res.status(200).json({
             message: 'Successfully joined organization',
             organization: {
-                id: organization.id,
-                name: organization.name,
-                description: organization.description
+                ...organization,
+                createdBy: { id: organization.createdBy.id },
+                // Omit password fields
+                users: organization.users.map((user) => {
+                    return {
+                        ...user,
+                        password: undefined
+                    }
+                })
             }
         });
 
@@ -699,5 +701,6 @@ router.put("/claim-ownership", async (req, res) => {
         }
     }
 })
+
 
 export default router;

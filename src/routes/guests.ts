@@ -11,7 +11,7 @@ router.post('/login', async (req, res)=> {
 
         const organizationId = (req as any).user.organizationId;
 
-        const autoInviteOrganization = autoInviteOrganizationFrom(organizationId, email);
+        const autoInviteOrganization = await autoInviteOrganizationFrom(organizationId, email);
 
         res.json({ token, user, autoInviteOrganization });
     } catch(err) {

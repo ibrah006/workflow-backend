@@ -44,7 +44,7 @@ router.get('/me', async (req: Request, res: Response) => {
 
         const organizationId = (req as any).user.organizationId;
 
-        const autoInviteOrganization = autoInviteOrganizationFrom(organizationId, user.email);
+        const autoInviteOrganization = await autoInviteOrganizationFrom(organizationId, user.email);
     
         // omit sensitive fields like password
         const { password, ...safeUser } = user;
