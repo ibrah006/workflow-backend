@@ -33,7 +33,7 @@ export class Organization {
     createdById!: string;
 
     @OneToMany(()=> User, (user)=> user.organization)
-    users!: User;
+    users!: User[];
 
     @Column()
     isSample!: boolean;

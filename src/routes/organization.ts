@@ -64,7 +64,7 @@ router.post("/", async (req, res) : Promise<any> => {
             description: description?.trim() || null,
             createdBy: user,
             createdById: userId,
-            isSample: isSample
+            isSample: isSample,
         });
 
         const savedOrg = await organizationRepo.save(organization);
