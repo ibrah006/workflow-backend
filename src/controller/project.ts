@@ -80,6 +80,8 @@ export default {
             return res.status(404).json({ message: "Project not found" });
         }
 
+        console.log("progressLogLastModifiedAt:", project.progressLogLastModifiedAt);
+
         res.json({
             lastModifiedAt: project?.progressLogLastModifiedAt
         })
