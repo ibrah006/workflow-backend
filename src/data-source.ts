@@ -20,7 +20,7 @@ export const AppDataSource = isProduction? new DataSource({
     ssl: {
         rejectUnauthorized: false
     },
-    subscribers: ['dist/subscribers/*.ts'],
+    subscribers: ['dist/subscribers/*.js'],
 }) : new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST_DEV,
@@ -31,6 +31,6 @@ export const AppDataSource = isProduction? new DataSource({
   entities: ['src/models/*.ts'],
   migrations: ['src/migrations/*.ts'],
   subscribers: ['src/subscribers/*.ts'],
-  synchronize: true,
+  // synchronize: true,
   logging: true,
 });
