@@ -118,7 +118,7 @@ router.post("/", async (req, res) : Promise<any> => {
  */
 // TODO: do not let any private domain user join organization with another private domain
 router.post("/join", async (req, res) : Promise<any> => {
-    const { organizationId } = req.body;
+    const { organizationId, role } = req.body;
     const userId = (req as any).user?.id;
 
     if (!userId) {
@@ -161,7 +161,7 @@ router.post("/join", async (req, res) : Promise<any> => {
 
         // Add user to organization
         user.organization = organization;
-        user.role = 'viewer'; // Default role for new members
+        user.role = role; // Default role for new members
         await userRepo.save(user);
 
         return res.status(200).json({

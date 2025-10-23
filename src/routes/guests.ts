@@ -9,9 +9,12 @@ router.post('/login', async (req, res)=> {
     try {
         const { token, user } = await loginUser(String(email), String(password));
 
-        const organizationId = (req as any).user.organizationId;
-
-        const autoInviteOrganization = await autoInviteOrganizationFrom(organizationId, email);
+        let autoInviteOrganization = null;
+        try {
+            autoInviteOrganization = (req as any).user.organizationId;
+        } catch(e) {
+            autoInviteOrganization = await autoInviteOrganizationFrom(undefined, email);
+        }
 
         res.json({ token, user, autoInviteOrganization });
     } catch(err) {
