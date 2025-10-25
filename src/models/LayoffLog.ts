@@ -1,5 +1,4 @@
 import { Column, Entity, ManyToMany, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { WorkActivityLog } from "./WorkActivityLog";
 import { User } from "./User";
 
 
