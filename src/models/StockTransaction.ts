@@ -59,7 +59,7 @@ import {
   
     @ManyToOne(() => User)
     @JoinColumn({ name: 'createdById' })
-    createdB!: User;
+    createdBy!: User;
   
     @CreateDateColumn()
     createdAt!: Date;
