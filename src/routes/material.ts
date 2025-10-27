@@ -6,15 +6,8 @@ import { MeasureType } from '../models/Material';
 const router = Router();
 const materialService = new MaterialService();
 
-// Middleware to authenticate user (implement your own)
-// This is a placeholder - replace with your actual auth middleware
-const authenticate = (req: Request, res: Response, next: Function) => {
-  // Example: req.user = { id: 'user-id', organizationId: 'org-id' };
-  next();
-};
-
 // Create a new material
-router.post('/materials', authenticate, async (req: Request, res: Response) => {
+router.post('/materials',  async (req: Request, res: Response) => {
   try {
     const { name, description, measureType, minStockLevel, initialStock } = req.body;
     const userId = (req as any).user.id;
@@ -55,7 +48,7 @@ router.post('/materials', authenticate, async (req: Request, res: Response) => {
 });
 
 // Get all materials for organization
-router.get('/materials', authenticate, async (req: Request, res: Response) => {
+router.get('/materials',  async (req: Request, res: Response) => {
   try {
     const organizationId = (req as any).user.organizationId;
     const materials = await materialService.getMaterialsByOrganization(organizationId);
@@ -67,7 +60,7 @@ router.get('/materials', authenticate, async (req: Request, res: Response) => {
 });
 
 // Get material by ID
-router.get('/materials/:id', authenticate, async (req: Request, res: Response) => {
+router.get('/materials/:id',  async (req: Request, res: Response) => {
   try {
     const material = await materialService.getMaterial(req.params.id);
     res.json(material);
@@ -78,7 +71,7 @@ router.get('/materials/:id', authenticate, async (req: Request, res: Response) =
 });
 
 // Update material
-router.put('/materials/:id', authenticate, async (req: Request, res: Response) => {
+router.put('/materials/:id',  async (req: Request, res: Response) => {
   try {
     const { name, description, measureType, minStockLevel } = req.body;
     
@@ -97,7 +90,7 @@ router.put('/materials/:id', authenticate, async (req: Request, res: Response) =
 });
 
 // Delete material
-router.delete('/materials/:id', authenticate, async (req: Request, res: Response) => {
+router.delete('/materials/:id',  async (req: Request, res: Response) => {
   try {
     await materialService.deleteMaterial(req.params.id);
     res.status(204).send();
@@ -108,7 +101,7 @@ router.delete('/materials/:id', authenticate, async (req: Request, res: Response
 });
 
 // Stock In - Add stock to material
-router.post('/materials/:id/stock-in', authenticate, async (req: Request, res: Response) => {
+router.post('/materials/:id/stock-in',  async (req: Request, res: Response) => {
   try {
     const { quantity, notes } = req.body;
     const userId = (req as any).user.id;
@@ -135,7 +128,7 @@ router.post('/materials/:id/stock-in', authenticate, async (req: Request, res: R
 });
 
 // Stock Out - Remove stock from material
-router.post('/materials/:id/stock-out', authenticate, async (req: Request, res: Response) => {
+router.post('/materials/:id/stock-out',  async (req: Request, res: Response) => {
   try {
     const { quantity, projectId, notes } = req.body;
     const userId = (req as any).user.id;
@@ -163,7 +156,7 @@ router.post('/materials/:id/stock-out', authenticate, async (req: Request, res: 
 });
 
 // Get material transaction history
-router.get('/materials/:id/transactions', authenticate, async (req: Request, res: Response) => {
+router.get('/materials/:id/transactions',  async (req: Request, res: Response) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
     const transactions = await materialService.getMaterialTransactions(
@@ -178,7 +171,7 @@ router.get('/materials/:id/transactions', authenticate, async (req: Request, res
 });
 
 // Get transaction by barcode
-router.get('/transactions/barcode/:barcode', authenticate, async (req: Request, res: Response) => {
+router.get('/transactions/barcode/:barcode',  async (req: Request, res: Response) => {
   try {
     const transaction = await materialService.getTransactionByBarcode(req.params.barcode);
     
@@ -195,7 +188,7 @@ router.get('/transactions/barcode/:barcode', authenticate, async (req: Request, 
 });
 
 // Get low stock materials
-router.get('/materials/alerts/low-stock', authenticate, async (req: Request, res: Response) => {
+router.get('/materials/alerts/low-stock',  async (req: Request, res: Response) => {
   try {
     const organizationId = (req as any).user.organizationId;
     const materials = await materialService.getLowStockMaterials(organizationId);
@@ -207,7 +200,7 @@ router.get('/materials/alerts/low-stock', authenticate, async (req: Request, res
 });
 
 // Get material usage for a project
-router.get('/projects/:projectId/materials', authenticate, async (req: Request, res: Response) => {
+router.get('/projects/:projectId/materials',  async (req: Request, res: Response) => {
   try {
     const transactions = await materialService.getProjectMaterialUsage(req.params.projectId);
     res.json(transactions);

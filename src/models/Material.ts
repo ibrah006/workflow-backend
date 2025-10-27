@@ -23,7 +23,7 @@ export enum MeasureType {
 
 @Entity('materials')
 export class Material {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryGeneratedColumn()
   id!: string;
 
   @Column()

@@ -71,7 +71,7 @@ app.use('/organizations', authMiddleware, organizationRoutes)
 app.use('/invitations', invitationRoutes)
 // Sample Organization routes
 app.use('/sample-organization', sampleOrganizationRoutes)
-app.use('/api', materialRoutes);
+app.use('/material', authMiddleware, materialRoutes);
 
 app.listen(PORT, () => {
   const ip = getLocalExternalIp();
