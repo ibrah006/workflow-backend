@@ -65,6 +65,13 @@ export class MaterialService {
       throw new Error('User not found');
     }
 
+    const existingMaterial = await this.materialRepo.find({
+      where: {name: data.name}
+    });
+    if (!existingMaterial) {
+      return existingMaterial;
+    }
+
     // Create material
     const material = this.materialRepo.create({
       name: data.name,
