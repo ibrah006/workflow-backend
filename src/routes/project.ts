@@ -197,10 +197,18 @@ router.post("/:id/progressLogs", async (req, res) : Promise<any> => {
     }
     delete body.updatedAt;
 
+    if (project.status == body.status) {
+        return res.status(209).json({ message: "Can't update project to the existing status" });
+    }
+
     let savedLog;
     try {
         const log = progressLogRepo.create(body);
         savedLog = await progressLogRepo.save(log);
+
+        // Update project status
+        project.status = log.status;
+        await projectRepo.save(project);
     } catch(err) {
         console.error(err);
         return res.status(500).json({ message: "Unexpected error from server side" });
