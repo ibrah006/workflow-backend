@@ -129,7 +129,7 @@ router.post('/materials/:id/stock-in',  async (req: Request, res: Response) => {
 });
 
 // Stock Out - Remove stock from material
-router.post('/materials/:id/stock-out',  async (req: Request, res: Response) => {
+router.post('/materials/:barcode/stock-out',  async (req: Request, res: Response) => {
   try {
     const { quantity, projectId, notes } = req.body;
     const userId = (req as any).user.id;
@@ -141,15 +141,15 @@ router.post('/materials/:id/stock-out',  async (req: Request, res: Response) => 
       return;
     }
 
-    const transaction = await materialService.stockOut({
-      materialId: req.params.id,
+    const stockTransaction = await materialService.stockOut({
+      barcode: req.params.barcode,
       quantity: parseFloat(quantity),
       projectId,
       notes,
       userId,
     });
 
-    res.status(201).json(transaction);
+    res.status(201).json(stockTransaction);
   } catch (error) {
     console.error('Error processing stock out:', error);
     res.status(500).json({ error: error });

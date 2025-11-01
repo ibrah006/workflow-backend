@@ -26,7 +26,7 @@ interface StockInDto {
 }
 
 interface StockOutDto {
-  materialId: string;
+  barcode: string;
   quantity: number;
   projectId?: string;
   notes?: string;
@@ -196,7 +196,14 @@ export class MaterialService {
   }
 
   async stockOut(data: StockOutDto): Promise<StockTransaction | null> {
-    const material = await this.getMaterial(data.materialId);
+
+    const stockTransaction = await this.getTransactionByBarcode(data.barcode);
+
+    if (!stockTransaction) {
+      throw new Error('Stock in Transaction not found with the given barcode');
+    }
+
+    const material = stockTransaction.material;
     const user = await this.userRepo.findOne({
       where: { id: data.userId },
     });
@@ -229,7 +236,7 @@ export class MaterialService {
 
     // Create transaction record
     const transaction = this.transactionRepo.create({
-      materialId: data.materialId,
+      materialId: material.id,
       type: TransactionType.STOCK_OUT,
       quantity: data.quantity,
       balanceAfter: material.currentStock,
@@ -261,7 +268,7 @@ export class MaterialService {
   async getTransactionByBarcode(barcode: string): Promise<StockTransaction | null> {
     return this.transactionRepo.findOne({
       where: { barcode },
-      relations: ['material', 'createdBy'],
+      relations: ['material', 'createdBy', 'material.organization', 'material.createdBy'],
     });
   }
 
