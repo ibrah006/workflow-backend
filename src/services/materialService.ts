@@ -23,6 +23,7 @@ interface StockInDto {
   quantity: number;
   notes?: string;
   userId: string;
+  organizationId: string
 }
 
 interface StockOutDto {
@@ -92,6 +93,7 @@ export class MaterialService {
         quantity: data.initialStock,
         notes: 'Initial stock',
         userId: data.createdById,
+        organizationId: organization.id
       });
     }
 
@@ -149,10 +151,22 @@ export class MaterialService {
     await this.materialRepo.remove(material);
   }
 
-  private generateBarcode(): string {
+  private async generateBarcode(organizationId: string, materialId: string): Promise<string> {
+
+    const materialNumber = (await this.materialRepo.countBy({
+      organizationId
+    })) + 1;
+
+    const transactionNumber = (await this.transactionRepo.countBy({
+      material: {
+        id: materialId,
+        organizationId
+      }
+    })) + 1;
+
     const timestamp = Date.now().toString(36);
     const random = crypto.randomBytes(4).toString('hex');
-    return `MAT-${timestamp}-${random}`.toUpperCase();
+    return `MAT-${materialNumber} ${transactionNumber}`.toUpperCase();
   }
 
   async stockIn(data: StockInDto): Promise<StockTransaction | null> {
@@ -174,7 +188,7 @@ export class MaterialService {
     await this.materialRepo.save(material);
 
     // Generate unique barcode for this stock-in
-    const barcode = this.generateBarcode();
+    const barcode = await this.generateBarcode(data.organizationId, material.id);
 
     // Create transaction record
     const transaction = this.transactionRepo.create({
@@ -268,6 +282,15 @@ export class MaterialService {
   async getTransactionByBarcode(barcode: string): Promise<StockTransaction | null> {
     return this.transactionRepo.findOne({
       where: { barcode },
+      relations: ['material', 'createdBy', 'material.organization', 'material.createdBy'],
+    });
+  }
+
+  async getTransactions(organizationId: string): Promise<StockTransaction[]> {
+    return this.transactionRepo.find({
+      where: {
+        material: { organizationId: organizationId }
+      },
       relations: ['material', 'createdBy', 'material.organization', 'material.createdBy'],
     });
   }

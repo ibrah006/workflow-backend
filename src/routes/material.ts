@@ -106,6 +106,7 @@ router.post('/materials/:id/stock-in',  async (req: Request, res: Response) => {
   try {
     const { quantity, notes } = req.body;
     const userId = (req as any).user.id;
+    const organizationId = (req as any).user.organizationId;
 
     if (!quantity || quantity <= 0) {
       res.status(400).json({
@@ -119,6 +120,7 @@ router.post('/materials/:id/stock-in',  async (req: Request, res: Response) => {
       quantity: parseFloat(quantity),
       notes,
       userId,
+      organizationId
     });
 
     res.status(201).json(transaction);
@@ -175,6 +177,23 @@ router.get('/materials/:id/transactions',  async (req: Request, res: Response) =
 router.get('/transactions/barcode/:barcode',  async (req: Request, res: Response) => {
   try {
     const transaction = await materialService.getTransactionByBarcode(req.params.barcode);
+    
+    if (!transaction) {
+      res.status(404).json({ error: 'Transaction not found' });
+      return;
+    }
+
+    res.json(transaction);
+  } catch (error) {
+    console.error('Error fetching transaction by barcode:', error);
+    res.status(500).json({ error: error });
+  }
+});
+
+// Get transaction for current organization
+router.get('/transactions',  async (req: Request, res: Response) => {
+  try {
+    const transaction = await materialService.getTransactions((req as any).organizationId);
     
     if (!transaction) {
       res.status(404).json({ error: 'Transaction not found' });
