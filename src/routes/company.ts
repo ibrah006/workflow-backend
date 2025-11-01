@@ -51,10 +51,11 @@ router.post("/", async (req, res) : Promise<any> => {
                 organization: { id: organizationId },
                 name: ILike(companyDetails.name!),
             },
+            relations: ['createdBy', 'projects']
           });
           
         if (existingCompany) {
-            return res.status(400).json({ error: 'Company with this name already exists in your Organization.' });
+            return res.status(209).json({ error: 'Company with this name already exists in your Organization.', company: existingCompany });
         }
         
         // Proceed to save only if not exists
