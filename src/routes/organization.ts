@@ -342,6 +342,39 @@ router.get("/members", async (req, res) : Promise<any> => {
 });
 
 /**
+ * GET /organizations/members/:memberId
+ * Get a specific member of current user's organization by ID
+ */
+router.get("/members/:memberId", async (req, res) : Promise<any> => {
+    const organizationId = (req as any).user?.organizationId;
+
+    const memberId = req.params.memberId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
+
+    try {
+        const member = await userRepo.findOne({
+            where: { organization: { id: organizationId }, id: memberId },
+            select: ['id', 'name', 'email', 'role', 'createdAt'],
+            order: { createdAt: 'ASC' }
+        });
+
+        return res.status(200).json({
+            member
+        });
+
+    } catch (error) {
+        console.error('Error fetching member:', error);
+        return res.status(500).json({ 
+            message: 'Failed to fetch organization member',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        });
+    }
+});
+
+/**
  * PUT /organizations/members/:userId/role
  * Update a member's role (admin only)
  */
