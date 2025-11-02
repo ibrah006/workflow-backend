@@ -42,6 +42,7 @@ export class MaterialController {
         quantity: parseFloat(req.body.quantity),
         notes: req.body.notes,
         userId: (req as any).user.id,
+        organizationId: (req as any).user.organizationId
       });
 
       if (!transaction) {
