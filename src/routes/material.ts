@@ -166,6 +166,7 @@ router.get('/materials/:id/transactions',  async (req: Request, res: Response) =
       req.params.id,
       limit
     );
+    console.log("transactions by material:", transactions);
     res.json(transactions);
   } catch (error) {
     console.error('Error fetching transactions:', error);
