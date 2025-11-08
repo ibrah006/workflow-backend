@@ -91,7 +91,7 @@ export const registerUser = async (
         organizationId: user.organization?.id,
       },
       JWT_SECRET,
-      { expiresIn: "3d" }
+      { expiresIn: "99d" }
     );
   
     return { token, user };
