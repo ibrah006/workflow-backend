@@ -172,7 +172,7 @@ export class MaterialService {
       await this.transactionRepo.save(stockTransactions);
     }
 
-    return savedMaterials;
+    return inserted;
   }
 
   // Return with material barcode
