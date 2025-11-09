@@ -7,6 +7,9 @@ export class MaterialController {
   constructor(private materialService: MaterialService) {}
 
   async createMaterial(req: Request, res: Response, next: NextFunction) {
+
+    const organizationId = (req as any).user.organizationId;
+
     try {
       // Validate request
       const errors = validationResult(req);
@@ -16,9 +19,8 @@ export class MaterialController {
 
       const material = await this.materialService.createMaterial({
         ...req.body,
-        organizationId: (req as any).user.organizationId,
         createdById: (req as any).user.id,
-      });
+      }, organizationId);
 
       res.status(201).json({
         success: true,

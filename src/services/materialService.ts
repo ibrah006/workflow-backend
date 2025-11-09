@@ -8,13 +8,12 @@ import { User } from '../models/User';
 import { Project } from '../models/Project';
 import { AppDataSource } from '../data-source';
 
-interface CreateMaterialDto {
+export interface CreateMaterialDto {
   name: string;
   description?: string;
   measureType: MeasureType;
   minStockLevel?: number;
   initialStock?: number;
-  organizationId: string;
   createdById: string;
 }
 
@@ -49,10 +48,10 @@ export class MaterialService {
     this.projectRepo = AppDataSource.getRepository(Project);
   }
 
-  async createMaterial(data: CreateMaterialDto): Promise<Material> {
+  async createMaterial(data: CreateMaterialDto, organizationId: string): Promise<Material> {
     // Verify organization exists
     const organization = await this.organizationRepo.findOne({
-      where: { id: data.organizationId },
+      where: { id: organizationId },
     });
     if (!organization) {
       throw new Error('Organization not found');
@@ -80,7 +79,7 @@ export class MaterialService {
       measureType: data.measureType,
       minStockLevel: data.minStockLevel || 0,
       currentStock: data.initialStock || 0,
-      organizationId: data.organizationId,
+      organizationId: organizationId,
       createdById: data.createdById,
     });
 
@@ -98,6 +97,70 @@ export class MaterialService {
     }
 
     return material;
+  }
+
+  async createMaterials(
+    materialsData: CreateMaterialDto[],
+    organizationId: string
+  ): Promise<Material[]> {
+    if (!materialsData || materialsData.length === 0) {
+      throw new Error('No materials data provided');
+    }
+
+    // Verify organization exists
+    const organization = await this.organizationRepo.findOne({
+      where: { id: organizationId },
+    });
+    if (!organization) {
+      throw new Error('Organization not found');
+    }
+
+    // Verify user exists
+    const userId = materialsData[0].createdById;
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Create all materials
+    const materials = materialsData.map((data) =>
+      this.materialRepo.create({
+        name: data.name,
+        description: data.description,
+        measureType: data.measureType,
+        minStockLevel: data.minStockLevel || 0,
+        currentStock: data.initialStock || 0,
+        organizationId: organizationId,
+        createdById: data.createdById,
+      })
+    );
+
+    // Bulk insert materials
+    const savedMaterials = await this.materialRepo.save(materials);
+
+    // Prepare stock-in transactions for materials with initial stock
+    const stockTransactions: StockTransaction[] = [];
+    for (const [index, material] of savedMaterials.entries()) {
+      const initialStock = materialsData[index].initialStock;
+      if (initialStock && initialStock > 0) {
+        const transaction = await this.stockIn({
+          materialId: material.id,
+          quantity: initialStock,
+          userId: userId,
+          organizationId: organizationId
+        }, false);
+        stockTransactions.push(transaction!);
+      }
+    }
+
+    // Bulk insert stock transactions if any
+    if (stockTransactions.length > 0) {
+      await this.transactionRepo.save(stockTransactions);
+    }
+
+    return savedMaterials;
   }
 
   async getMaterial(id: string): Promise<Material> {
@@ -169,7 +232,7 @@ export class MaterialService {
     return `MAT-${materialNumber} ${transactionNumber}`.toUpperCase();
   }
 
-  async stockIn(data: StockInDto): Promise<StockTransaction | null> {
+  async stockIn(data: StockInDto, saveautoSave: boolean = true): Promise<StockTransaction | null> {
     const material = await this.getMaterial(data.materialId);
     const user = await this.userRepo.findOne({
       where: { id: data.userId },
@@ -201,12 +264,16 @@ export class MaterialService {
       createdById: data.userId,
     });
 
-    await this.transactionRepo.save(transaction);
+    if (saveautoSave) {
+      await this.transactionRepo.save(transaction);
 
-    return this.transactionRepo.findOne({
-      where: { id: transaction.id },
-      relations: ['material', 'createdBy'],
-    });
+      return this.transactionRepo.findOne({
+        where: { id: transaction.id },
+        relations: ['material', 'createdBy'],
+      });
+    }
+
+    return transaction;
   }
 
   async stockOut(data: StockOutDto): Promise<StockTransaction | null> {

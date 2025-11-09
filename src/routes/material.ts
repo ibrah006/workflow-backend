@@ -1,48 +1,63 @@
 // src/routes/materialRoutes.ts
 import { Router, Request, Response } from 'express';
-import { MaterialService } from '../services/materialService';
+import { CreateMaterialDto, MaterialService } from '../services/materialService';
 import { MeasureType } from '../models/Material';
+import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
 const materialService = new MaterialService();
 
-// Create a new material
-router.post('/materials',  async (req: Request, res: Response) => {
+// Create a new material or multiple materials
+router.post('/materials', async (req: Request, res: Response) : Promise<any> =>  {
   try {
-    const { name, description, measureType, minStockLevel, initialStock } = req.body;
     const userId = (req as any).user.id;
     const organizationId = (req as any).user.organizationId;
 
-    // Validate required fields
-    if (!name || !measureType) {
-      res.status(400).json({
-        error: 'Name and measure type are required',
-      });
-      return;
+    // Check if request body is an array (bulk create) or single object
+    const isBulk = Array.isArray(req.body);
+    const materialsData = isBulk ? req.body : [req.body];
+
+    // Validate all materials
+    for (const material of materialsData) {
+      const { name, measureType } = material;
+      
+      if (!name || !measureType) {
+        return res.status(400).json({
+          error: 'Name and measure type are required for all materials',
+        });
+      }
+
+      if (!Object.values(MeasureType).includes(measureType)) {
+        return res.status(400).json({
+          error: `Invalid measure type: ${measureType}`,
+          validTypes: Object.values(MeasureType),
+        });
+      }
     }
 
-    // Validate measure type
-    if (!Object.values(MeasureType).includes(measureType)) {
-      res.status(400).json({
-        error: 'Invalid measure type',
-        validTypes: Object.values(MeasureType),
-      });
-      return;
-    }
-
-    const material = await materialService.createMaterial({
-      name,
-      description,
-      measureType,
-      minStockLevel,
-      initialStock,
+    // Prepare materials with user and org data
+    const preparedMaterials = materialsData.map((material: CreateMaterialDto) => ({
+      name: material.name,
+      description: material.description,
+      measureType: material.measureType,
+      minStockLevel: material.minStockLevel,
+      initialStock: material.initialStock,
       organizationId,
       createdById: userId,
-    });
+    }));
 
-    res.status(201).json(material);
+    let result;
+    if (isBulk) {
+      // Bulk create
+      result = await materialService.createMaterials(preparedMaterials, organizationId);
+    } else {
+      // Single create
+      result = await materialService.createMaterial(preparedMaterials[0], organizationId);
+    }
+
+    res.status(201).json(result);
   } catch (error) {
-    console.error('Error creating material:', error);
+    console.error('Error creating material(s):', error);
     res.status(500).json({ error: error });
   }
 });
