@@ -139,11 +139,22 @@ export class MaterialService {
     );
 
     // Bulk insert materials
-    const savedMaterials = await this.materialRepo.save(materials);
+    const savedMaterials = await this.materialRepo
+      .createQueryBuilder()
+      .insert()
+      .into(Material)
+      .values(materials)
+      .onConflict(`("organizationId", "name") DO NOTHING`)
+      .returning("*")
+      .execute();
+
+    const inserted = savedMaterials.raw.map(
+      (row: Partial<Material>) => this.materialRepo.create(row)
+    );
 
     // Prepare stock-in transactions for materials with initial stock
     const stockTransactions: StockTransaction[] = [];
-    for (const [index, material] of savedMaterials.entries()) {
+    for (const [index, material] of inserted.entries()) {
       const initialStock = materialsData[index].initialStock;
       if (initialStock && initialStock > 0) {
         const transaction = await this.stockIn({
