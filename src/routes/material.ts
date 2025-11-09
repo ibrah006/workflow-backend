@@ -71,8 +71,7 @@ router.get('/materials',  async (req: Request, res: Response) => {
     res.json(materials);
   } catch (error) {
     console.error('Error fetching materials:', error);
-    res.status(500).json({ error: error });
-    
+    res.status(500).json({ error: error }); 
   }
 });
 

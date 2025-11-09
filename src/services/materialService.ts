@@ -83,7 +83,7 @@ export class MaterialService {
       createdById: data.createdById,
     });
 
-    await this.materialRepo.save(material);
+    const savedMaterial = await this.materialRepo.save(material);
 
     // If initial stock provided, create initial stock-in transaction
     if (data.initialStock && data.initialStock > 0) {
@@ -96,7 +96,7 @@ export class MaterialService {
       });
     }
 
-    return material;
+    return savedMaterial;
   }
 
   // Return with material barcode
