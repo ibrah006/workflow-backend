@@ -54,6 +54,9 @@ export class Material {
   @Column()
   createdById!: string;
 
+  @Column()
+  barcode!: string;
+
   @ManyToOne(() => User)
   @JoinColumn({ name: 'createdById' })
   createdBy!: User;
