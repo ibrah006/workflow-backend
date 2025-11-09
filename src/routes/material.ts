@@ -55,6 +55,7 @@ router.post('/materials', async (req: Request, res: Response) : Promise<any> => 
       result = await materialService.createMaterial(preparedMaterials[0], organizationId);
     }
 
+    // result = Material[] | Material
     res.status(201).json(result);
   } catch (error) {
     console.error('Error creating material(s):', error);

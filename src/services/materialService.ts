@@ -99,6 +99,7 @@ export class MaterialService {
     return material;
   }
 
+  // Return with material barcode
   async createMaterials(
     materialsData: CreateMaterialDto[],
     organizationId: string
@@ -163,6 +164,7 @@ export class MaterialService {
     return savedMaterials;
   }
 
+  // Return with material barcode
   async getMaterial(id: string): Promise<Material> {
     const material = await this.materialRepo.findOne({
       where: { id },
@@ -176,6 +178,7 @@ export class MaterialService {
     return material;
   }
 
+  // Return with materials barcode
   async getMaterialsByOrganization(organizationId: string): Promise<Material[]> {
     return this.materialRepo.find({
       where: { organizationId },
@@ -212,6 +215,20 @@ export class MaterialService {
     }
 
     await this.materialRepo.remove(material);
+  }
+
+  // NOT GENERATE, GET Barcode
+  private async getMaterialBarcode(organizationId: string, materialId: string): Promise<string> {
+
+    const materialNumber = (await this.materialRepo.countBy({
+      organizationId
+    }));
+
+    if (materialNumber===0) {
+      throw "No materials found for this organization\nGet Material barcode called on organization with no materials";
+    }
+    
+    return `MAT-${materialNumber}`.toUpperCase();
   }
 
   private async generateBarcode(organizationId: string, materialId: string): Promise<string> {
