@@ -41,7 +41,7 @@ import {
     @Column({ type: 'decimal', precision: 10, scale: 2 })
     balanceAfter!: number;
   
-    @Column({ nullable: true })
+    @Column({ nullable: true, unique: true })
     barcode?: string;
   
     @Column({ type: 'text', nullable: true })

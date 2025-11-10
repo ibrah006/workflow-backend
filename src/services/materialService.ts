@@ -228,25 +228,11 @@ export class MaterialService {
     await this.materialRepo.remove(material);
   }
 
-  // NOT GENERATE, GET Barcode
-  private async getMaterialBarcode(organizationId: string, materialId: string): Promise<string> {
-
-    const materialNumber = (await this.materialRepo.countBy({
-      organizationId
-    }));
-
-    if (materialNumber===0) {
-      throw "No materials found for this organization\nGet Material barcode called on organization with no materials";
-    }
-    
-    return `MAT-${materialNumber}`.toUpperCase();
-  }
-
   private async generateBarcode(organizationId: string, materialId: string): Promise<string> {
 
-    const materialNumber = (await this.materialRepo.countBy({
-      organizationId
-    })) + 1;
+    const materialBarcode = (await this.materialRepo.findOneBy({
+      id: materialId
+    }))!.barcode;
 
     const transactionNumber = (await this.transactionRepo.countBy({
       material: {
@@ -257,7 +243,7 @@ export class MaterialService {
 
     const timestamp = Date.now().toString(36);
     const random = crypto.randomBytes(4).toString('hex');
-    return `MAT-${materialNumber} ${transactionNumber}`.toUpperCase();
+    return `${materialBarcode} ${transactionNumber}`.toUpperCase();
   }
 
   async stockIn(data: StockInDto, saveautoSave: boolean = true): Promise<StockTransaction | null> {
