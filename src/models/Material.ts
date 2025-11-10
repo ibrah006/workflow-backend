@@ -26,6 +26,9 @@ export class Material {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
+  @Column({ type: 'int', nullable: true })
+  materialNumber!: number;
+
   @Column()
   name!: string;
 
