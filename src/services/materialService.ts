@@ -362,6 +362,12 @@ export class MaterialService {
     });
   }
 
+  async getMaterialByMaterialBarcode(materialBarcode: string) : Promise<Material | null> {
+    return await this.materialRepo.findOne({
+      where: { barcode: materialBarcode }
+    });
+  }
+
   async getMaterialTransactions(
     materialId: string,
     limit: number = 50

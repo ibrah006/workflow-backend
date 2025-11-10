@@ -116,6 +116,22 @@ router.delete('/materials/:id',  async (req: Request, res: Response) => {
   }
 });
 
+router.get("/materials/barcode/:materialBarcode", async (req: Request, res: Response)=> {
+
+  const materialBarcode = req.params.materialBarcode;
+
+  try {
+    const material = materialService.getMaterialByMaterialBarcode(materialBarcode);
+
+    res.json({
+      material
+    });
+  } catch(err) {
+    console.error('Error getting material by its barcode:', err);
+    res.status(500).json({ error: err, message: 'Error getting material by its barcode' });
+  }
+});
+
 // Stock In - Add stock to material
 router.post('/materials/:id/stock-in',  async (req: Request, res: Response) => {
   try {
