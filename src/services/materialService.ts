@@ -96,6 +96,8 @@ export class MaterialService {
       });
     }
 
+    console.log("saved material:", savedMaterial);
+
     return savedMaterial;
   }
 
