@@ -96,7 +96,7 @@ export class MaterialService {
       });
     }
 
-    const savedMaterial = this.materialRepo.findOne({where: {id: material.id}});
+    const savedMaterial = (await this.materialRepo.findOne({where: {id: material.id}}))!;
 
     console.log("saved material:", savedMaterial);
 
