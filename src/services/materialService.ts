@@ -381,6 +381,7 @@ export class MaterialService {
     const materials = await this.getMaterialsByOrganization(organizationId);
     var transactions: StockTransaction[] = [];
     for (var i=0; i<transactions.length; i++) {
+      console.log(`materials[i].id: ${materials[i].id}`);
       transactions = [
         ...transactions,
         ...(await this.transactionRepo.find({
