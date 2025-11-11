@@ -228,7 +228,7 @@ router.get('/transactions',  async (req: Request, res: Response) => {
     const transaction = await materialService.getTransactions((req as any).organizationId);
     
     if (!transaction) {
-      res.status(404).json({ error: 'Transaction not found' });
+      res.status(404).json({ error: 'Transactions not found' });
       return;
     }
 

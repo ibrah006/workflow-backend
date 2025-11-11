@@ -378,12 +378,20 @@ export class MaterialService {
   }
 
   async getTransactions(organizationId: string): Promise<StockTransaction[]> {
-    return this.transactionRepo.find({
-      where: {
-        material: { organization: {id: organizationId} }
-      },
-      relations: ['material', 'createdBy', 'material.organization', 'material.createdBy'],
+    const materials = await this.getMaterialsByOrganization(organizationId);
+    let transactions: StockTransaction[] = [];
+    materials.forEach(async (material) => {
+      
+      transactions = [
+        ...transactions,
+        ...(await this.transactionRepo.find({
+          where: { materialId: material.id },
+          relations: ['material', 'createdBy', 'material.organization', 'material.createdBy'],
+        }))
+      ];
     });
+
+    return transactions;
   }
 
   async getLowStockMaterials(organizationId: string): Promise<Material[]> {
