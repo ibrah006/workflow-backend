@@ -380,7 +380,7 @@ export class MaterialService {
   async getTransactions(organizationId: string): Promise<StockTransaction[]> {
     return this.transactionRepo.find({
       where: {
-        material: { organizationId: organizationId }
+        material: { organization: {id: organizationId} }
       },
       relations: ['material', 'createdBy', 'material.organization', 'material.createdBy'],
     });
