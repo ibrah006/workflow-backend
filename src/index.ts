@@ -20,7 +20,7 @@ import sampleOrganizationRoutes from './routes/sampleOrganization';
 import materialRoutes from './routes/material';
 
 import os from 'os';
-import printerRoutes from './controller/printer';
+import printerRoutes from './routes/printer';
 
 
 const app = express();
