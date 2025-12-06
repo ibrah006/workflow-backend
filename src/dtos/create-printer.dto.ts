@@ -25,4 +25,8 @@ export class CreatePrinterDto {
   @IsOptional()
   @IsNumber()
   printSpeed?: number;
+
+  @IsString()
+  @IsNotEmpty()
+  organizationId!: string;
 }

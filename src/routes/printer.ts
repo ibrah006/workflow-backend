@@ -12,8 +12,14 @@ const printerRouter = Router();
 // POST /printers
 // --------------------------------------------------
 printerRouter.post('/', async (req, res) => {
+
+  const organizationId = (req as any).user.organizationId;
+
   try {
-    const dto = Object.assign(new CreatePrinterDto(), req.body);
+    const dto = Object.assign(new CreatePrinterDto(), {
+      ...req.body,
+      organizationId
+    });
     await validateOrReject(dto);
 
     const printerRepo = AppDataSource.getRepository(Printer);
@@ -34,6 +40,9 @@ printerRouter.post('/', async (req, res) => {
 // PATCH /printers/:id
 // --------------------------------------------------
 printerRouter.patch('/:id', async (req, res) : Promise<any> => {
+  
+  const organizationId = (req as any).user.organizationId;
+
   try {
     const dto = Object.assign(new UpdatePrinterDto(), req.body);
     await validateOrReject(dto);
@@ -41,7 +50,7 @@ printerRouter.patch('/:id', async (req, res) : Promise<any> => {
     const printerRepo = AppDataSource.getRepository(Printer);
 
     const printer = await printerRepo.findOne({
-      where: { id: req.params.id },
+      where: { id: req.params.id, organization: { id: organizationId } },
     });
 
     if (!printer) {
@@ -65,10 +74,11 @@ printerRouter.patch('/:id', async (req, res) : Promise<any> => {
 // DELETE /printers/:id
 // --------------------------------------------------
 printerRouter.delete('/:id', async (req, res) : Promise<any> => {
+  const organizationId = (req as any).user.organizationId;
   try {
     const printerRepo = AppDataSource.getRepository(Printer);
 
-    const result = await printerRepo.delete(req.params.id);
+    const result = await printerRepo.delete({id: req.params.id, organization: { id: organizationId }});
 
     if (!result.affected) {
       return res.status(404).json({ message: 'Printer not found' });
@@ -86,10 +96,14 @@ printerRouter.delete('/:id', async (req, res) : Promise<any> => {
 // LIST PRINTERS
 // GET /printers
 // --------------------------------------------------
-printerRouter.get('/', async (_, res) => {
+printerRouter.get('/', async (req, res) => {
+
+  const organizationId = (req as any).user.organizationId;
+
   try {
     const printers = await AppDataSource.getRepository(Printer).find({
       order: { createdAt: 'DESC' },
+      where: { organization: { id: organizationId } }
     });
 
     res.json(printers);
@@ -107,14 +121,16 @@ printerRouter.get('/:id', async (req, res) => {
 
     const id = req.params.id;
 
+    const organizationId = (req as any).user.organizationId;
+
     try {
       const printer = await AppDataSource.getRepository(Printer).findOne({
-        where: { id: id }
+        where: { id: id, organization: { id: organizationId } }
       });
 
       if (!printer) {
         res.status(404).json({
-            message: "Printer with this id not found"
+            message: "Printer not found"
         })
         return;
       }
