@@ -20,6 +20,7 @@ import sampleOrganizationRoutes from './routes/sampleOrganization';
 import materialRoutes from './routes/material';
 
 import os from 'os';
+import printerRoutes from './controller/printer';
 
 
 const app = express();
@@ -72,10 +73,12 @@ app.use('/invitations', invitationRoutes)
 // Sample Organization routes
 app.use('/sample-organization', sampleOrganizationRoutes)
 app.use('/material', authMiddleware, materialRoutes);
+// Printer routes
+app.use('/printers', authMiddleware, printerRoutes);
 
 app.listen(PORT, () => {
   const ip = getLocalExternalIp();
-  // console.log(`Server is running at http://${ip || 'localhost'}:${PORT}`);
+  console.log(`Server is running at http://${ip || 'localhost'}:${PORT}`);
 });
 
 function getLocalExternalIp(): string | undefined {

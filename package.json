@@ -17,6 +17,7 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^5.1.1",
+    "class-validator": "^0.14.3",
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
