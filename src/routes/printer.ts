@@ -99,4 +99,31 @@ printerRouter.get('/', async (_, res) => {
   }
 });
 
+// --------------------------------------------------
+// Get Printer by Id
+// GET /printers/:printerId
+// --------------------------------------------------
+printerRouter.get('/:id', async (req, res) => {
+
+    const id = req.params.id;
+
+    try {
+      const printer = await AppDataSource.getRepository(Printer).findOne({
+        where: { id: id }
+      });
+
+      if (!printer) {
+        res.status(404).json({
+            message: "Printer with this id not found"
+        })
+        return;
+      }
+  
+      res.json(printer);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err });
+    }
+  });
+
 export default printerRouter;

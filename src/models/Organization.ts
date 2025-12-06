@@ -12,6 +12,7 @@ import { User } from './User';
 import { Project } from './Project';
 import { Team } from './Team';
 import { Company } from './Company';
+import { Printer } from './Printer';
 
 @Entity()
 export class Organization {
@@ -64,5 +65,8 @@ export class Organization {
 
     @OneToMany(() => Company, (company) => company.organization)
     companies!: Company[];
+
+    @OneToMany(() => Printer, (company) => company.organization)
+    printers!: Printer[];
   }
   
