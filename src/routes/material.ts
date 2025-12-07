@@ -1,8 +1,9 @@
 // src/routes/materialRoutes.ts
 import { Router, Request, Response } from 'express';
 import { CreateMaterialDto, MaterialService } from '../services/materialService';
-import { MeasureType } from '../models/Material';
+import { Material, MeasureType } from '../models/Material';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { AppDataSource } from '../data-source';
 
 const router = Router();
 const materialService = new MaterialService();
@@ -253,12 +254,61 @@ router.get('/materials/alerts/low-stock',  async (req: Request, res: Response) =
 
 // Get material usage for a project
 router.get('/projects/:projectId/materials',  async (req: Request, res: Response) => {
+  const organizationId = (req as any).user.organizationId;
   try {
-    const transactions = await materialService.getProjectMaterialUsage(req.params.projectId);
+    const transactions = await materialService.getProjectMaterialUsage(req.params.projectId, organizationId);
     res.json(transactions);
   } catch (error) {
     console.error('Error fetching project material usage:', error);
     res.status(500).json({ error: error });
+  }
+});
+
+// get material stock percentage
+// returns what percentage of the materials in stock are above the min stock level
+router.get('/stock-percentage', async (req: Request, res: Response) : Promise<any> => {
+
+  const materialRepo = AppDataSource.getRepository(Material);
+
+  const organizationId = (req as any).user.organizationId;
+
+  try {
+    // Get all materials with their current stock and minimum stock levels
+    const materials = await materialRepo.find({
+      where: { organizationId },
+      select: ['id', 'currentStock', 'minStockLevel']
+    });
+
+    if (materials.length === 0) {
+      return res.json({
+        percentage: 0,
+        totalMaterials: 0,
+        materialsAboveMin: 0,
+        materialsBelowMin: 0
+      });
+    }
+
+    // Count materials above minimum stock level
+    const materialsAboveMin = materials.filter(
+      material => material.currentStock >= material.minStockLevel
+    ).length;
+
+    const materialsBelowMin = materials.length - materialsAboveMin;
+
+    // Calculate percentage
+    const percentage = (materialsAboveMin / materials.length) * 100;
+
+    return res.json({
+      percentage: Math.round(percentage * 100) / 100, // Round to 2 decimal places
+      totalMaterials: materials.length,
+      materialsAboveMin,
+      materialsBelowMin
+    });
+  } catch (error) {
+    console.error('Error calculating stock percentage:', error);
+    return res.status(500).json({
+      error: 'Failed to calculate stock percentage'
+    });
   }
 });
 

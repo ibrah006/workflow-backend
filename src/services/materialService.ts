@@ -397,9 +397,9 @@ export class MaterialService {
       .getMany();
   }
 
-  async getProjectMaterialUsage(projectId: string): Promise<StockTransaction[]> {
+  async getProjectMaterialUsage(projectId: string, organizationId: string): Promise<StockTransaction[]> {
     return this.transactionRepo.find({
-      where: { projectId, type: TransactionType.STOCK_OUT },
+      where: { projectId, type: TransactionType.STOCK_OUT, material: { organizationId } },
       relations: ['material', 'createdBy'],
       order: { createdAt: 'DESC' },
     });
