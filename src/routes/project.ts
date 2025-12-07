@@ -581,7 +581,7 @@ router.get("/:id", async (req, res) : Promise<any>=> {
 });
 
 // --------------------------------------------------
-// GET ACTIVE PROJECTS
+// GET Projects overall status
 // GET /projects/active
 // --------------------------------------------------
 // { activeProjects, activeProjectsLength, pendingProjectsLength, finishedLength }
