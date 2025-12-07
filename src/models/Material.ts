@@ -29,7 +29,7 @@ export class Material {
   @Column({ type: 'int', nullable: true })
   materialNumber!: number;
 
-  @Column()
+  @Column({ nullable: false })
   name!: string;
 
   @Column({ type: 'text', nullable: true })

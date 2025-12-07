@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Organization } from "./Organization";
 
 export enum PrinterStatus {
@@ -41,7 +41,11 @@ export enum PrinterStatus {
     @UpdateDateColumn()
     updatedAt!: Date;
 
-    @ManyToOne(()=> Organization, (org)=> org.printers)
+    @Column()
+    organizationId!: string;
+
+    @ManyToOne(() => Organization, (org)=> org.printers)
+    @JoinColumn({ name: 'organizationId' })
     organization!: Organization;
 
   }

@@ -15,6 +15,8 @@ printerRouter.post('/', async (req, res) => {
 
   const organizationId = (req as any).user.organizationId;
 
+  console.log("printer creation org id:", organizationId);
+
   try {
     const dto = Object.assign(new CreatePrinterDto(), {
       ...req.body,
