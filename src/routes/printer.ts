@@ -152,12 +152,21 @@ printerRouter.get('/active', async (req, res) => {
 
     const organizationId = (req as any).user.organizationId;
 
+    const printerRepo = AppDataSource.getRepository(Printer);
+
     try {
-      const printers = await AppDataSource.getRepository(Printer).find({
+      const printers = await printerRepo.find({
         where: { organization: { id: organizationId }, status: PrinterStatus.ACTIVE }
       });
+
+      const totalPrintersCount = printerRepo.count({
+        where: { organization: { id: organizationId }}
+      })
   
-      res.json(printers);
+      res.json({
+        activePrinters: printers,
+        totalPrinters: totalPrintersCount
+      });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: err });
