@@ -584,7 +584,8 @@ router.get("/:id", async (req, res) : Promise<any>=> {
 // GET ACTIVE PROJECTS
 // GET /projects/active
 // --------------------------------------------------
-router.get("/active", async (req, res) => {
+// { activeProjects, activeProjectsLength, pendingProjectsLength, finishedLength }
+router.get("/projects-overall-status", async (req, res) => {
     const organizationId = (req as any).user?.organizationId;
   
     try {
@@ -599,10 +600,26 @@ router.get("/active", async (req, res) => {
           createdAt: 'DESC',
         },
       });
+
+      const pendingLength = await projectRepo.count({
+        where: {
+            organizationId,
+            status: "pending",
+        }
+      });
+
+      const finishedLength = await projectRepo.count({
+        where: {
+            organizationId,
+            status: "finished",
+        }
+      });
   
       res.json({
         activeProjects,
-        length: activeProjects.length
+        activeLength: activeProjects.length,
+        pendingLength,
+        finishedLength
       });
     } catch (err) {
       console.error(err);
