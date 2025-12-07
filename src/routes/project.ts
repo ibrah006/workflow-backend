@@ -4,7 +4,7 @@ import { Project } from "../models/Project";
 import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
 import { Task } from "../models/Task";
 import { User } from "../models/User";
-import { In, IsNull } from "typeorm";
+import { In, IsNull, Not } from "typeorm";
 import { WorkActivityLog } from "../models/WorkActivityLog";
 import { ProgressLog } from "../models/ProgressLog";
 import projectController from "../controller/project";
@@ -579,5 +579,32 @@ router.get("/:id", async (req, res) : Promise<any>=> {
         });
     }
 });
+
+// --------------------------------------------------
+// GET ACTIVE PROJECTS
+// GET /projects/active
+// --------------------------------------------------
+router.get("/active", async (req, res) => {
+    const organizationId = (req as any).user?.organizationId;
+  
+    try {
+      const projectRepo = AppDataSource.getRepository(Project);
+  
+      const activeProjects = await projectRepo.find({
+        where: {
+          organizationId,
+          status: Not(In(['cancelled', 'finished'])),
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+      });
+  
+      res.json(activeProjects);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Failed to fetch active projects' });
+    }
+  });
 
 export default router;
