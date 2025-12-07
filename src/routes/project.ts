@@ -587,6 +587,8 @@ router.get("/:id", async (req, res) : Promise<any>=> {
 // { activeProjects, activeProjectsLength, pendingProjectsLength, finishedLength }
 router.get("/projects-overall-status", async (req, res) => {
     const organizationId = (req as any).user?.organizationId;
+
+    console.log("overall status called");
   
     try {
       const projectRepo = AppDataSource.getRepository(Project);
@@ -614,6 +616,8 @@ router.get("/projects-overall-status", async (req, res) => {
             status: "finished",
         }
       });
+
+      console.log("overall status call success");
   
       res.json({
         activeProjects,
@@ -622,7 +626,8 @@ router.get("/projects-overall-status", async (req, res) => {
         finishedLength
       });
     } catch (err) {
-      console.error(err);
+    //   console.log("overall status call failed");
+    //   console.error("get project overall status error: ", err);
       res.status(500).json({ error: 'Failed to fetch active projects' });
     }
   });

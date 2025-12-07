@@ -165,7 +165,7 @@ printerRouter.get('/active', async (req, res) => {
   
       res.json({
         activePrinters: printers,
-        totalPrinters: totalPrintersCount
+        totalPrintersCount
       });
     } catch (err) {
       console.error(err);
