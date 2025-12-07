@@ -600,11 +600,16 @@ router.get("/active", async (req, res) => {
         },
       });
   
-      res.json(activeProjects);
+      res.json({
+        activeProjects,
+        length: activeProjects.length
+      });
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: 'Failed to fetch active projects' });
     }
   });
+
+
 
 export default router;
