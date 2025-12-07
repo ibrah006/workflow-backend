@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Organization } from "./Organization";
+import { Task } from "./Task";
 
 export enum PrinterStatus {
     ACTIVE = 'active',
@@ -47,6 +48,17 @@ export enum PrinterStatus {
     @ManyToOne(() => Organization, (org)=> org.printers)
     @JoinColumn({ name: 'organizationId' })
     organization!: Organization;
+
+    @Column()
+    currentTaskId!: string;
+
+    @ManyToOne(() => Task)
+    @JoinColumn({ name: 'currentTaskId' })
+    currentTask!: Task;
+
+    // All the tasks done on this printer
+    @OneToMany(()=> Task, (task)=> task.printer)
+    tasks!: Task[];
 
   }
   

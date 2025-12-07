@@ -6,6 +6,7 @@ import { Message } from "./Message";
 import { WorkActivityLog } from "./WorkActivityLog";
 import { MaterialLog } from "./MaterialLog";
 import { ProgressLog } from "./ProgressLog";
+import { Printer } from "./Printer";
 
 
 @Entity()
@@ -57,6 +58,14 @@ export class Task {
     @ManyToOne(() => ProgressLog, { nullable: false })
     @JoinColumn({ name: 'progressLogId' })
     progressLog!: ProgressLog;
+
+    // The printer that this job(task) was completed on
+    @Column()
+    printerId!: string;
+
+    @ManyToOne(() => Printer, (printer)=> printer.tasks)
+    @JoinColumn({ name: 'printer' })
+    printer!: Printer;
 
     // All the Material logs initiated for this task
     // @OneToMany(()=> MaterialLog, (log)=> log.task)
