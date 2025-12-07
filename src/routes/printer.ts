@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { AppDataSource } from '../data-source';
 import { validateOrReject } from 'class-validator';
 import { UpdatePrinterDto } from '../dtos/update-printer.dto';
-import { Printer } from '../models/Printer';
+import { Printer, PrinterStatus } from '../models/Printer';
 import { CreatePrinterDto } from '../dtos/create-printer.dto';
 
 const printerRouter = Router();
@@ -138,6 +138,26 @@ printerRouter.get('/:id', async (req, res) => {
       }
   
       res.json(printer);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err });
+    }
+  });
+
+  // --------------------------------------------------
+// Get Active Printers
+// GET /printers/active
+// --------------------------------------------------
+printerRouter.get('/active', async (req, res) => {
+
+    const organizationId = (req as any).user.organizationId;
+
+    try {
+      const printers = await AppDataSource.getRepository(Printer).find({
+        where: { organization: { id: organizationId }, status: PrinterStatus.ACTIVE }
+      });
+  
+      res.json(printers);
     } catch (err) {
       console.error(err);
       res.status(500).json({ error: err });
