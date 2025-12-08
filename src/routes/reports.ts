@@ -63,21 +63,21 @@ router.get('/projects', async (req, res) : Promise<any> => {
         completedProjects,
         delayedProjects
       ] = await Promise.all([
-        projectRepo.find({
+        projectRepo.count({
           where: {
             ...dateWhere,
             status: Not(In(['cancelled', 'finished']))
           }
         }),
   
-        projectRepo.find({
+        projectRepo.count({
           where: {
             ...dateWhere,
             status: 'finished'
           }
         }),
   
-        projectRepo.find({
+        projectRepo.count({
           where: {
             ...dateWhere,
             status: 'delayed'
@@ -137,9 +137,9 @@ router.get('/projects', async (req, res) : Promise<any> => {
         },
   
         projectGroups: {
-          active: activeProjects.length,
-          completed: completedProjects.length,
-          delayed: delayedProjects.length
+          active: activeProjects,
+          completed: completedProjects,
+          delayed: delayedProjects
         },
   
         statusDistribution,
