@@ -107,14 +107,16 @@ router.get('/projects', async (req, res) : Promise<any> => {
       // ISSUE BREAKDOWN
       // --------------------------------------
   
-      const issueRows = await progressRepo.createQueryBuilder("log")
+      const issueRows = await progressRepo
+        .createQueryBuilder("log")
+        .leftJoin("log.project", "project")
         .select("log.issue", "issue")
         .addSelect("COUNT(*)", "count")
-        .where("log.organizationId = :org", { org: organizationId })
+        .where("project.organizationId = :org", { org: organizationId })
         .andWhere("log.issue IS NOT NULL")
-        .andWhere("log.createdAt BETWEEN :from AND :to", {
-          from: fromDate,
-          to: now
+        .andWhere("log.startDate BETWEEN :from AND :to", {
+            from: fromDate,
+            to: now
         })
         .groupBy("log.issue")
         .getRawMany();
