@@ -475,9 +475,9 @@ router.delete("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<
 
 // --------------------------------------------------
 // GET Projects overall status
-// GET /projects/active
+// GET /projects/overall-status
 // --------------------------------------------------
-// { activeProjects, activeProjectsLength, pendingProjectsLength, finishedLength }
+// { activeProjects, activeProjectsLength, pendingProjectsLength, finishedLength, totalLength }
 router.get("/overall-status", async (req, res) => {
     const organizationId = (req as any).user?.organizationId;
 
@@ -485,38 +485,78 @@ router.get("/overall-status", async (req, res) => {
   
     try {
   
-      const activeProjects = await projectRepo.find({
-        where: {
-          organizationId,
-          status: Not(In(['cancelled', 'finished'])),
-        },
-        order: {
-          createdAt: 'DESC',
-        },
-      });
-
-      const pendingLength = await projectRepo.count({
-        where: {
+        const activeProjects = await projectRepo.find({
+            where: {
             organizationId,
-            status: "pending",
-        }
-      });
+            status: Not(In(['cancelled', 'finished'])),
+            },
+            order: {
+            createdAt: 'DESC',
+            },
+        });
 
-      const finishedLength = await projectRepo.count({
-        where: {
-            organizationId,
-            status: "finished",
-        }
-      });
+        const pendingLength = await projectRepo.count({
+            where: {
+                organizationId,
+                status: "pending",
+            }
+        });
 
-      console.log("overall status call success");
-  
-      res.json({
-        activeProjects,
-        activeLength: activeProjects.length,
-        pendingLength,
-        finishedLength
-      });
+        const finishedLength = await projectRepo.count({
+            where: {
+                organizationId,
+                status: "finished",
+            }
+        });
+
+        // --------------------------------------------------
+        // Month-over-month increase
+        // --------------------------------------------------
+        const today = new Date();
+        const currentMonth = today.getMonth() + 1; // 1-12
+        const currentYear = today.getFullYear();
+
+        const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+        const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+
+        // Count for current month
+        const countThisMonth = await projectRepo
+            .createQueryBuilder("p")
+            .where("p.organizationId = :orgId", { orgId: organizationId })
+            .andWhere("EXTRACT(MONTH FROM p.createdAt) = :currentMonth", {
+                currentMonth,
+            })
+            .andWhere("EXTRACT(YEAR FROM p.createdAt) = :currentYear", { currentYear })
+            .getCount();
+
+        // Count for previous month
+        const countLastMonth = await projectRepo
+            .createQueryBuilder("p")
+            .where("p.organizationId = :orgId", { orgId: organizationId })
+            .andWhere("EXTRACT(MONTH FROM p.createdAt) = :lastMonth", { lastMonth })
+            .andWhere("EXTRACT(YEAR FROM p.createdAt) = :lastMonthYear", {
+                lastMonthYear,
+            })
+            .getCount();
+
+        const increaseWRTPrevMonth = countThisMonth - countLastMonth;
+
+        console.log("overall status call success");
+
+        // --------------------------------------------------
+        // Response
+        // --------------------------------------------------
+        res.json({
+            activeProjects,
+            activeLength: activeProjects.length,
+            pendingLength,
+            finishedLength,
+
+            // NEW FIELD:
+            countThisMonth,
+            countLastMonth,
+            increaseWRTPrevMonth,
+        });
     } catch (err) {
     //   console.log("overall status call failed");
     //   console.error("get project overall status error: ", err);
