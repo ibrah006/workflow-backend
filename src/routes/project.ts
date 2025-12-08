@@ -139,6 +139,7 @@ router.get('/progress-rate', projectController.getOrganizationProgressRate);
 router.get("/", async (req, res) : Promise<any>=> {
     const organizationId = (req as any).user?.organizationId;
 
+
     if (!organizationId) {
         return res.status(401).json({ message: 'Organization context required' });
     }
@@ -472,6 +473,58 @@ router.delete("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<
     } 
 });
 
+// --------------------------------------------------
+// GET Projects overall status
+// GET /projects/active
+// --------------------------------------------------
+// { activeProjects, activeProjectsLength, pendingProjectsLength, finishedLength }
+router.get("/overall-status", async (req, res) => {
+    const organizationId = (req as any).user?.organizationId;
+
+    console.log("overall status called");
+  
+    try {
+  
+      const activeProjects = await projectRepo.find({
+        where: {
+          organizationId,
+          status: Not(In(['cancelled', 'finished'])),
+        },
+        order: {
+          createdAt: 'DESC',
+        },
+      });
+
+      const pendingLength = await projectRepo.count({
+        where: {
+            organizationId,
+            status: "pending",
+        }
+      });
+
+      const finishedLength = await projectRepo.count({
+        where: {
+            organizationId,
+            status: "finished",
+        }
+      });
+
+      console.log("overall status call success");
+  
+      res.json({
+        activeProjects,
+        activeLength: activeProjects.length,
+        pendingLength,
+        finishedLength
+      });
+    } catch (err) {
+    //   console.log("overall status call failed");
+    //   console.error("get project overall status error: ", err);
+      res.status(500).json({ error: 'Failed to fetch active projects' });
+    }
+  });
+
+
 // Assign task to users
 router.put("/tasks/:taskId/assign", adminOnlyMiddleware, async (req, res) : Promise<any>=> {
     const taskId = parseInt(req.params.taskId);
@@ -579,59 +632,6 @@ router.get("/:id", async (req, res) : Promise<any>=> {
         });
     }
 });
-
-// --------------------------------------------------
-// GET Projects overall status
-// GET /projects/active
-// --------------------------------------------------
-// { activeProjects, activeProjectsLength, pendingProjectsLength, finishedLength }
-router.get("/projects-overall-status", async (req, res) => {
-    const organizationId = (req as any).user?.organizationId;
-
-    console.log("overall status called");
-  
-    try {
-      const projectRepo = AppDataSource.getRepository(Project);
-  
-      const activeProjects = await projectRepo.find({
-        where: {
-          organizationId,
-          status: Not(In(['cancelled', 'finished'])),
-        },
-        order: {
-          createdAt: 'DESC',
-        },
-      });
-
-      const pendingLength = await projectRepo.count({
-        where: {
-            organizationId,
-            status: "pending",
-        }
-      });
-
-      const finishedLength = await projectRepo.count({
-        where: {
-            organizationId,
-            status: "finished",
-        }
-      });
-
-      console.log("overall status call success");
-  
-      res.json({
-        activeProjects,
-        activeLength: activeProjects.length,
-        pendingLength,
-        finishedLength
-      });
-    } catch (err) {
-    //   console.log("overall status call failed");
-    //   console.error("get project overall status error: ", err);
-      res.status(500).json({ error: 'Failed to fetch active projects' });
-    }
-  });
-
 
 
 export default router;
