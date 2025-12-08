@@ -18,6 +18,7 @@ import organizationRoutes from './routes/organization';
 import invitationRoutes from './routes/invitation';
 import sampleOrganizationRoutes from './routes/sampleOrganization';
 import materialRoutes from './routes/material';
+import reportsRoutes from './routes/reports';
 
 import os from 'os';
 import printerRoutes from './routes/printer';
@@ -75,6 +76,8 @@ app.use('/sample-organization', sampleOrganizationRoutes)
 app.use('/material', authMiddleware, materialRoutes);
 // Printer routes
 app.use('/printers', authMiddleware, printerRoutes);
+// Reports routes
+app.use('/reports', authMiddleware, reportsRoutes);
 
 app.listen(PORT, () => {
   const ip = getLocalExternalIp();
