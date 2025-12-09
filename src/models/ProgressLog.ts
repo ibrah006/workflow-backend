@@ -1,5 +1,6 @@
-import { Column, CreateDateColumn, Entity, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, ManyToMany, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "./Project";
+import { Task } from "./Task";
 
 
 @Entity() 
@@ -40,4 +41,7 @@ export class ProgressLog {
 
     @Column({ type: 'timestamptz', nullable: true, name: "completedAt" })
     completedAt?: Date | null;
+
+    @ManyToOne(() => Task, (task)=> task.progressLogs, { nullable: false })
+    task!: Task;
 }

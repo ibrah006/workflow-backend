@@ -82,6 +82,8 @@ app.use('/reports', authMiddleware, reportsRoutes);
 app.listen(PORT, () => {
   const ip = getLocalExternalIp();
   console.log(`Server is running at http://${ip || 'localhost'}:${PORT}`);
+
+  console.log(AppDataSource.entityMetadatas.map(m => m.name));
 });
 
 function getLocalExternalIp(): string | undefined {
