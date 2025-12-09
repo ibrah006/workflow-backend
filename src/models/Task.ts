@@ -70,7 +70,7 @@ export class Task {
     @Column({ default: 1 })
     runs!: number;
 
-    // Production Duration in minutes
+    // Estimated production duration in minutes
     @Column({ nullable: true })
     productionDuration?: number;
 
