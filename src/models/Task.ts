@@ -71,8 +71,8 @@ export class Task {
     runs!: number;
 
     // Production Duration in minutes
-    @Column({ nullable: false })
-    productionDuration!: number;
+    @Column({ nullable: true })
+    productionDuration?: number;
 
     // All the Material logs initiated for this task
     // @OneToMany(()=> MaterialLog, (log)=> log.task)

@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { AppDataSource } from "../data-source";
 import { Company } from "../models/Company";
-import { PROJECT_GET_RELATIONS } from "./project";
 import { ILike } from 'typeorm';
+import { PROJECT_GET_RELATIONS } from "../controller/project";
 
 const router = Router();
 

@@ -7,7 +7,7 @@ import { User } from "../models/User";
 import { In, IsNull, Not } from "typeorm";
 import { WorkActivityLog } from "../models/WorkActivityLog";
 import { ProgressLog } from "../models/ProgressLog";
-import projectController from "../controller/project";
+import projectController, { PROJECT_GET_RELATIONS } from "../controller/project";
 import { notifyProjectAboutLastTaskChange } from "./tasks";
 import { Company } from "../models/Company";
 import { Organization } from "../models/Organization";
@@ -22,17 +22,6 @@ const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 const companyRepo = AppDataSource.getRepository(Company);
 const organizationRepo = AppDataSource.getRepository(Organization);
-
-export const PROJECT_GET_RELATIONS = [
-    "progressLogs", 
-    "tasks", 
-    "assignedManagers", 
-    "tasks.assignees", 
-    "tasks.progressLog", 
-    "client", 
-    "client.createdBy", 
-    "materialLogs"
-];
 
 /**
  * Update the progressLogLastModifiedAt column of project model
@@ -168,58 +157,21 @@ router.get("/:id/progressLogs/last-modified", projectController.getProgressLogLa
 
 // Create Progress log
 router.post("/:id/progressLogs", async (req, res) : Promise<any> => {
-    const projectId = req.params.id;
-    const organizationId = (req as any).user?.organizationId;
+    const createProgressResponse = await projectController.createProgressLog(req);
 
-    if (!organizationId) {
-        return res.status(401).json({ message: 'Organization context required' });
+    let message;
+    switch (createProgressResponse.statusCode) {
+        case 400: message = "Invalid body params, check the ProjectLog schema"; break;
+        case 404: message = "Project not found"; break;
+        case 209: message = "Can't update project to the existing status"; break;
+        case 201: message = "Successfully created progress log"; break;
+        case 500: message = "Unexpected error from server side"; break;
     }
 
-    // Verify project belongs to user's organization
-    const project = await projectRepo.findOne({
-        where: { id: projectId, organizationId },
-        select: ['id']
-    });
-
-    if (!project) {
-        return res.status(404).json({ message: 'Project not found' });
-    }
-
-    // Required body from user: { id, project, status, description?, isError? (db default: false) }
-    let body;
-    try {
-        body = { 
-            ...req.body, 
-            project: { id: projectId }, 
-            updatedAt: undefined 
-        } as Partial<ProgressLog>;
-    } catch(err) {
-        return res.status(400).json({ message: "Invalid body params, check the ProjectLog schema" });
-    }
-    delete body.updatedAt;
-
-    if (project.status == body.status) {
-        return res.status(209).json({ message: "Can't update project to the existing status" });
-    }
-
-    let savedLog;
-    try {
-        const log = progressLogRepo.create(body);
-        savedLog = await progressLogRepo.save(log);
-
-        // Update project status
-        project.status = log.status;
-        await projectRepo.save(project);
-    } catch(err) {
-        console.error(err);
-        return res.status(500).json({ message: "Unexpected error from server side" });
-    }
-
-    await updateProgressLogLastModifiedAt(savedLog.id);
-
-    res.status(201).json({ 
-        message: "Successfully created progress log",
-        id: savedLog.id
+    res.status(createProgressResponse.statusCode).json({ 
+        message: message,
+        // progress log is only returned when status === 201
+        id: createProgressResponse.progressLog?.id
     });
 })
 
@@ -266,11 +218,8 @@ router.put("/:id", async (req, res) : Promise<any> => {
 // Add task for project with ID: [params.id]
 router.post("/:id/tasks", async (req, res) : Promise<any>=> {
     const projectId = req.params.id;
-    const organizationId = (req as any).user?.organizationId;
-
-    if (!organizationId) {
-        return res.status(401).json({ message: 'Organization context required' });
-    }
+    const user = (req as any).user;
+    const organizationId = user.organizationId;
 
     const {
         name,
@@ -279,19 +228,55 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         status,
         assignees: assigneeIds,
         dateCompleted,
-        progressLog
     } = req.body;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
+
+    // Get the department of the User
+    // This department is going to be assigned as the initial state for this Task
+    const requestFromDepartment = status;
+
+    const progressRequest = {
+        params: { id: projectId },
+        user: (req as any).user,
+        body: {
+            status: requestFromDepartment
+        }
+    };
+    const createProgressResponse = await projectController.createProgressLog(progressRequest);
+
+    let progressLog = createProgressResponse.progressLog;
+    if (Math.floor(createProgressResponse.statusCode/100) !== 2) {
+        // Error - not 201 or not 209
+        return res.status(createProgressResponse.statusCode).json({ message: "Error Occurred." });
+    } else if (createProgressResponse.statusCode === 209) {
+        // Which means the createProgressResponse.progressLog is null/undefined
+        // and createProgressResponse.statusCode === 209
+
+        // Get the most recently created progress log
+        // and considering createProgressResponse.statusCode === 209 the situation implies that the last progress log has status === userDepartment (one that we're concerned with)
+        progressLog = (await progressLogRepo.findOne({
+            where: {
+              project: { id: projectId },
+            },
+            order: {
+              startDate: 'DESC',
+            },
+          }))?? undefined;
+
+        if (!progressLog) {
+            // This error is not expected! Probably an error due to network connection or something
+            return res.status(createProgressResponse.statusCode).json({ message: "Unexpected Error Occurred. Please try again." });
+        }
+    }
+
+    // At this point: progressLog !== null
+    progressLog = progressLog!;
   
     try {
-        // Fetch related project (scoped to organization)
-        const project = await projectRepo.findOne({
-            relations: PROJECT_GET_RELATIONS, 
-            where: { id: projectId, organizationId }
-        });
-
-        if (!project) {
-            return res.status(404).json({ message: "Project not found" });
-        }
+        const project = createProgressResponse.project;
         
         // Fetch User entities from the assigneeIds (if provided)
         // Ensure users belong to the same organization

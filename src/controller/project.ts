@@ -11,6 +11,17 @@ const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 const projectRepo = AppDataSource.getRepository(Project);
 const taskRepo = AppDataSource.getRepository(Task);
 
+export const PROJECT_GET_RELATIONS = [
+    "progressLogs", 
+    "tasks", 
+    "assignedManagers", 
+    "tasks.assignees", 
+    "tasks.progressLog", 
+    "client", 
+    "client.createdBy", 
+    "materialLogs"
+];
+
 export default {
     async getProgressLogsByProject(req: Request, res: Response) : Promise<any> {
         try {
@@ -383,4 +394,104 @@ export default {
             return res.status(500).json({ error: 'Internal server error' });
         }
     },
+
+    /**
+     * Update the progressLogLastModifiedAt column of project model
+     * @param progressLogId
+     */
+    async updateProgressLogLastModifiedAt(progressLogId: string) : Promise<void> {
+        const subQuery = AppDataSource
+            .createQueryBuilder()
+            .subQuery()
+            .select('pl.projectId')
+            .from(ProgressLog, 'pl')
+            .where('pl.id = :progressLogId')
+            .getQuery(); // returns raw SQL
+
+        await AppDataSource
+            .createQueryBuilder()
+            .update(Project)
+            .set({ progressLogLastModifiedAt: new Date() })
+            .where(`id = ${subQuery}`)
+            .setParameter('progressLogId', progressLogId)
+            .execute();
+    },
+    
+    /**
+     * 
+     * @param projectId 
+     * @param rawRequestBody 
+     * @returns number: the status code
+     * 400: Invalid body params, check the ProjectLog schema
+     * 404: Project not found
+     * 209: Can't update project to the existing status
+     * 20: Successfully created - no issues
+     * 500: Unexpected error from server side
+     * @returns progressLog when status code === 200
+     * When status code === 209 => currently in same progress as requested (e.g. already in production progress, can't start another production progress because two progress with same status cannot come consecutively)
+     * @returns project when status code !== 401 or !== 404
+     */
+    async createProgressLog(req: any) : Promise<{
+        statusCode: number,
+        progressLog?: ProgressLog,
+        project?: Project
+    }> {
+
+        const projectId = req.params.id;
+        const organizationId = (req as any).user?.organizationId;
+
+        if (!organizationId) {
+            return { statusCode: 401 }
+        }
+
+        // Verify project belongs to user's organization
+        const project = await projectRepo.findOne({
+            where: { id: projectId, organizationId },
+            relations: PROJECT_GET_RELATIONS, 
+        });
+
+        if (!project) {
+            return { statusCode: 404 }
+        }
+    
+        // Required body from user: { id, project, status, description?, isError? (db default: false) }
+        let body;
+        try {
+            body = { 
+                ...req.body, 
+                project: { id: projectId }, 
+                updatedAt: undefined 
+            } as Partial<ProgressLog>;
+        } catch(err) {
+            return { statusCode: 400, project };
+        }
+        delete body.updatedAt;
+    
+        if (project.status == body.status) {
+            return {
+                statusCode: 209, project
+            }
+        }
+    
+        let savedLog;
+        try {
+            const log = progressLogRepo.create(body);
+            savedLog = await progressLogRepo.save(log);
+    
+            // Update project status
+            project.status = log.status;
+            await projectRepo.save(project);
+        } catch(err) {
+            console.error(err);
+            return { statusCode: 500, project };
+        }
+    
+        await this.updateProgressLogLastModifiedAt(savedLog.id);
+
+        return {
+            statusCode: 201,
+            progressLog: savedLog,
+            project
+        };
+    }
 }
