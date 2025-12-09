@@ -16,7 +16,7 @@ export const PROJECT_GET_RELATIONS = [
     "tasks", 
     "assignedManagers", 
     "tasks.assignees", 
-    "tasks.progressLog", 
+    "tasks.progressLogs", 
     "client", 
     "client.createdBy", 
     "materialLogs"

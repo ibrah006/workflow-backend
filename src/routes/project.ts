@@ -128,7 +128,6 @@ router.get('/progress-rate', projectController.getOrganizationProgressRate);
 router.get("/", async (req, res) : Promise<any>=> {
     const organizationId = (req as any).user?.organizationId;
 
-
     if (!organizationId) {
         return res.status(401).json({ message: 'Organization context required' });
     }
@@ -138,8 +137,6 @@ router.get("/", async (req, res) : Promise<any>=> {
             where: { organizationId },
             relations: [
                 ...PROJECT_GET_RELATIONS,
-                "tasks",
-                "materialLogs"
             ],
         });
   
