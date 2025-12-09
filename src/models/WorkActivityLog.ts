@@ -20,6 +20,10 @@ export class WorkActivityLog {
     @Column({ type: 'timestamp', nullable: true })
     end!: Date | null;
 
+    // Department that is responsible for this work activity log
+    @Column({ nullable: false })
+    department!: string;
+
     @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt!: Date;
 }

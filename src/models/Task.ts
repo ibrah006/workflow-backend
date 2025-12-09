@@ -7,7 +7,7 @@ import { WorkActivityLog } from "./WorkActivityLog";
 import { MaterialLog } from "./MaterialLog";
 import { ProgressLog } from "./ProgressLog";
 import { Printer } from "./Printer";
-
+import { Material } from "./Material";
 
 @Entity()
 export class Task {
@@ -67,9 +67,25 @@ export class Task {
     @JoinColumn({ name: 'printer' })
     printer!: Printer;
 
+    // Repeat of this task - How many times this task is supposed to repeat
+    @Column({ default: 1 })
+    runs!: number;
+
+    // Production Duration in minutes
+    @Column({ nullable: false })
+    productionDuration!: number;
+
     // All the Material logs initiated for this task
     // @OneToMany(()=> MaterialLog, (log)=> log.task)
     // materialLogs!: MaterialLog[];
+
+    @Column()
+    materialId!: string;
+
+    // Material used for this task
+    @ManyToOne(()=> Material)
+    @JoinColumn({ name: 'materialId' })
+    material!: Material[];
 
     // derived attributes (NOTE FOR THE FRONT-END):
     // task efficiency
