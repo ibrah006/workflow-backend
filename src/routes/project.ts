@@ -11,6 +11,7 @@ import projectController, { PROJECT_GET_RELATIONS } from "../controller/project"
 import { notifyProjectAboutLastTaskChange } from "./tasks";
 import { Company } from "../models/Company";
 import { Organization } from "../models/Organization";
+import { v4 as uuidv4 } from 'uuid';
 
 
 const router = Router();
@@ -239,6 +240,7 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         params: { id: projectId },
         user: (req as any).user,
         body: {
+            id: uuidv4(),
             status: requestFromDepartment
         }
     };
@@ -247,6 +249,7 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
     let progressLog = createProgressResponse.progressLog;
     if (Math.floor(createProgressResponse.statusCode/100) !== 2) {
         // Error - not 201 or not 209
+        console.log("createProgressResponse.status: ", createProgressResponse.statusCode);
         return res.status(createProgressResponse.statusCode).json({ message: "Error Occurred." });
     } else if (createProgressResponse.statusCode === 209) {
         // Which means the createProgressResponse.progressLog is null/undefined

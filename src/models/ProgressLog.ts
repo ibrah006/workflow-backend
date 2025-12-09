@@ -42,6 +42,6 @@ export class ProgressLog {
     @Column({ type: 'timestamptz', nullable: true, name: "completedAt" })
     completedAt?: Date | null;
 
-    @ManyToOne(() => Task, (task)=> task.progressLogs, { nullable: false })
-    task!: Task;
+    // @ManyToOne(() => Task, (task)=> task.progressLogs, { nullable: false })
+    // task!: Task;
 }

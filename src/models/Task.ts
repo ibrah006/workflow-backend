@@ -55,7 +55,8 @@ export class Task {
     })
     discussionThreads!: Message[];
 
-    @OneToMany(() => ProgressLog, (logs)=> logs.task)
+    @ManyToMany(() => ProgressLog)
+    @JoinTable()
     progressLogs!: ProgressLog[];
 
     // The printer that this job(task) was completed on
