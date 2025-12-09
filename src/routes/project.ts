@@ -226,6 +226,9 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         status,
         assignees: assigneeIds,
         dateCompleted,
+        printerId,
+        estimatedDuration,
+        materialId
     } = req.body;
 
     if (!organizationId) {
@@ -235,6 +238,8 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
     // Get the department of the User
     // This department is going to be assigned as the initial state for this Task
     const requestFromDepartment = status;
+
+    console.log("status passed in:", requestFromDepartment);
 
     const progressRequest = {
         params: { id: projectId },
@@ -258,12 +263,12 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         // Get the most recently created progress log
         // and considering createProgressResponse.statusCode === 209 the situation implies that the last progress log has status === userDepartment (one that we're concerned with)
         progressLog = (await progressLogRepo
-            .createQueryBuilder('log')
-            .innerJoin('log.project', 'project')
-            .where('project.id = :projectId', { projectId })
-            .andWhere('log.status = :status', { requestFromDepartment })
-            .orderBy('log.startDate', 'DESC')
-            .addOrderBy('log.createdAt', 'DESC')
+            .createQueryBuilder("log")
+            .innerJoin("log.project", "project")
+            .where("project.id = :projectId", { projectId })
+            .andWhere("log.status = :status", { status: requestFromDepartment })
+            .orderBy("log.startDate", "DESC")
+            .addOrderBy("log.createdAt", "DESC")
             .limit(1)
             .getOne())?? undefined;
 
@@ -306,7 +311,10 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             dateCompleted,
             project,
             assignees,
-            progressLogs: [progressLog]
+            progressLogs: [progressLog],
+            printerId,
+            productionDuration: estimatedDuration,
+            materialId
         });
     
         const savedTask = await taskRepo.save(newTask);

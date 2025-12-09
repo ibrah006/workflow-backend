@@ -466,8 +466,10 @@ export default {
             return { statusCode: 400, project };
         }
         delete body.updatedAt;
+
+        console.log("updated body for progress log creation controller function:", body)
     
-        if (project.status == body.status) {
+        if (project.status === body.status) {
             return {
                 statusCode: 209, project
             }
