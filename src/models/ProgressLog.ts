@@ -32,6 +32,9 @@ export class ProgressLog {
     })
     startDate!: string; // or Date — both work, but string avoids timezone confusion    
 
+    @CreateDateColumn({ type: 'timestamptz' })
+    createdAt!: Date;
+
     @UpdateDateColumn({ type: 'timestamptz' })
     updatedAt!: Date;
 

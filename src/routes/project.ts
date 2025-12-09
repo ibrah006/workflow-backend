@@ -257,14 +257,15 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
 
         // Get the most recently created progress log
         // and considering createProgressResponse.statusCode === 209 the situation implies that the last progress log has status === userDepartment (one that we're concerned with)
-        progressLog = (await progressLogRepo.findOne({
-            where: {
-              project: { id: projectId },
-            },
-            order: {
-              startDate: 'DESC',
-            },
-          }))?? undefined;
+        progressLog = (await progressLogRepo
+            .createQueryBuilder('log')
+            .innerJoin('log.project', 'project')
+            .where('project.id = :projectId', { projectId })
+            .andWhere('log.status = :status', { requestFromDepartment })
+            .orderBy('log.startDate', 'DESC')
+            .addOrderBy('log.createdAt', 'DESC')
+            .limit(1)
+            .getOne())?? undefined;
 
         if (!progressLog) {
             // This error is not expected! Probably an error due to network connection or something
