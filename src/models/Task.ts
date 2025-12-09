@@ -55,9 +55,8 @@ export class Task {
     })
     discussionThreads!: Message[];
 
-    @ManyToOne(() => ProgressLog, { nullable: false })
-    @JoinColumn({ name: 'progressLogId' })
-    progressLog!: ProgressLog;
+    @ManyToMany(() => ProgressLog, { nullable: false })
+    progressLogs!: ProgressLog[];
 
     // The printer that this job(task) was completed on
     @Column()

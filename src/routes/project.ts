@@ -320,7 +320,7 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             dateCompleted,
             project,
             assignees,
-            progressLog
+            progressLogs: [progressLog]
         });
     
         const savedTask = await taskRepo.save(newTask);

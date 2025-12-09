@@ -137,7 +137,7 @@ export default {
 
                 // Get tasks for this progress log
                 const tasksForLog = tasks.filter(
-                    (t) => t.progressLog && t.progressLog.id === log.id
+                    (t) => t.progressLogs && t.progressLogs.includes(log)
                 );
 
                 let actual = 0.0;
@@ -219,7 +219,7 @@ export default {
             
                     // Get tasks for this progress log
                     const tasksForLog = tasks.filter(
-                        (t) => t.progressLog && t.progressLog.id === log.id
+                        (t) => t.progressLogs && t.progressLogs.includes(log)
                     );
             
                     let actual = 0.0;
@@ -344,7 +344,7 @@ export default {
             
                     // Get tasks for this progress log
                     const tasksForLog = tasks.filter(
-                        (t) => t.progressLog && t.progressLog.id === log.id
+                        (t) => t.progressLogs && t.progressLogs.includes(log)
                     );
             
                     let actual = 0.0;
