@@ -5,10 +5,10 @@ export class AddBarcodeToMaterials1762700525901 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // 1. Add the column
-        await queryRunner.query(`
-            ALTER TABLE "materials"
-            ADD COLUMN "barcode" TEXT;
-        `);
+        // await queryRunner.query(`
+        //     ALTER TABLE "materials"
+        //     ADD COLUMN "barcode" TEXT;
+        // `);
 
         // 2. Populate existing rows (oldest first)
         await queryRunner.query(`
