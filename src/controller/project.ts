@@ -459,15 +459,13 @@ export default {
         try {
             body = { 
                 ...req.body, 
-                project: { id: projectId }, 
+                projectId,
                 updatedAt: undefined 
             } as Partial<ProgressLog>;
         } catch(err) {
             return { statusCode: 400, project };
         }
         delete body.updatedAt;
-
-        console.log("updated body for progress log creation controller function:", body)
     
         if (project.status === body.status) {
             return {
@@ -478,7 +476,8 @@ export default {
         let savedLog;
         try {
             const log = progressLogRepo.create(body);
-            savedLog = await progressLogRepo.save(log);
+            console.log("log BEFORE save: ", log);
+            // savedLog = await progressLogRepo.save(log);
     
             // Update project status
             project.status = log.status;
@@ -488,7 +487,7 @@ export default {
             return { statusCode: 500, project };
         }
     
-        await this.updateProgressLogLastModifiedAt(savedLog.id);
+        // await this.updateProgressLogLastModifiedAt(savedLog.id);
 
         return {
             statusCode: 201,

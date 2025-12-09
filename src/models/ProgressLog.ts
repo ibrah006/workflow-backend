@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, ManyToMany, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToMany, ManyToOne, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "./Project";
 import { Task } from "./Task";
 
@@ -9,8 +9,12 @@ export class ProgressLog {
     @PrimaryColumn("uuid")
     id!: string;
 
-    @ManyToOne(()=> Project, project=> project.progressLogs)
+    @ManyToOne(() => Project, project => project.progressLogs, { nullable: false })
+    @JoinColumn({ name: "projectId" })
     project!: Project;
+
+    @Column()
+    projectId!: string;
 
     @Column()
     status!: string;
