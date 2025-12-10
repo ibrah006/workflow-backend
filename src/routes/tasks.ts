@@ -249,10 +249,18 @@ router.get('/active', async (req, res) : Promise<any> => {
 });
 
 // Get all tasks
-// Not scoped to current organization / all tasks across the platform
+// Scoped to current organization
 router.get('/', async (req, res) : Promise<any> => {
+
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
+
     const tasks = await taskRepo.find({
-        relations: ["assignees", "project"]
+        relations: ["assignees", "project"],
+        where: { project: { organizationId } }
     });
 
     return res.json(tasks);
