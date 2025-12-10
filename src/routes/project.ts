@@ -306,7 +306,7 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             name,
             description,
             dueDate,
-            status,
+            status: "Pending",
             dateCompleted,
             project,
             assignees,
