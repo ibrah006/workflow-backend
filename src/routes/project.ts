@@ -228,7 +228,8 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         dateCompleted,
         printerId,
         estimatedDuration,
-        materialId
+        materialId,
+        productionStartTime
     } = req.body;
 
     if (!organizationId) {
@@ -313,7 +314,8 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             progressLogs: [progressLog],
             printerId,
             productionDuration: estimatedDuration,
-            materialId
+            materialId,
+            productionStartTime
         });
     
         const savedTask = await taskRepo.save(newTask);
