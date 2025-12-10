@@ -259,7 +259,7 @@ router.get('/', async (req, res) : Promise<any> => {
     }
 
     const tasks = await taskRepo.find({
-        relations: ["assignees", "project"],
+        relations: TASK_RELATIONS,
         where: { project: { organizationId } }
     });
 
