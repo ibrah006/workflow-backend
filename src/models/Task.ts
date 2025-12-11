@@ -78,6 +78,9 @@ export class Task {
     @Column({ type: 'timestamptz', nullable: true })
     productionStartTime?: Date | null;
 
+    @Column()
+    department!: string;
+
     // All the Material logs initiated for this task
     // @OneToMany(()=> MaterialLog, (log)=> log.task)
     // materialLogs!: MaterialLog[];
