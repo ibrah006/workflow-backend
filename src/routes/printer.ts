@@ -127,7 +127,7 @@ printerRouter.get('/active', async (req, res) => {
 
     try {
       const printers = await printerRepo.find({
-        where: { organization: organizationId , status: PrinterStatus.ACTIVE }
+        where: { organizationId, status: PrinterStatus.ACTIVE }
       });
 
       const totalPrintersCount = printerRepo.count({
