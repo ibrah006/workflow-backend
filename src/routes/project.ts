@@ -229,7 +229,9 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         printerId,
         estimatedDuration,
         materialId,
-        productionStartTime
+        productionStartTime,
+        // progress stage / department
+        progressStage
     } = req.body;
 
     if (!organizationId) {
@@ -238,7 +240,7 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
 
     // Get the department of the User
     // This department is going to be assigned as the initial state for this Task
-    const requestFromDepartment = status;
+    const requestFromDepartment = progressStage;
 
     console.log("status passed in:", requestFromDepartment);
 
@@ -307,7 +309,7 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             name,
             description,
             dueDate,
-            status: "Pending",
+            status,
             dateCompleted,
             project,
             assignees,
@@ -315,7 +317,7 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             printerId,
             productionDuration: estimatedDuration,
             materialId,
-            productionStartTime
+            productionStartTime,
         });
     
         const savedTask = await taskRepo.save(newTask);
