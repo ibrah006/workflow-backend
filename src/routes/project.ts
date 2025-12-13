@@ -487,11 +487,12 @@ router.get("/overall-status", async (req, res) => {
         const activeProjects = await projectRepo.find({
             where: {
             organizationId,
-            status: Not(In(['cancelled', 'finished'])),
+                status: Not(In(['cancelled', 'finished'])),
             },
             order: {
-            createdAt: 'DESC',
+                createdAt: 'DESC',
             },
+            relations: PROJECT_GET_RELATIONS
         });
 
         const pendingLength = await projectRepo.count({
