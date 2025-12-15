@@ -48,4 +48,7 @@ export class ProgressLog {
 
     // @ManyToOne(() => Task, (task)=> task.progressLogs, { nullable: false })
     // task!: Task;
+
+    @ManyToOne(() => Task, (task)=> task.progressLogs)
+    tasks!: Task[];
 }

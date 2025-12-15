@@ -55,7 +55,7 @@ export class Task {
     })
     discussionThreads!: Message[];
 
-    @ManyToMany(() => ProgressLog)
+    @ManyToMany(() => ProgressLog, (log)=> log.tasks)
     @JoinTable()
     progressLogs!: ProgressLog[];
 

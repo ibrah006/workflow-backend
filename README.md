@@ -85,3 +85,12 @@ CREATE DATABASE mydb OWNER myuser;
 \q
 ```
 
+Generate Migration
+```bash
+npm run migration:generate src/migrations/MigrationName
+```
+
+Run Migration
+```bash
+npm run typeorm -- migration:run -d src/data-source.ts
+```

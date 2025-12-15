@@ -8,7 +8,7 @@ import { Project } from "../models/Project";
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 const projectRepo = AppDataSource.getRepository(Project);
 
-export const PROGRESS_RELATIONS = ['project'];
+export const PROGRESS_RELATIONS = ['project', 'tasks'];
 
 export default {
     async getLogById(req: Request, res: Response) : Promise<any> {
