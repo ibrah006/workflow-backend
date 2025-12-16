@@ -9,6 +9,8 @@
 
 This is the Express.js + TypeScript backend for **Work Flow**, a productivity and project workflow management system for teams and admins.
 
+### This project uses POSTGRESQL VERSION: 14.17
+
 ## 🚀 Features
 - REST API with Role-based Auth (JWT)
 - Task & project lifecycle management
