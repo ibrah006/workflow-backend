@@ -4,7 +4,7 @@ import { Project } from "../models/Project";
 import { adminOnlyMiddleware } from "../middleware/adminOnlyMiddleware";
 import { Task } from "../models/Task";
 import { User } from "../models/User";
-import { In, IsNull, Not } from "typeorm";
+import { In, IsNull, MoreThanOrEqual, Not } from "typeorm";
 import { WorkActivityLog } from "../models/WorkActivityLog";
 import { ProgressLog } from "../models/ProgressLog";
 import projectController, { PROJECT_GET_RELATIONS } from "../controller/project";
@@ -483,18 +483,22 @@ router.get("/overall-status", async (req, res) => {
     console.log("overall status called");
   
     try {
+
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0); // to ensure date-only comparison
   
         const activeProjects = await projectRepo.find({
             where: {
-            organizationId,
+                organizationId,
                 status: Not(In(['cancelled', 'finished'])),
+                estimatedProductionStart: MoreThanOrEqual(todayDate),
             },
             order: {
                 createdAt: 'DESC',
             },
-            relations: PROJECT_GET_RELATIONS
+            relations: PROJECT_GET_RELATIONS,
         });
-
+          
         const pendingLength = await projectRepo.count({
             where: {
                 organizationId,
