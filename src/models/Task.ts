@@ -60,11 +60,11 @@ export class Task {
     progressLogs!: ProgressLog[];
 
     // The printer that this job(task) was completed on
-    @Column()
+    @Column("character varying")
     printerId!: string;
 
     @ManyToOne(() => Printer, (printer)=> printer.tasks)
-    @JoinColumn({ name: 'printer' })
+    @JoinColumn({ name: 'printerId' })
     printer!: Printer;
 
     // Repeat of this task - How many times this task is supposed to repeat

@@ -1,4 +1,5 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
+import { addForeignKeyIfNotExists } from "../functions/add_foreign_keys_ifnotexists";
 
 // NOTE
 // After the format for project id is changed from uuid to PRJ-YEAR-{nth project in YEAR}
@@ -30,8 +31,20 @@ export class AfterProjectIdFormatChange1760779194304 implements MigrationInterfa
         await queryRunner.query(`ALTER TABLE "company" ADD CONSTRAINT "FK_865ba8d77c1cb1478bf7e59c750" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "progress_log" ADD CONSTRAINT "FK_39728fe700699caa76a2a9c5f20" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "material_log" ADD CONSTRAINT "FK_48584b111e24870036acd7f7aac" FOREIGN KEY ("loggedById") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "material_log" ADD CONSTRAINT "FK_a46c90c15933b395321ef2b70da" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "project" ADD CONSTRAINT "FK_816f608a9acf4a4314c9e1e9c66" FOREIGN KEY ("clientId") REFERENCES "company"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await addForeignKeyIfNotExists(queryRunner, {
+            table: 'material_log',
+            constraintName: 'FK_a46c90c15933b395321ef2b70da',
+            column: 'projectId',
+            referencedTable: 'project',
+            referencedColumn: 'id'
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+            table: 'project',
+            constraintName: 'FK_816f608a9acf4a4314c9e1e9c66',
+            column: 'clientId',
+            referencedTable: 'company',
+            referencedColumn: 'id',
+        });
         await queryRunner.query(`ALTER TABLE "wastage_log" ADD CONSTRAINT "FK_aab33ce2671eb208442c68b67a5" FOREIGN KEY ("taskId") REFERENCES "task"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "message" ADD CONSTRAINT "FK_446251f8ceb2132af01b68eb593" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "message" ADD CONSTRAINT "FK_d4f63b9a33826eb052fd934b070" FOREIGN KEY ("taskId") REFERENCES "task"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);

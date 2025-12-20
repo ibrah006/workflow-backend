@@ -1,4 +1,5 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
+import { addForeignKeyIfNotExists } from "./functions/add_foreign_keys_ifnotexists";
 
 export class LatestMigration1761990688115 implements MigrationInterface {
     name = 'LatestMigration1761990688115'
@@ -6,8 +7,25 @@ export class LatestMigration1761990688115 implements MigrationInterface {
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`CREATE TABLE IF NOT EXISTS "wastage_log" ("id" SERIAL NOT NULL, "invoiceItemId" character varying NOT NULL, "wastage" numeric NOT NULL, "taskId" integer, CONSTRAINT "PK_89e6f56f3780ecf7acecd5d4ffd" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE IF NOT EXISTS "message" ("id" SERIAL NOT NULL, "message" character varying NOT NULL, "date" date NOT NULL, "userId" uuid, "taskId" integer, CONSTRAINT "PK_ba01f0a3e0123651915008bc578" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE IF NOT EXISTS "progress_log" ("id" uuid NOT NULL, "status" character varying NOT NULL, "isCompleted" boolean NOT NULL DEFAULT false, "description" character varying, "issue" character varying, "dueDate" date, "startDate" date NOT NULL DEFAULT ('now'::text)::date, "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "completedAt" TIMESTAMP WITH TIME ZONE, "projectId" character varying, CONSTRAINT "PK_59ba81d77fc262fe624293fbaf2" PRIMARY KEY ("id"))`);
-        await queryRunner.query(`CREATE TABLE IF NOT EXISTS "task" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "description" character varying, "dueDate" TIMESTAMP, "assigneesLastAdded" TIMESTAMP WITH TIME ZONE, "status" character varying NOT NULL DEFAULT 'pending', "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "workActivityLogsLastModifiedAt" TIMESTAMP WITH TIME ZONE, "dateCompleted" date, "projectId" character varying, "progressLogId" uuid NOT NULL, CONSTRAINT "PK_fb213f79ee45060ba925ecd576e" PRIMARY KEY ("id"))`);
+        // await queryRunner.query(`CREATE TABLE IF NOT EXISTS "progress_log" ("id" uuid NOT NULL, "status" character varying NOT NULL, "isCompleted" boolean NOT NULL DEFAULT false, "description" character varying, "issue" character varying, "dueDate" date, "startDate" date NOT NULL DEFAULT ('now'::text)::date, "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "completedAt" TIMESTAMP WITH TIME ZONE, "projectId" character varying, CONSTRAINT "PK_59ba81d77fc262fe624293fbaf2" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`
+          CREATE TABLE IF NOT EXISTS "progress_log" (
+            "id" uuid NOT NULL,
+            "projectId" character varying NOT NULL,
+            "status" character varying NOT NULL,
+            "isCompleted" boolean NOT NULL DEFAULT false,
+            "description" character varying,
+            "issue" character varying,
+            "dueDate" date,
+            "startDate" date NOT NULL DEFAULT CURRENT_DATE,
+            "createdAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+            "updatedAt" TIMESTAMPTZ NOT NULL DEFAULT now(),
+            "completedAt" TIMESTAMPTZ,
+            CONSTRAINT "PK_progress_log_id" PRIMARY KEY ("id")
+          )
+        `);
+        // await queryRunner.query(`CREATE TABLE IF NOT EXISTS "task" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "description" character varying, "dueDate" TIMESTAMP, "assigneesLastAdded" TIMESTAMP WITH TIME ZONE, "status" character varying NOT NULL DEFAULT 'pending', "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "workActivityLogsLastModifiedAt" TIMESTAMP WITH TIME ZONE, "dateCompleted" date, "projectId" character varying, "projectId" character varying, "progressLogId" uuid NOT NULL, CONSTRAINT "PK_fb213f79ee45060ba925ecd576e" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE IF NOT EXISTS "task" ("id" SERIAL NOT NULL, "name" character varying NOT NULL, "description" character varying, "dueDate" TIMESTAMP, "assigneesLastAdded" TIMESTAMP WITH TIME ZONE, "status" character varying NOT NULL DEFAULT 'pending', "updatedAt" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "workActivityLogsLastModifiedAt" TIMESTAMP WITH TIME ZONE, "dateCompleted" date, "printerId" uuid NOT NULL, "runs" integer NOT NULL DEFAULT '1', "productionDuration" integer, "materialId" uuid NOT NULL, "projectId" character varying, "printer" uuid, CONSTRAINT "PK_fb213f79ee45060ba925ecd576e" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TABLE IF NOT EXISTS "company" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" character varying, "isActive" boolean NOT NULL DEFAULT true, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "organizationId" uuid NOT NULL, "createdById" uuid NOT NULL, CONSTRAINT "PK_056f7854a7afdba7cbd6d45fc20" PRIMARY KEY ("id"))`);
         await queryRunner.query(`
             DO $$
@@ -44,7 +62,7 @@ export class LatestMigration1761990688115 implements MigrationInterface {
               END IF;
             END$$;
           `);          
-        await queryRunner.query(`CREATE TABLE IF NOT EXISTS "materials" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "name" character varying NOT NULL, "description" text, "measureType" "public"."materials_measuretype_enum" NOT NULL, "currentStock" numeric(10,2) NOT NULL DEFAULT '0', "minStockLevel" numeric(10,2) NOT NULL DEFAULT '0', "organizationId" uuid NOT NULL, "createdById" uuid NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_2fd1a93ecb222a28bef28663fa0" PRIMARY KEY ("id"))`);
+        await queryRunner.query(`CREATE TABLE "materials" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "materialNumber" integer, "name" character varying NOT NULL, "description" text, "measureType" "public"."materials_measuretype_enum" NOT NULL, "currentStock" numeric(10,2) NOT NULL DEFAULT '0', "minStockLevel" numeric(10,2) NOT NULL DEFAULT '0', "organizationId" uuid NOT NULL, "createdById" uuid NOT NULL, "barcode" character varying NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_2fd1a93ecb222a28bef28663fa0" PRIMARY KEY ("id"))`);
         await queryRunner.query(`
             DO $$
             BEGIN
@@ -86,38 +104,276 @@ export class LatestMigration1761990688115 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE IF NOT EXISTS "project_assigned_managers_user" ("projectId" character varying NOT NULL, "userId" uuid NOT NULL, CONSTRAINT "PK_9b9939fb151e0e4616bf478db0b" PRIMARY KEY ("projectId", "userId"))`);
         await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_d9fd4807ea74dadce7f705af6f" ON "project_assigned_managers_user" ("projectId") `);
         await queryRunner.query(`CREATE INDEX IF NOT EXISTS "IDX_43a779234ed899161f17f93613" ON "project_assigned_managers_user" ("userId") `);
-        await queryRunner.query(`ALTER TABLE "wastage_log" ADD CONSTRAINT "FK_aab33ce2671eb208442c68b67a5" FOREIGN KEY ("taskId") REFERENCES "task"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "message" ADD CONSTRAINT "FK_446251f8ceb2132af01b68eb593" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "message" ADD CONSTRAINT "FK_d4f63b9a33826eb052fd934b070" FOREIGN KEY ("taskId") REFERENCES "task"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "progress_log" ADD CONSTRAINT "FK_39728fe700699caa76a2a9c5f20" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "task" ADD CONSTRAINT "FK_3797a20ef5553ae87af126bc2fe" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "task" ADD CONSTRAINT "FK_11c1f96bc242b84517d279d471c" FOREIGN KEY ("progressLogId") REFERENCES "progress_log"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "company" ADD CONSTRAINT "FK_865ba8d77c1cb1478bf7e59c750" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "company" ADD CONSTRAINT "FK_306bbc7f81f2a0fa162f7261417" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "material_log" ADD CONSTRAINT "FK_48584b111e24870036acd7f7aac" FOREIGN KEY ("loggedById") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "material_log" ADD CONSTRAINT "FK_a46c90c15933b395321ef2b70da" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "project" ADD CONSTRAINT "FK_0028dfadf312a1d7f51656c4a9a" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "project" ADD CONSTRAINT "FK_816f608a9acf4a4314c9e1e9c66" FOREIGN KEY ("clientId") REFERENCES "company"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "organization" ADD CONSTRAINT "FK_acdbd1e490930af04b4ff569ca9" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "team" ADD CONSTRAINT "FK_3a93fbdeba4e1e9e47fec6bada9" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "team" ADD CONSTRAINT "FK_12e10686074dba7e8fd02f41bf4" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "attendance_log" ADD CONSTRAINT "FK_e22012e930d96307906528f1bd5" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "layoff_log" ADD CONSTRAINT "FK_c1d9823779465cb2c90054684a7" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user" ADD CONSTRAINT "FK_3d6915a33798152a079997cad28" FOREIGN KEY ("departmentId") REFERENCES "team"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "user" ADD CONSTRAINT "FK_dfda472c0af7812401e592b6a61" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "work_activity_log" ADD CONSTRAINT "FK_80b9149aafae9cd1cd1e8d9564f" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "work_activity_log" ADD CONSTRAINT "FK_6e575bb05b464e33f68faf49140" FOREIGN KEY ("taskId") REFERENCES "task"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "materials" ADD CONSTRAINT "FK_b641bd9a8e615030a93f853a935" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "materials" ADD CONSTRAINT "FK_5f86dcbd0cddd6a5e3f9ff3d36e" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "stock_transactions" ADD CONSTRAINT "FK_402fae16a3b7b44f7628c3e203a" FOREIGN KEY ("materialId") REFERENCES "materials"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "stock_transactions" ADD CONSTRAINT "FK_3965d676cb2f12c1b86f297599b" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "stock_transactions" ADD CONSTRAINT "FK_acb5a8e3dd41e653d2f2a9f0bf7" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "invitations" ADD CONSTRAINT "FK_b9139f00cebfadced76bca3084f" FOREIGN KEY ("organizationId") REFERENCES "organization"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "invitations" ADD CONSTRAINT "FK_b60325e5302be0dad38b423314c" FOREIGN KEY ("invitedById") REFERENCES "user"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "task_assignees_user" ADD CONSTRAINT "FK_6779281224d4075bfd0c18fdc2c" FOREIGN KEY ("taskId") REFERENCES "task"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
-        await queryRunner.query(`ALTER TABLE "task_assignees_user" ADD CONSTRAINT "FK_d3ab8572b56640902c3f40fcaa2" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "project_assigned_managers_user" ADD CONSTRAINT "FK_d9fd4807ea74dadce7f705af6f6" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE CASCADE ON UPDATE CASCADE`);
-        await queryRunner.query(`ALTER TABLE "project_assigned_managers_user" ADD CONSTRAINT "FK_43a779234ed899161f17f936133" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await queryRunner.query(`
+          DO $$
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1
+              FROM pg_constraint
+              WHERE conname = 'FK_aab33ce2671eb208442c68b67a5'
+            ) THEN
+              ALTER TABLE "wastage_log"
+              ADD CONSTRAINT "FK_aab33ce2671eb208442c68b67a5"
+              FOREIGN KEY ("taskId")
+              REFERENCES "task"("id")
+              ON DELETE SET NULL
+              ON UPDATE NO ACTION;
+            END IF;
+          END
+          $$;
+          `);
+          await queryRunner.query(`DO $$
+            BEGIN
+            IF NOT EXISTS (
+                SELECT 1
+                FROM pg_constraint
+                WHERE conname = 'FK_446251f8ceb2132af01b68eb593'
+            ) THEN
+                ALTER TABLE "message"
+                ADD CONSTRAINT "FK_446251f8ceb2132af01b68eb593"
+                FOREIGN KEY ("userId")
+                REFERENCES "user"("id")
+                ON DELETE NO ACTION
+                ON UPDATE NO ACTION;
+            END IF;
+            END
+            $$;
+            `);
+        await queryRunner.query(`
+          DO $$
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM pg_constraint
+              WHERE conname = 'FK_d4f63b9a33826eb052fd934b070'
+            ) THEN
+              ALTER TABLE "message"
+              ADD CONSTRAINT "FK_d4f63b9a33826eb052fd934b070"
+              FOREIGN KEY ("taskId")
+              REFERENCES "task"("id")
+              ON DELETE CASCADE
+              ON UPDATE NO ACTION;
+            END IF;
+          END
+          $$;
+          `);
+          await addForeignKeyIfNotExists(
+            queryRunner,
+            {
+                table: 'progress_log',
+                constraintName: 'FK_39728fe700699caa76a2a9c5f20',
+                column: 'projectId',
+                referencedTable: 'project',
+                referencedColumn: 'id',
+                onDelete: 'NO ACTION',
+                onUpdate: 'NO ACTION',
+            }
+        );
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'task',
+          constraintName: 'FK_3797a20ef5553ae87af126bc2fe',
+          column: 'projectId',
+          referencedTable: 'project',
+          referencedColumn: 'id',
+          onDelete: 'NO ACTION',
+          onUpdate: 'NO ACTION',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'company',
+          constraintName: 'FK_865ba8d77c1cb1478bf7e59c750',
+          column: 'createdById',
+          referencedTable: 'user',
+          referencedColumn: 'id',
+          onDelete: 'NO ACTION',
+          onUpdate: 'NO ACTION',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'company',
+          constraintName: 'FK_306bbc7f81f2a0fa162f7261417',
+          column: 'organizationId',
+          referencedTable: 'organization',
+          referencedColumn: 'id',
+          onDelete: 'CASCADE',
+          onUpdate: 'NO ACTION',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'material_log',
+          constraintName: 'FK_48584b111e24870036acd7f7aac',
+          column: 'loggedById',
+          referencedTable: 'user',
+          referencedColumn: 'id'
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'material_log',
+          constraintName: 'FK_a46c90c15933b395321ef2b70da',
+          column: 'projectId',
+          referencedTable: 'project',
+          referencedColumn: 'id'
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'project',
+          constraintName: 'FK_0028dfadf312a1d7f51656c4a9a',
+          column: 'organizationId',
+          referencedTable: 'organization',
+          referencedColumn: 'id',
+          onDelete: 'CASCADE',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'project',
+          constraintName: 'FK_816f608a9acf4a4314c9e1e9c66',
+          column: 'clientId',
+          referencedTable: 'company',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'organization',
+          constraintName: 'FK_acdbd1e490930af04b4ff569ca9',
+          column: 'createdById',
+          referencedTable: 'user',
+          referencedColumn: 'id',
+          onDelete: 'RESTRICT',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'team',
+          constraintName: 'FK_3a93fbdeba4e1e9e47fec6bada9',
+          column: 'createdById',
+          referencedTable: 'user',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'team',
+          constraintName: 'FK_12e10686074dba7e8fd02f41bf4',
+          column: 'organizationId',
+          referencedTable: 'organization',
+          referencedColumn: 'id',
+          onDelete: 'CASCADE',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'attendance_log',
+          constraintName: 'FK_e22012e930d96307906528f1bd5',
+          column: 'userId',
+          referencedTable: 'user',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'layoff_log',
+          constraintName: 'FK_c1d9823779465cb2c90054684a7',
+          column: 'userId',
+          referencedTable: 'user',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'user',
+          constraintName: 'FK_3d6915a33798152a079997cad28',
+          column: 'departmentId',
+          referencedTable: 'team',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'user',
+          constraintName: 'FK_dfda472c0af7812401e592b6a61',
+          column: 'organizationId',
+          referencedTable: 'organization',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'work_activity_log',
+          constraintName: 'FK_80b9149aafae9cd1cd1e8d9564f',
+          column: 'userId',
+          referencedTable: 'user',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'work_activity_log',
+          constraintName: 'FK_6e575bb05b464e33f68faf49140',
+          column: 'taskId',
+          referencedTable: 'task',
+          referencedColumn: 'id',
+          onDelete: 'SET NULL'
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'materials',
+          constraintName: 'FK_b641bd9a8e615030a93f853a935',
+          column: 'organizationId',
+          referencedTable: 'organization',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'materials',
+          constraintName: 'FK_5f86dcbd0cddd6a5e3f9ff3d36e',
+          column: 'createdById',
+          referencedTable: 'user',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'stock_transactions',
+          constraintName: 'FK_402fae16a3b7b44f7628c3e203a',
+          column: 'materialId',
+          referencedTable: 'materials',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'stock_transactions',
+          constraintName: 'FK_3965d676cb2f12c1b86f297599b',
+          column: 'projectId',
+          referencedTable: 'project',
+          referencedColumn: 'id',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'stock_transactions',
+          constraintName: 'FK_acb5a8e3dd41e653d2f2a9f0bf7',
+          column: 'createdById',
+          referencedTable: 'user',
+          referencedColumn: 'id',
+          onDelete: 'SET NULL',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'invitations',
+          constraintName: 'FK_b9139f00cebfadced76bca3084f',
+          column: 'organizationId',
+          referencedTable: 'organization',
+          referencedColumn: 'id',
+          onDelete: 'CASCADE',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'invitations',
+          constraintName: 'FK_b60325e5302be0dad38b423314c',
+          column: 'invitedById',
+          referencedTable: 'user',
+          referencedColumn: 'id',
+          onDelete: 'SET NULL',
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'task_assignees_user',
+          constraintName: 'FK_6779281224d4075bfd0c18fdc2c',
+          column: 'taskId',
+          referencedTable: 'task',
+          referencedColumn: 'id',
+          onDelete: 'CASCADE',
+          onUpdate: 'CASCADE'
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'task_assignees_user',
+          constraintName: 'FK_d3ab8572b56640902c3f40fcaa2',
+          column: 'userId',
+          referencedTable: 'user',
+          referencedColumn: 'id'
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'project_assigned_managers_user',
+          constraintName: 'FK_d9fd4807ea74dadce7f705af6f6',
+          column: 'projectId',
+          referencedTable: 'project',
+          referencedColumn: 'id',
+          onDelete: 'CASCADE',
+          onUpdate: 'CASCADE'
+        });
+        await addForeignKeyIfNotExists(queryRunner, {
+          table: 'project_assigned_managers_user',
+          constraintName: 'FK_43a779234ed899161f17f936133',
+          column: 'userId',
+          referencedTable: 'user',
+          referencedColumn: 'id'
+        });
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {

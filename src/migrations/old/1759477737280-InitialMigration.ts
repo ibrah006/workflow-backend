@@ -1,4 +1,5 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
+import { addForeignKeyIfNotExists } from "../functions/add_foreign_keys_ifnotexists";
 
 export class InitialMigration1759477737280 implements MigrationInterface {
     name = 'InitialMigration1759477737280'
@@ -23,9 +24,23 @@ export class InitialMigration1759477737280 implements MigrationInterface {
         await queryRunner.query(`CREATE TABLE "task_assignees_user" ("taskId" integer NOT NULL, "userId" uuid NOT NULL, CONSTRAINT "PK_910c37c13f72414640db814dc60" PRIMARY KEY ("taskId", "userId"))`);
         await queryRunner.query(`CREATE INDEX "IDX_6779281224d4075bfd0c18fdc2" ON "task_assignees_user" ("taskId") `);
         await queryRunner.query(`CREATE INDEX "IDX_d3ab8572b56640902c3f40fcaa" ON "task_assignees_user" ("userId") `);
-        await queryRunner.query(`ALTER TABLE "company" ADD CONSTRAINT "FK_865ba8d77c1cb1478bf7e59c750" FOREIGN KEY ("createdById") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await addForeignKeyIfNotExists(queryRunner, {
+            table: 'company',
+            constraintName: 'FK_865ba8d77c1cb1478bf7e59c750',
+            column: 'createdById',
+            referencedTable: 'user',
+            referencedColumn: 'id',
+            onDelete: 'NO ACTION',
+            onUpdate: 'NO ACTION',
+        });
         await queryRunner.query(`ALTER TABLE "progress_log" ADD CONSTRAINT "FK_39728fe700699caa76a2a9c5f20" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "project" ADD CONSTRAINT "FK_816f608a9acf4a4314c9e1e9c66" FOREIGN KEY ("clientId") REFERENCES "company"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await addForeignKeyIfNotExists(queryRunner, {
+            table: 'project',
+            constraintName: 'FK_816f608a9acf4a4314c9e1e9c66',
+            column: 'clientId',
+            referencedTable: 'company',
+            referencedColumn: 'id',
+        });
         await queryRunner.query(`ALTER TABLE "wastage_log" ADD CONSTRAINT "FK_aab33ce2671eb208442c68b67a5" FOREIGN KEY ("taskId") REFERENCES "task"("id") ON DELETE SET NULL ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "message" ADD CONSTRAINT "FK_446251f8ceb2132af01b68eb593" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "message" ADD CONSTRAINT "FK_d4f63b9a33826eb052fd934b070" FOREIGN KEY ("taskId") REFERENCES "task"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
@@ -35,7 +50,15 @@ export class InitialMigration1759477737280 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "material_log" ADD CONSTRAINT "FK_a7b37e0d416fa7f66ba59b44ed0" FOREIGN KEY ("materialsUsedTaskId") REFERENCES "task"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "material_log" ADD CONSTRAINT "FK_08f0f39bcc1000fb379608e10e1" FOREIGN KEY ("materialsEstimatedTaskId") REFERENCES "task"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "task" ADD CONSTRAINT "FK_3797a20ef5553ae87af126bc2fe" FOREIGN KEY ("projectId") REFERENCES "project"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "task" ADD CONSTRAINT "FK_11c1f96bc242b84517d279d471c" FOREIGN KEY ("progressLogId") REFERENCES "progress_log"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
+        await addForeignKeyIfNotExists(queryRunner, {
+            table: 'task',
+            constraintName: 'FK_11c1f96bc242b84517d279d471c',
+            column: 'progressLogId',
+            referencedTable: 'progress_log',
+            referencedColumn: 'id',
+            onDelete: 'NO ACTION',
+            onUpdate: 'NO ACTION',
+        });
         await queryRunner.query(`ALTER TABLE "attendance_log" ADD CONSTRAINT "FK_e22012e930d96307906528f1bd5" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "layoff_log" ADD CONSTRAINT "FK_c1d9823779465cb2c90054684a7" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
         await queryRunner.query(`ALTER TABLE "user" ADD CONSTRAINT "FK_3d6915a33798152a079997cad28" FOREIGN KEY ("departmentId") REFERENCES "team"("id") ON DELETE NO ACTION ON UPDATE NO ACTION`);
