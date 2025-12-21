@@ -45,6 +45,17 @@ export enum PrinterStatus {
     @Column()
     organizationId!: string;
 
+    @Column({ default: 0 })
+    activeMinutes!: number;
+
+    @Column({ default: 0 })
+    maintenanceMinutes!: number;
+
+    // Scheduled minutes for a single day
+    // default: 8 hours (480 minutes)
+    @Column({ default: 480 })
+    scheduledMinutes!: number;
+
     @ManyToOne(() => Organization, (org)=> org.printers)
     @JoinColumn({ name: 'organizationId' })
     organization!: Organization;
