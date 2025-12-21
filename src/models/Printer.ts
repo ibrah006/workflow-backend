@@ -46,7 +46,7 @@ export enum PrinterStatus {
     organizationId!: string;
 
     @Column({ default: 0 })
-    activeMinutes!: number;
+    workMinutes!: number;
 
     @Column({ default: 0 })
     maintenanceMinutes!: number;
@@ -61,15 +61,48 @@ export enum PrinterStatus {
     organization!: Organization;
 
     @Column({nullable: true})
-    currentTaskId?: string;
+    currentTaskId?: string | null;
 
     @ManyToOne(() => Task)
     @JoinColumn({ name: 'currentTaskId' })
     currentTask?: Task;
 
+    @Column({ type: 'timestamptz', nullable: true })
+    statusLastUpdatedAt?: Date | null;
+
+    @Column({ type: 'timestamptz', nullable: true })
+    taskAssignedAt?: Date | null;
+
     // All the tasks done on this printer
     @OneToMany(()=> Task, (task)=> task.printer)
     tasks!: Task[];
+
+    getEffectiveWorkMinutes(): number {
+      let total = this.workMinutes;
+  
+      if (this.currentTaskId && this.taskAssignedAt) {
+        const now = Date.now();
+        const diffMs = now - this.taskAssignedAt.getTime();
+        total += Math.floor(diffMs / 60000);
+      }
+  
+      return total;
+    }
+  
+    getEffectiveMaintenanceMinutes(): number {
+      let total = this.maintenanceMinutes;
+  
+      if (
+        this.status === PrinterStatus.MAINTENANCE &&
+        this.statusLastUpdatedAt
+      ) {
+        const now = Date.now();
+        const diffMs = now - this.statusLastUpdatedAt.getTime();
+        total += Math.floor(diffMs / 60000);
+      }
+  
+      return total;
+    }
 
   }
   
