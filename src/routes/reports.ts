@@ -3,11 +3,28 @@ import { AppDataSource } from "../data-source";
 import { Project } from "../models/Project";
 import { ProgressLog } from "../models/ProgressLog";
 import { Between, In, Not } from "typeorm";
+import { ProductionReportController } from "../controller/reports";
 
 const projectRepo = AppDataSource.getRepository(Project);
 const progressRepo = AppDataSource.getRepository(ProgressLog);
 
 const router = Router();
+
+const productionReportController = new ProductionReportController();
+
+/**
+ * @route   GET /api/production/report
+ * @desc    Get production report for specified period
+ * @query   for - Required: 'today' | 'thisWeek' | 'thisMonth'
+ * @access  Private (add your auth middleware)
+ */
+router.get(
+  '/report',
+  // Add your authentication middleware here
+  // authMiddleware,
+  (req, res) => productionReportController.getProductionReport(req, res)
+);
+
 
 // GET /reports/projects?for=thisWeek|thisMonth|thisYear
 router.get('/projects', async (req, res) : Promise<any> => {

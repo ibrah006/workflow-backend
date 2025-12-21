@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "./Project";
 import { User } from "./User";
 import { WastageLog } from "./WastageLog";
@@ -54,6 +54,9 @@ export class Task {
         onDelete: 'CASCADE'
     })
     discussionThreads!: Message[];
+
+    @CreateDateColumn({ type: 'timestamptz' })
+    createdAt!: Date;
 
     @ManyToMany(() => ProgressLog, (log)=> log.tasks)
     @JoinTable()
