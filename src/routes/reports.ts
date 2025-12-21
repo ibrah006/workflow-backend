@@ -19,7 +19,7 @@ const productionReportController = new ProductionReportController();
  * @access  Private (add your auth middleware)
  */
 router.get(
-  '/report',
+  '/production',
   // Add your authentication middleware here
   // authMiddleware,
   (req, res) => productionReportController.getProductionReport(req, res)
