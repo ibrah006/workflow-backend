@@ -61,7 +61,7 @@ export enum PrinterStatus {
     organization!: Organization;
 
     @Column({nullable: true})
-    currentTaskId?: string | null;
+    currentTaskId?: number | null;
 
     @ManyToOne(() => Task)
     @JoinColumn({ name: 'currentTaskId' })

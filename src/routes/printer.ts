@@ -4,8 +4,13 @@ import { validateOrReject } from 'class-validator';
 import { UpdatePrinterDto } from '../dtos/update-printer.dto';
 import { Printer, PrinterStatus } from '../models/Printer';
 import { CreatePrinterDto } from '../dtos/create-printer.dto';
+import { PrinterService } from '../services/printerService';
 
 const printerRouter = Router();
+
+const printerService = new PrinterService();
+
+const printerRepo = AppDataSource.getRepository(Printer);
 
 // --------------------------------------------------
 // CREATE PRINTER
@@ -24,8 +29,6 @@ printerRouter.post('/', async (req, res) => {
     });
     await validateOrReject(dto);
 
-    const printerRepo = AppDataSource.getRepository(Printer);
-
     const printer = printerRepo.create(dto);
     await printerRepo.save(printer);
 
@@ -36,6 +39,23 @@ printerRouter.post('/', async (req, res) => {
   }
 });
 
+printerRouter.post('/:id/assign/:taskId', async (req, res) : Promise<any> => {
+  const organizationId = (req as any).user.organizationId;
+
+  const taskId = Number(req.params.taskId);
+
+  const printer = await printerRepo.findOne({
+    where: { id: req.params.id, organization: { id: organizationId } },
+  });
+
+  if (!printer) {
+    return res.status(404).json({ message: 'Printer not found' });
+  }
+
+  await printerService.updatePrinterTask(printer, taskId);
+
+  res.json(printer);
+});
 
 // --------------------------------------------------
 // UPDATE PRINTER (PARTIAL UPDATE)
@@ -49,8 +69,6 @@ printerRouter.patch('/:id', async (req, res) : Promise<any> => {
     const dto = Object.assign(new UpdatePrinterDto(), req.body);
     await validateOrReject(dto);
 
-    const printerRepo = AppDataSource.getRepository(Printer);
-
     const printer = await printerRepo.findOne({
       where: { id: req.params.id, organization: { id: organizationId } },
     });
@@ -59,9 +77,14 @@ printerRouter.patch('/:id', async (req, res) : Promise<any> => {
       return res.status(404).json({ message: 'Printer not found' });
     }
 
-    Object.assign(printer, dto);
+    Object.assign(printer, {  
+      ...dto,
+      // Avoiding assigning the new status from here
+      status: printer.status
+    });
 
-    await printerRepo.save(printer);
+    // await printerRepo.save(printer);
+    await printerService.updatePrinterStatus(printer, dto.status);
 
     res.json(printer);
   } catch (err) {
@@ -78,7 +101,6 @@ printerRouter.patch('/:id', async (req, res) : Promise<any> => {
 printerRouter.delete('/:id', async (req, res) : Promise<any> => {
   const organizationId = (req as any).user.organizationId;
   try {
-    const printerRepo = AppDataSource.getRepository(Printer);
 
     const result = await printerRepo.delete({id: req.params.id, organization: { id: organizationId }});
 
@@ -122,8 +144,6 @@ printerRouter.get('/', async (req, res) => {
 printerRouter.get('/active', async (req, res) => {
 
     const organizationId = (req as any).user.organizationId;
-
-    const printerRepo = AppDataSource.getRepository(Printer);
 
     try {
       const printers = await printerRepo.find({
@@ -181,8 +201,6 @@ printerRouter.get('/:shittu-sample', async (req, res) => {
 
     const organizationId = (req as any).user.organizationId;
 
-    const printerRepo = AppDataSource.getRepository(Printer);
-
     try {
       const printers = await printerRepo.find({
         where: { organization: { id: organizationId }, status: PrinterStatus.ACTIVE }
@@ -205,8 +223,6 @@ printerRouter.get('/:shittu-sample', async (req, res) => {
   printerRouter.get('/shit-sample', async (req, res) => {
 
     const organizationId = (req as any).user.organizationId;
-
-    const printerRepo = AppDataSource.getRepository(Printer);
 
     try {
       const printers = await printerRepo.find({

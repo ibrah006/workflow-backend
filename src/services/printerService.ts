@@ -1,12 +1,15 @@
 import { Repository } from "typeorm";
 import { Printer, PrinterStatus } from "../models/Printer";
 import { AppDataSource } from "../data-source";
+import { Task } from "../models/Task";
 
-export class MaterialService {
+export class PrinterService {
     private printerRepo: Repository<Printer>;
+    private taskRepo: Repository<Task>;
 
     constructor() {
         this.printerRepo = AppDataSource.getRepository(Printer);
+        this.taskRepo = AppDataSource.getRepository(Task);
     }
 
     async updatePrinterStatus(
@@ -35,7 +38,7 @@ export class MaterialService {
 
     async updatePrinterTask(
         printer: Printer,
-        newTaskId: string | null,
+        newTaskId: number | null,
     ) {
         const now = new Date();
       
@@ -51,6 +54,16 @@ export class MaterialService {
         // If assigning a new task
         if (!printer.currentTaskId && newTaskId) {
           printer.taskAssignedAt = now;
+
+          const task = await this.taskRepo.findOne({
+            where: { id: newTaskId }
+          });
+        
+          if (!task) {
+            throw 'Failed to Assign Task - Task not found';
+          }
+
+          printer.tasks.push(task);
         }
       
         printer.currentTaskId = newTaskId;
