@@ -39,8 +39,6 @@ router.get('/projects', async (req, res) : Promise<any> => {
     }
   
     try {
-      
-  
       // --------------------------------------
       // GET DATE RANGE
       // --------------------------------------

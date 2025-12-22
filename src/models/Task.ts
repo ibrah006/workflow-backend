@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "./Project";
 import { User } from "./User";
 import { WastageLog } from "./WastageLog";
@@ -58,6 +58,9 @@ export class Task {
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt!: Date;
 
+    @CreateDateColumn({ type: 'timestamptz' })
+    completedAt!: Date;
+
     @ManyToMany(() => ProgressLog, (log)=> log.tasks)
     @JoinTable()
     progressLogs!: ProgressLog[];
@@ -102,5 +105,13 @@ export class Task {
     // All the work activity logs by all users, checking into this task
     @OneToMany(()=> WorkActivityLog, (log)=> log.task)
     workActivityLogs?: WorkActivityLog[];
+
+    @BeforeUpdate()
+    updateCompletedAt() {
+        // Only set completedAt if status is changing to 'completed' AND completedAt is not already set
+        if (this.status === 'completed' && !this.completedAt) {
+            this.completedAt = new Date();
+        }
+    }
 
 }

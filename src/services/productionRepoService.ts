@@ -32,10 +32,17 @@ interface DowntimeData {
   averageMaintenancePerPrinter: number;
 }
 
+interface PrintJobsOverview {
+  printing: number;
+  pending: number;
+  completedToday: number;
+}
+
 interface ProductionReport {
   overview: OverviewData;
   printerUtilization: PrinterUtilizationData[];
   downtimeAndIssues: DowntimeData;
+  printJobsOverview: PrintJobsOverview;
 }
 
 export class ProductionReportService {
@@ -94,11 +101,13 @@ export class ProductionReportService {
       dateRange
     );
     const downtimeAndIssues = this.generateDowntimeData(printers);
+    const printJobsOverview = await this.getPrintJobsOverview(dateRange);
 
     return {
       overview,
       printerUtilization,
       downtimeAndIssues,
+      printJobsOverview,
     };
   }
 
@@ -203,6 +212,41 @@ export class ProductionReportService {
       totalMaintenanceMinutes,
       totalMaintenanceHours,
       averageMaintenancePerPrinter,
+    };
+  }
+
+  async getPrintJobsOverview(dateRange: DateRange): Promise<PrintJobsOverview> {
+    // Get count of tasks with status "printing"
+    const printing = await this.taskRepo.count({
+      where: {
+        status: "printing",
+      },
+    });
+
+    // Get count of tasks with status "pending"
+    const pending = await this.taskRepo.count({
+      where: {
+        status: "pending",
+      },
+    });
+
+    // Get count of tasks completed today
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+
+    const completedToday = await this.taskRepo.count({
+      where: {
+        status: "completed",
+        completedAt: Between(todayStart, todayEnd),
+      },
+    });
+
+    return {
+      printing,
+      pending,
+      completedToday,
     };
   }
 }
