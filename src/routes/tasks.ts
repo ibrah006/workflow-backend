@@ -3,7 +3,7 @@ import { AppDataSource } from "../data-source";
 import { User } from "../models/User";
 import { Task } from "../models/Task";
 import { WorkActivityLog } from "../models/WorkActivityLog";
-import { IsNull, MoreThan } from "typeorm";
+import { Between, IsNull, MoreThan } from "typeorm";
 import { AttendanceLog } from "../models/AttendanceLog";
 import { Project } from "../models/Project";
 import { authMiddleware } from "../middleware/authMiddleware";
@@ -334,6 +334,37 @@ router.get("/:projectId/last-modified", async (req, res) : Promise<any> => {
         .status(500)
         .json({ message: "Internal server error" });
     }
-});  
+});
+
+// Get today's schedule print jobs
+router.get("/production/today", async (req, res) : Promise<any> => {
+    try {
+        const organizationId = (req as any).user.organizationId;
+
+        // Get today's date at midnight
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        // Get tomorrow's date at midnight
+        const startOfTomorrow = new Date();
+        startOfTomorrow.setDate(startOfToday.getDate() + 1);
+        startOfTomorrow.setHours(0, 0, 0, 0);
+
+        // Today's tasks
+        const tasks = await taskRepo.find({
+            where: { project: { organizationId }, productionStartTime: Between(startOfToday, startOfTomorrow) }
+        });
+
+        res.json({
+            message: "Today's Schedule for Production Team",
+            tasks
+        });
+    } catch(error) {
+        console.error("Error fetching today's schedule for production team", error);
+        return res
+            .status(500)
+            .json({ message: "Internal server error" });
+    }
+});
 
 export default router;
