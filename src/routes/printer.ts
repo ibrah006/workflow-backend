@@ -128,7 +128,7 @@ printerRouter.get('/', async (req, res) => {
   try {
     const printers = await AppDataSource.getRepository(Printer).find({
       order: { createdAt: 'DESC' },
-      where: { organization: { id: organizationId } },
+      where: { organizationId },
     });
 
     res.json(printers);
