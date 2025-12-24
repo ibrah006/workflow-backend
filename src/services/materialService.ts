@@ -316,7 +316,7 @@ export class MaterialService {
     }
 
     if (Number(material.currentStock) < Number(data.quantity)) {
-      throw new Error('Insufficient stock');
+      throw new Error(`Insufficient stock, available limit: ${material.currentStock}`);
     }
 
     // If projectId provided, verify it exists
