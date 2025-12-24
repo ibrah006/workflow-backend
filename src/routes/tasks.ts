@@ -352,7 +352,8 @@ router.get("/production/today", async (req, res) : Promise<any> => {
 
         // Today's tasks
         const tasks = await taskRepo.find({
-            where: { project: { organizationId }, productionStartTime: Between(startOfToday, startOfTomorrow) }
+            where: { project: { organizationId }, productionStartTime: Between(startOfToday, startOfTomorrow) },
+            relations: TASK_RELATIONS
         });
 
         res.json({

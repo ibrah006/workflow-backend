@@ -1,14 +1,14 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddBarcodeToMaterials1762700525901 implements MigrationInterface {
-    name = 'AddBarcodeToMaterials1762700525901'
+export class AddBarcodeToMaterials1762700525903 implements MigrationInterface {
+    name = 'AddBarcodeToMaterials1762700525903'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // 1. Add the column
-        // await queryRunner.query(`
-        //     ALTER TABLE "materials"
-        //     ADD COLUMN "barcode" TEXT;
-        // `);
+        await queryRunner.query(`
+            ALTER TABLE "materials"
+            ADD COLUMN "barcode" TEXT;
+        `);
 
         // 2. Populate existing rows (oldest first)
         await queryRunner.query(`
@@ -29,7 +29,7 @@ export class AddBarcodeToMaterials1762700525901 implements MigrationInterface {
             RETURNS TRIGGER AS $$
             BEGIN
             IF NEW."barcode" IS NULL THEN
-                NEW."barcode" := CONCAT('MAT-', NEW.id);
+                NEW."barcode" := CONCAT('MAT-', NEW.materialNumber);
             END IF;
             RETURN NEW;
             END;
