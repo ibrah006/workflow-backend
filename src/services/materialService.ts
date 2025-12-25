@@ -489,10 +489,11 @@ export class MaterialService {
 
   async getMaterialTransactions(
     materialId: string,
-    limit: number = 50
+    limit: number = 50,
+    type?: TransactionType
   ): Promise<StockTransaction[]> {
     return this.transactionRepo.find({
-      where: { materialId },
+      where: { materialId, ... type? { type } : {} },
       relations: ['createdBy', 'project'],
       order: { createdAt: 'DESC' },
       take: limit,

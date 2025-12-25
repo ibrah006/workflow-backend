@@ -4,6 +4,7 @@ import { CreateMaterialDto, MaterialService } from '../services/materialService'
 import { Material, MeasureType } from '../models/Material';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { AppDataSource } from '../data-source';
+import { TransactionType } from '../models/StockTransaction';
 
 const router = Router();
 const materialService = new MaterialService();
@@ -194,11 +195,21 @@ router.post('/materials/:barcode/stock-out',  async (req: Request, res: Response
 router.get('/materials/:id/transactions',  async (req: Request, res: Response) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+
+    const type = req.query.type as 'stock_in' | 'stock_out' | 'adjustment' | undefined;
+    let typeFormatted: TransactionType | undefined;
+    switch (type) {
+      case 'stock_in': typeFormatted = TransactionType.STOCK_IN; break;
+      case 'stock_out': typeFormatted = TransactionType.STOCK_OUT; break;
+      case 'adjustment': typeFormatted = TransactionType.ADJUSTMENT; break;
+      default: typeFormatted = undefined;
+    }
+
     const transactions = await materialService.getMaterialTransactions(
       req.params.id,
-      limit
+      limit,
+      typeFormatted
     );
-    console.log("transactions by material:", transactions);
     res.json(transactions);
   } catch (error) {
     console.error('Error fetching transactions:', error);
