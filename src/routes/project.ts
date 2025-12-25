@@ -13,6 +13,8 @@ import { Company } from "../models/Company";
 import { Organization } from "../models/Organization";
 import { v4 as uuidv4 } from 'uuid';
 import { Material } from "../models/Material";
+import { MaterialService, StockOutCommitTransactionDto, StockOutDto } from "../services/materialService";
+import { StockTransaction, TransactionType } from "../models/StockTransaction";
 
 
 const router = Router();
@@ -25,6 +27,9 @@ const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 const companyRepo = AppDataSource.getRepository(Company);
 const organizationRepo = AppDataSource.getRepository(Organization);
 const materialRepo = AppDataSource.getRepository(Material);
+const transactionRepo = AppDataSource.getRepository(StockTransaction);
+
+const materialService = new MaterialService();
 
 /**
  * Update the progressLogLastModifiedAt column of project model
@@ -235,7 +240,9 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         // progress stage / department
         progressStage,
         runs,
-        productionQuantity
+        productionQuantity,
+        barcode,
+        priority
     } = req.body;
 
     if (!organizationId) {
@@ -312,6 +319,31 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             }
         }
 
+        const material = await materialRepo.findOne({
+            where: { id: materialId }
+        });
+
+        if (!material) {
+            return res.status(400).json({
+                message: "Material not found"
+            });
+        }
+
+        // Create transaction record
+        const transaction = transactionRepo.create({
+            materialId: materialId,
+            type: TransactionType.STOCK_OUT,
+            quantity: productionQuantity,
+            balanceAfter: material.currentStock,
+            projectId: projectId,
+            notes: "",
+            createdById: user.id,
+            barcode: barcode,
+            committed: false
+        });
+
+        await transactionRepo.save(transaction);
+
         // Create new task with resolved relations
         const newTask = taskRepo.create({
             name,
@@ -327,22 +359,19 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             materialId,
             productionStartTime,
             runs,
-            productionQuantity
+            productionQuantity,
+            priority,
+            stockTransaction: transaction
         });
-
-        const material = await materialRepo.findOne({
-            where: { id: materialId }
-        });
-
-        if (!material) {
-            return res.status(400).json({
-                message: "Material not found"
-            });
-        }
 
         material.stockDemand = material.stockDemand + productionQuantity;
     
         const savedTask = await taskRepo.save(newTask);
+
+        // Now set the inverse relation and save
+        transaction.task = savedTask;
+        transaction.taskId = savedTask.id;
+        await transactionRepo.save(transaction);
 
         res.status(201).json({
             message: `Task created successfully for project ${projectId}`,
@@ -367,6 +396,7 @@ router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<any
     const taskId = parseInt(req.params.taskId);
     const updatedTaskData = req.body;
     const organizationId = (req as any).user?.organizationId;
+    const userId = (req as any).user.id;
 
     if (!organizationId) {
         return res.status(401).json({ message: 'Organization context required' });
@@ -375,7 +405,7 @@ router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<any
     try {
         const task = await taskRepo.findOne({
             where: { id: taskId },
-            relations: ['assignees', 'project'],
+            relations: ['assignees', 'project', 'stockTransaction'],
         });
 
         if (!task) {
@@ -403,16 +433,23 @@ router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<any
             ...entityField("dateCompleted", updatedTaskData.dateCompleted),
         };
 
+        await taskRepo.update(taskId, updates);
+
         // If task is marked completed
         if (task.status !== updatedTaskData.status && updatedTaskData.status === 'completed') {
             // Stock out, update the material's currentStock and stockDemand
-            await materialRepo.update(task.materialId, {
-                currentStock: task.material.currentStock - task.productionQuantity,
-                stockDemand: task.material.stockDemand - task.productionQuantity
-            })
-        }
+            // await materialRepo.update(task.materialId, {
+            //     currentStock: task.material.currentStock - task.productionQuantity,
+            //     stockDemand: task.material.stockDemand - task.productionQuantity
+            // })
 
-        await taskRepo.update(taskId, updates);
+            await materialService.stockOut({
+                quantity: task.stockTransaction.quantity,
+                projectId: task.project.id,
+                taskId: task.id,
+                transactionId: task.stockTransactionId
+            } as StockOutCommitTransactionDto);
+        }
 
         // If assignees are passed, update relation
         if (updatedTaskData.assignees) {

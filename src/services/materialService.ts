@@ -26,12 +26,41 @@ interface StockInDto {
   organizationId: string
 }
 
-interface StockOutDto {
+export interface StockOutDto {
   barcode: string;
   quantity: number;
   projectId?: string;
+  taskId?: number;
   notes?: string;
   userId: string;
+}
+
+export interface StockOutCommitTransactionDto {
+  quantity: number;
+  projectId?: string;
+  taskId?: number;
+  userId: string;
+  /**
+   * The existing stock out transaction that has not yet been committed
+  */
+  transactionId: string;
+}
+
+function isStockOutCommitTransactionDto(
+  value: unknown
+): value is StockOutCommitTransactionDto {
+  if (typeof value !== "object" || value === null) return false;
+
+  const v = value as Record<string, unknown>;
+
+  return (
+    typeof v.quantity === "number" &&
+    typeof v.userId === "string" &&
+    typeof v.transactionId === "string" &&
+    (v.projectId === undefined || typeof v.projectId === "string") &&
+    (v.taskId === undefined || typeof v.taskId === "number") &&
+    (v.notes === undefined || typeof v.notes === "string")
+  );
 }
 
 export class MaterialService {
@@ -40,6 +69,7 @@ export class MaterialService {
   private organizationRepo: Repository<Organization>;
   private userRepo: Repository<User>;
   private projectRepo: Repository<Project>;
+  private taskRepo: Repository<Task>;
 
   constructor() {
     this.materialRepo = AppDataSource.getRepository(Material);
@@ -47,6 +77,7 @@ export class MaterialService {
     this.organizationRepo = AppDataSource.getRepository(Organization);
     this.userRepo = AppDataSource.getRepository(User);
     this.projectRepo = AppDataSource.getRepository(Project);
+    this.taskRepo = AppDataSource.getRepository(Task);
   }
 
   async createMaterial(data: CreateMaterialDto, organizationId: string): Promise<Material> {
@@ -281,6 +312,7 @@ export class MaterialService {
       barcode,
       notes: data.notes,
       createdById: data.userId,
+      committed: true
     });
 
     if (saveautoSave) {
@@ -298,15 +330,26 @@ export class MaterialService {
   /**
    * Updated stockOut method with task blocking logic
    */
-  async stockOut(data: StockOutDto): Promise<StockTransaction | null> {
+  async stockOut(data: StockOutDto | StockOutCommitTransactionDto): Promise<StockTransaction | null> {
     const queryRunner = AppDataSource.createQueryRunner();
     await queryRunner.connect();
     await queryRunner.startTransaction();
 
     try {
-      const stockTransaction = await this.getTransactionByBarcode(data.barcode);
+      let stockTransaction
+      const isExistingTransaction = isStockOutCommitTransactionDto(data);
+      if (isExistingTransaction) {
+        // Checking to see if the stock out transaction exists
+        stockTransaction = await this.transactionRepo.findOne({
+          where: { id: data.transactionId }
+        });
+      } else {
+        // Checking to see if the stock (in) transaction exists with this barcode
+        stockTransaction = await this.getTransactionByBarcode(data.barcode);
+      }
+
       if (!stockTransaction) {
-        throw new Error('Stock in Transaction not found with the given barcode');
+        throw new Error('Stock in Transaction not found');
       }
 
       const material = stockTransaction.material;
@@ -339,16 +382,27 @@ export class MaterialService {
       material.currentStock = Number(material.currentStock) - Number(data.quantity);
       await queryRunner.manager.save(material);
 
-      // Create transaction record
-      const transaction = this.transactionRepo.create({
-        materialId: material.id,
-        type: TransactionType.STOCK_OUT,
-        quantity: data.quantity,
-        balanceAfter: material.currentStock,
-        projectId: data.projectId,
-        notes: data.notes,
-        createdById: data.userId,
-      });
+      // Create/Update transaction record
+      let transaction;
+      if (isExistingTransaction) {
+        transaction = stockTransaction;
+      } else {
+        transaction = this.transactionRepo.create({
+          materialId: material.id,
+          type: TransactionType.STOCK_OUT,
+          quantity: data.quantity,
+          balanceAfter: material.currentStock,
+          projectId: data.projectId,
+          notes: data.notes,
+          createdById: data.userId,
+          barcode: stockTransaction.barcode,
+          committed: true
+        });
+      }
+
+      if (data.taskId) {
+        transaction.taskId = data.taskId;
+      }
       await queryRunner.manager.save(transaction);
 
       // NEW: Check and block tasks if needed
@@ -502,7 +556,7 @@ export class MaterialService {
 
   async getTransactionByBarcode(barcode: string): Promise<StockTransaction | null> {
     return this.transactionRepo.findOne({
-      where: { barcode },
+      where: { barcode, type: TransactionType.STOCK_IN },
       relations: ['material', 'createdBy', 'material.organization', 'material.createdBy'],
     });
   }

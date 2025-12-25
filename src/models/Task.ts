@@ -1,4 +1,4 @@
-import { BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { BeforeUpdate, Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Project } from "./Project";
 import { User } from "./User";
 import { WastageLog } from "./WastageLog";
@@ -8,6 +8,7 @@ import { MaterialLog } from "./MaterialLog";
 import { ProgressLog } from "./ProgressLog";
 import { Printer } from "./Printer";
 import { Material } from "./Material";
+import { StockTransaction } from "./StockTransaction";
 
 @Entity()
 export class Task {
@@ -84,6 +85,9 @@ export class Task {
     @Column({ type: 'timestamptz', nullable: true })
     productionStartTime?: Date | null;
 
+    /**
+     * @deprecated
+     */
     @Column({ type: 'decimal' })
     productionQuantity!: number;
 
@@ -101,6 +105,13 @@ export class Task {
 
     @Column({ default: 1 })
     priority!: number;
+
+    @Column({ nullable: true })
+    stockTransactionId!: string;
+  
+    @OneToOne(() => StockTransaction, (stockTransaction)=> stockTransaction.task, { nullable: true })
+    @JoinColumn({ name: 'stockTransactionId' })
+    stockTransaction!: StockTransaction;
 
     // derived attributes (NOTE FOR THE FRONT-END):
     // task efficiency
