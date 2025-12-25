@@ -1,5 +1,5 @@
 // src/services/MaterialService.ts
-import { Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import crypto from 'crypto';
 import { Material, MeasureType } from '../models/Material';
 import { StockTransaction, TransactionType } from '../models/StockTransaction';
@@ -7,6 +7,7 @@ import { Organization } from '../models/Organization';
 import { User } from '../models/User';
 import { Project } from '../models/Project';
 import { AppDataSource } from '../data-source';
+import { Task } from '../models/Task';
 
 export interface CreateMaterialDto {
   name: string;
@@ -294,63 +295,191 @@ export class MaterialService {
     return transaction;
   }
 
+  /**
+   * Updated stockOut method with task blocking logic
+   */
   async stockOut(data: StockOutDto): Promise<StockTransaction | null> {
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    const stockTransaction = await this.getTransactionByBarcode(data.barcode);
+    try {
+      const stockTransaction = await this.getTransactionByBarcode(data.barcode);
+      if (!stockTransaction) {
+        throw new Error('Stock in Transaction not found with the given barcode');
+      }
 
-    if (!stockTransaction) {
-      throw new Error('Stock in Transaction not found with the given barcode');
+      const material = stockTransaction.material;
+      const user = await this.userRepo.findOne({
+        where: { id: data.userId },
+      });
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      if (data.quantity <= 0) {
+        throw new Error('Quantity must be greater than 0');
+      }
+
+      if (Number(material.currentStock) < Number(data.quantity)) {
+        throw new Error(`Insufficient stock, available limit: ${material.currentStock}`);
+      }
+
+      // If projectId provided, verify it exists
+      if (data.projectId) {
+        const project = await this.projectRepo.findOne({
+          where: { id: data.projectId },
+        });
+        if (!project) {
+          throw new Error('Project not found');
+        }
+      }
+
+      // Update material stock
+      material.currentStock = Number(material.currentStock) - Number(data.quantity);
+      await queryRunner.manager.save(material);
+
+      // Create transaction record
+      const transaction = this.transactionRepo.create({
+        materialId: material.id,
+        type: TransactionType.STOCK_OUT,
+        quantity: data.quantity,
+        balanceAfter: material.currentStock,
+        projectId: data.projectId,
+        notes: data.notes,
+        createdById: data.userId,
+      });
+      await queryRunner.manager.save(transaction);
+
+      // NEW: Check and block tasks if needed
+      await this.checkAndBlockTasksForMaterial(material.id, queryRunner);
+
+      await queryRunner.commitTransaction();
+
+      return this.transactionRepo.findOne({
+        where: { id: transaction.id },
+        relations: ['material', 'createdBy', 'project'],
+      });
+    } catch (error) {
+      await queryRunner.rollbackTransaction();
+      throw error;
+    } finally {
+      await queryRunner.release();
     }
+  }
 
-    const material = stockTransaction.material;
-    const user = await this.userRepo.findOne({
-      where: { id: data.userId },
+  /**
+   * Checks all non-completed/non-blocked tasks for a material
+   * and blocks them if cumulative demand exceeds current stock
+   */
+  private async checkAndBlockTasksForMaterial(
+    materialId: string,
+    queryRunner: any
+  ): Promise<void> {
+    // Get the material with current stock
+    const material = await queryRunner.manager.findOne(Material, {
+      where: { id: materialId },
     });
 
-    if (!user) {
-      throw new Error('User not found');
+    if (!material) {
+      throw new Error('Material not found');
     }
 
-    if (data.quantity <= 0) {
-      throw new Error('Quantity must be greater than 0');
+    // Get all relevant tasks, ordered by priority (higher number = higher priority = first)
+    const tasks = await queryRunner.manager.find(Task, {
+      where: {
+        materialId: materialId,
+        status: Not(In(['completed', 'blocked'])),
+      },
+      order: {
+        priority: 'DESC', // Higher priority first
+        createdAt: 'ASC',  // If same priority, older tasks first
+      },
+    });
+
+    if (tasks.length === 0) {
+      return;
     }
 
-    if (Number(material.currentStock) < Number(data.quantity)) {
-      throw new Error(`Insufficient stock, available limit: ${material.currentStock}`);
-    }
+    let cumulativeDemand = 0;
 
-    // If projectId provided, verify it exists
-    if (data.projectId) {
-      const project = await this.projectRepo.findOne({
-        where: { id: data.projectId },
-      });
-      if (!project) {
-        throw new Error('Project not found');
+    // Process each task in priority order
+    for (const task of tasks) {
+      const taskQuantity = Number(task.productionQuantity || 0);
+      
+      // Add this task's demand to cumulative
+      cumulativeDemand += taskQuantity;
+
+      // Check if cumulative demand exceeds available stock
+      if (cumulativeDemand > Number(material.currentStock)) {
+        // Block this task due to insufficient stock
+        task.status = 'blocked';
+        await queryRunner.manager.save(task);
       }
     }
 
-    // Update material stock
-    material.currentStock = Number(material.currentStock) - Number(data.quantity);
-    await this.materialRepo.save(material);
-
-    // Create transaction record
-    const transaction = this.transactionRepo.create({
-      materialId: material.id,
-      type: TransactionType.STOCK_OUT,
-      quantity: data.quantity,
-      balanceAfter: material.currentStock,
-      projectId: data.projectId,
-      notes: data.notes,
-      createdById: data.userId,
-    });
-
-    await this.transactionRepo.save(transaction);
-
-    return this.transactionRepo.findOne({
-      where: { id: transaction.id },
-      relations: ['material', 'createdBy', 'project'],
-    });
+    // Update material's total stock demand
+    material.stockDemand = cumulativeDemand;
+    await queryRunner.manager.save(material);
   }
+
+  // async stockOut(data: StockOutDto): Promise<StockTransaction | null> {
+
+  //   const stockTransaction = await this.getTransactionByBarcode(data.barcode);
+
+  //   if (!stockTransaction) {
+  //     throw new Error('Stock in Transaction not found with the given barcode');
+  //   }
+
+  //   const material = stockTransaction.material;
+  //   const user = await this.userRepo.findOne({
+  //     where: { id: data.userId },
+  //   });
+
+  //   if (!user) {
+  //     throw new Error('User not found');
+  //   }
+
+  //   if (data.quantity <= 0) {
+  //     throw new Error('Quantity must be greater than 0');
+  //   }
+
+  //   if (Number(material.currentStock) < Number(data.quantity)) {
+  //     throw new Error(`Insufficient stock, available limit: ${material.currentStock}`);
+  //   }
+
+  //   // If projectId provided, verify it exists
+  //   if (data.projectId) {
+  //     const project = await this.projectRepo.findOne({
+  //       where: { id: data.projectId },
+  //     });
+  //     if (!project) {
+  //       throw new Error('Project not found');
+  //     }
+  //   }
+
+  //   // Update material stock
+  //   material.currentStock = Number(material.currentStock) - Number(data.quantity);
+  //   await this.materialRepo.save(material);
+
+  //   // Create transaction record
+  //   const transaction = this.transactionRepo.create({
+  //     materialId: material.id,
+  //     type: TransactionType.STOCK_OUT,
+  //     quantity: data.quantity,
+  //     balanceAfter: material.currentStock,
+  //     projectId: data.projectId,
+  //     notes: data.notes,
+  //     createdById: data.userId,
+  //   });
+
+  //   await this.transactionRepo.save(transaction);
+
+  //   return this.transactionRepo.findOne({
+  //     where: { id: transaction.id },
+  //     relations: ['material', 'createdBy', 'project'],
+  //   });
+  // }
 
   async getMaterialByMaterialBarcode(materialBarcode: string) : Promise<Material | null> {
     return await this.materialRepo.findOne({

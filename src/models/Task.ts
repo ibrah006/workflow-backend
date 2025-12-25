@@ -84,6 +84,9 @@ export class Task {
     @Column({ type: 'timestamptz', nullable: true })
     productionStartTime?: Date | null;
 
+    @Column({ type: 'decimal' })
+    productionQuantity!: number;
+
     // All the Material logs initiated for this task
     // @OneToMany(()=> MaterialLog, (log)=> log.task)
     // materialLogs!: MaterialLog[];
@@ -94,7 +97,10 @@ export class Task {
     // Material used for this task
     @ManyToOne(()=> Material)
     @JoinColumn({ name: 'materialId' })
-    material!: Material[];
+    material!: Material;
+
+    @Column({ default: 1 })
+    priority!: number;
 
     // derived attributes (NOTE FOR THE FRONT-END):
     // task efficiency

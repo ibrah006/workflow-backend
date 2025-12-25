@@ -72,6 +72,9 @@ export class Material {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  @Column({ default: 0 })
+  stockDemand!: number;
 }
 
 

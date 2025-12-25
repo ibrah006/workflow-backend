@@ -12,6 +12,7 @@ import { notifyProjectAboutLastTaskChange } from "./tasks";
 import { Company } from "../models/Company";
 import { Organization } from "../models/Organization";
 import { v4 as uuidv4 } from 'uuid';
+import { Material } from "../models/Material";
 
 
 const router = Router();
@@ -23,6 +24,7 @@ const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 const companyRepo = AppDataSource.getRepository(Company);
 const organizationRepo = AppDataSource.getRepository(Organization);
+const materialRepo = AppDataSource.getRepository(Material);
 
 /**
  * Update the progressLogLastModifiedAt column of project model
@@ -232,11 +234,16 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         productionStartTime,
         // progress stage / department
         progressStage,
-        runs
+        runs,
+        productionQuantity
     } = req.body;
 
     if (!organizationId) {
         return res.status(401).json({ message: 'Organization context required' });
+    }
+
+    if (productionQuantity <= 0) {
+        return res.status(400).json({ message: 'Production Quantity must be greater than 0' });
     }
 
     // Get the department of the User
@@ -319,11 +326,24 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             productionDuration: estimatedDuration,
             materialId,
             productionStartTime,
-            runs
+            runs,
+            productionQuantity
         });
+
+        const material = await materialRepo.findOne({
+            where: { id: materialId }
+        });
+
+        if (!material) {
+            return res.status(400).json({
+                message: "Material not found"
+            });
+        }
+
+        material.stockDemand = material.stockDemand + productionQuantity;
     
         const savedTask = await taskRepo.save(newTask);
-        
+
         res.status(201).json({
             message: `Task created successfully for project ${projectId}`,
             taskId: savedTask.id,
@@ -382,6 +402,15 @@ router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<any
             ...entityField("status", updatedTaskData.status),
             ...entityField("dateCompleted", updatedTaskData.dateCompleted),
         };
+
+        // If task is marked completed
+        if (task.status !== updatedTaskData.status && updatedTaskData.status === 'completed') {
+            // Stock out, update the material's currentStock and stockDemand
+            await materialRepo.update(task.materialId, {
+                currentStock: task.material.currentStock - task.productionQuantity,
+                stockDemand: task.material.stockDemand - task.productionQuantity
+            })
+        }
 
         await taskRepo.update(taskId, updates);
 
