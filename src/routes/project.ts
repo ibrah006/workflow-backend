@@ -221,7 +221,7 @@ router.put("/:id", async (req, res) : Promise<any> => {
 /// Manage Project tasks
 
 // Add task for project with ID: [params.id]
-router.post("/:id/tasks", async (req, res) : Promise<any>=> {
+router.post("/:id/tasks", async (req, res): Promise<any> => {
     const projectId = req.params.id;
     const user = (req as any).user;
     const organizationId = user.organizationId;
@@ -237,7 +237,6 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         estimatedDuration,
         materialId,
         productionStartTime,
-        // progress stage / department
         progressStage,
         runs,
         productionQuantity,
@@ -253,103 +252,118 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
         return res.status(400).json({ message: 'Production Quantity must be greater than 0' });
     }
 
-    // Get the department of the User
-    // This department is going to be assigned as the initial state for this Task
-    const requestFromDepartment = progressStage;
+    // Start database transaction
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
 
-    console.log("status passed in:", requestFromDepartment);
-
-    const progressRequest = {
-        params: { id: projectId },
-        user: (req as any).user,
-        body: {
-            id: uuidv4(),
-            status: requestFromDepartment
-        }
-    };
-    const createProgressResponse = await projectController.createProgressLog(progressRequest);
-
-    let progressLog = createProgressResponse.progressLog;
-    if (Math.floor(createProgressResponse.statusCode/100) !== 2) {
-        // Error - not 201 or not 209
-        return res.status(createProgressResponse.statusCode).json({ message: "Error Occurred." });
-    } else if (createProgressResponse.statusCode === 209) {
-        // Which means the createProgressResponse.progressLog is null/undefined
-        // and createProgressResponse.statusCode === 209
-
-        // Get the most recently created progress log
-        // and considering createProgressResponse.statusCode === 209 the situation implies that the last progress log has status === userDepartment (one that we're concerned with)
-        progressLog = (await progressLogRepo
-            .createQueryBuilder("log")
-            .innerJoin("log.project", "project")
-            .where("project.id = :projectId", { projectId })
-            .andWhere("log.status = :status", { status: requestFromDepartment })
-            .orderBy("log.startDate", "DESC")
-            .addOrderBy("log.createdAt", "DESC")
-            .limit(1)
-            .getOne())?? undefined;
-
-        if (!progressLog) {
-            // This error is not expected! Probably an error due to network connection or something
-            return res.status(createProgressResponse.statusCode).json({ message: "Unexpected Error Occurred. Please try again." });
-        }
-    }
-
-    // At this point: progressLog !== null
-    progressLog = progressLog!;
-  
     try {
+        // Get the department of the User
+        const requestFromDepartment = progressStage;
+
+        console.log("status passed in:", requestFromDepartment);
+
+        const progressRequest = {
+            params: { id: projectId },
+            user: (req as any).user,
+            body: {
+                id: uuidv4(),
+                status: requestFromDepartment
+            }
+        };
+        const createProgressResponse = await projectController.createProgressLog(progressRequest);
+
+        let progressLog = createProgressResponse.progressLog;
+        if (Math.floor(createProgressResponse.statusCode / 100) !== 2) {
+            await queryRunner.rollbackTransaction();
+            return res.status(createProgressResponse.statusCode).json({ message: "Error Occurred." });
+        } else if (createProgressResponse.statusCode === 209) {
+            progressLog = (await progressLogRepo
+                .createQueryBuilder("log")
+                .innerJoin("log.project", "project")
+                .where("project.id = :projectId", { projectId })
+                .andWhere("log.status = :status", { status: requestFromDepartment })
+                .orderBy("log.startDate", "DESC")
+                .addOrderBy("log.createdAt", "DESC")
+                .limit(1)
+                .getOne()) ?? undefined;
+
+            if (!progressLog) {
+                await queryRunner.rollbackTransaction();
+                return res.status(createProgressResponse.statusCode).json({ 
+                    message: "Unexpected Error Occurred. Please try again." 
+                });
+            }
+        }
+
+        progressLog = progressLog!;
         const project = createProgressResponse.project;
-        
-        // Fetch User entities from the assigneeIds (if provided)
-        // Ensure users belong to the same organization
-        let assignees : User[] = [];
+
+        // Fetch User entities from the assigneeIds
+        let assignees: User[] = [];
         if (assigneeIds && Array.isArray(assigneeIds)) {
-            assignees = await userRepo.find({
-                where: { 
+            assignees = await queryRunner.manager.find(User, {
+                where: {
                     id: In(assigneeIds),
                     organization: { id: organizationId }
                 }
             });
 
             if (assignees.length !== assigneeIds.length) {
-                return res.status(400).json({ 
-                    message: "One or more assignees do not belong to your organization" 
+                await queryRunner.rollbackTransaction();
+                return res.status(400).json({
+                    message: "One or more assignees do not belong to your organization"
                 });
             }
         }
 
-        const material = await materialRepo.findOne({
+        const material = await queryRunner.manager.findOne(Material, {
             where: { id: materialId }
         });
 
         if (!material) {
+            await queryRunner.rollbackTransaction();
             return res.status(400).json({
                 message: "Material not found"
             });
         }
 
-        // Create transaction record
-        const transaction = transactionRepo.create({
+        // Update material stock demand
+        const updatedStockDemand = Number(material.stockDemand || 0) + Number(productionQuantity);
+        material.stockDemand = updatedStockDemand;
+
+        // Determine initial task status based on stock availability
+        let initialStatus = status || 'pending';
+        
+        // Check if this new task would exceed available stock
+        if (updatedStockDemand > Number(material.currentStock)) {
+            initialStatus = 'blocked';
+        }
+
+        // Save material with updated demand
+        await queryRunner.manager.save(material);
+
+        // Create uncommitted stock transaction record
+        const transaction = queryRunner.manager.create(StockTransaction, {
             materialId: materialId,
             type: TransactionType.STOCK_OUT,
             quantity: productionQuantity,
-            balanceAfter: material.currentStock,
+            balanceAfter: material.currentStock, // Balance doesn't change yet since not committed
             projectId: projectId,
             notes: "",
             createdById: user.id,
             barcode: barcode,
-            committed: false
+            committed: false // Key: not committed yet
         });
 
-        await transactionRepo.save(transaction);
+        await queryRunner.manager.save(transaction);
 
         // Create new task with resolved relations
-        const newTask = taskRepo.create({
+        const newTask = queryRunner.manager.create(Task, {
             name,
             description,
             dueDate,
-            status,
+            status: initialStatus, // Use calculated status
             dateCompleted,
             project,
             assignees,
@@ -360,32 +374,106 @@ router.post("/:id/tasks", async (req, res) : Promise<any>=> {
             productionStartTime,
             runs,
             productionQuantity,
-            priority,
+            priority: priority || 1, // Default priority if not provided
             stockTransaction: transaction
         });
 
-        material.stockDemand = material.stockDemand + productionQuantity;
-    
-        const savedTask = await taskRepo.save(newTask);
+        const savedTask = await queryRunner.manager.save(newTask);
 
-        // Now set the inverse relation and save
+        // Set inverse relation
         transaction.task = savedTask;
         transaction.taskId = savedTask.id;
-        await transactionRepo.save(transaction);
+        await queryRunner.manager.save(transaction);
+
+        // Re-evaluate all other non-completed/non-blocked tasks for this material
+        await checkAndBlockTasksForMaterial(materialId, queryRunner);
+
+        await queryRunner.commitTransaction();
 
         res.status(201).json({
             message: `Task created successfully for project ${projectId}`,
             taskId: savedTask.id,
+            status: initialStatus,
+            wasBlocked: initialStatus === 'blocked'
         });
 
     } catch (err) {
+        await queryRunner.rollbackTransaction();
         console.error(err);
         res.status(400).json({
             message: `Failed to create task for project ${projectId}`,
             error: err instanceof Error ? err.message : 'Unknown error',
         });
+    } finally {
+        await queryRunner.release();
     }
 });
+
+/**
+ * Helper function to check and block tasks based on material stock availability
+ * Should be placed in a shared location or service
+ */
+async function checkAndBlockTasksForMaterial(
+    materialId: string,
+    queryRunner: any
+): Promise<void> {
+    const { Not, In } = require('typeorm');
+    
+    // Get the material with current stock
+    const material = await queryRunner.manager.findOne(Material, {
+        where: { id: materialId },
+    });
+
+    if (!material) {
+        throw new Error('Material not found');
+    }
+
+    // Get all relevant tasks, ordered by priority (higher number = higher priority = first)
+    // Only tasks that are NOT completed and NOT already blocked
+    const tasks = await queryRunner.manager.find(Task, {
+        where: {
+            materialId: materialId,
+            status: Not(In(['completed', 'blocked'])),
+        },
+        order: {
+            priority: 'DESC', // Higher priority first (4, 3, 2, 1)
+            createdAt: 'ASC',  // If same priority, older tasks first
+        },
+    });
+
+    if (tasks.length === 0) {
+        return;
+    }
+
+    // Calculate cumulative demand and block tasks as needed
+    let cumulativeDemand = 0;
+
+    for (const task of tasks) {
+        const taskQuantity = Number(task.productionQuantity || 0);
+        
+        // Add this task's demand to cumulative
+        cumulativeDemand += taskQuantity;
+
+        // Check if cumulative demand exceeds available stock
+        if (cumulativeDemand > Number(material.currentStock)) {
+            // Block this task due to insufficient stock
+            if (task.status !== 'blocked') {
+                task.status = 'blocked';
+                await queryRunner.manager.save(task);
+            }
+        } else {
+            // If task was previously blocked due to stock and now has sufficient stock, unblock it
+            if (task.status === 'blocked') {
+                task.status = 'pending'; // or whatever default active status you use
+                await queryRunner.manager.save(task);
+            }
+        }
+    }
+
+    // Update material's total stock demand with all non-completed tasks
+    material.stockDemand = cumulativeDemand;
+    await queryRunner.manager.save(material);
+}
 
 // Edit Task endpoint
 function entityField(key: string, value: any | null): {} {
