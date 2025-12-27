@@ -400,6 +400,7 @@ router.put("/:id/assign-printer", async (req, res) => {
 
         task.printerId = printerId;
         task.printer.currentTaskId = task.id;
+        task.actualProductionStartTime = new Date();
         task.printer.tasks.push(task);
 
         task.status = 'printing';
@@ -457,9 +458,8 @@ router.put("/:id/unassign-printer", async (req, res) => {
         }
 
         task.printerId = null;
-
         task.printer.currentTaskId = null;
-
+        task.actualProductionEndTime = new Date();
         task.status = status;
 
         await taskRepo.save(task);
