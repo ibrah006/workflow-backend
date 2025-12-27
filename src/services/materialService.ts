@@ -423,7 +423,7 @@ export class MaterialService {
   }
 
   /**
-   * Checks all non-completed/non-blocked tasks for a material
+   * Checks all PENDING tasks for a material
    * and blocks them if cumulative demand exceeds current stock
    */
   private async checkAndBlockTasksForMaterial(
@@ -443,7 +443,8 @@ export class MaterialService {
     const tasks = await queryRunner.manager.find(Task, {
       where: {
         materialId: materialId,
-        status: Not(In(['completed', 'blocked'])),
+        // status: Not(In(['completed', 'blocked'])),
+        status: 'pending'
       },
       order: {
         priority: 'DESC', // Higher priority first
