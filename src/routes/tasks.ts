@@ -8,6 +8,7 @@ import { AttendanceLog } from "../models/AttendanceLog";
 import { Project } from "../models/Project";
 import { authMiddleware } from "../middleware/authMiddleware";
 import taskController from '../controller/task';
+import { MaterialService, StockOutCommitTransactionDto } from "../services/materialService";
 
 const router = Router();
 
@@ -18,6 +19,8 @@ const workActivityLogRepo = AppDataSource.getRepository(WorkActivityLog);
 const attendanceLogRepo = AppDataSource.getRepository(AttendanceLog);
 
 const projectRepo = AppDataSource.getRepository(Project);
+
+const materialService = new MaterialService()
 
 // --- define any task relations you want eagerly loaded
 export const TASK_RELATIONS = ["assignees", "project", "progressLogs", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task", 'material', 'stockTransaction'];
@@ -365,6 +368,109 @@ router.get("/production/today", async (req, res) : Promise<any> => {
         return res
             .status(500)
             .json({ message: "Internal server error" });
+    }
+});
+
+router.put("/:id/assign-printer", async (req, res) => {
+    const taskId = Number(req.params.id);
+
+    const printerId = req.body.printerId;
+
+    const userId = (req as any).user.id;
+
+    try {
+        const task = await taskRepo.findOne({
+            where: { id: taskId },
+            relations: ['stockTransaction', 'project']
+        });
+
+        if (!task) {
+            res.status(404).json({
+                message: `Task not found`
+            });
+            return;
+        }
+
+        if (!task.printer) {
+            res.status(404).json({
+                message: `Printer not found`
+            });
+            return;
+        }
+
+        task.printerId = printerId;
+        task.printer.currentTaskId = task.id;
+        task.printer.tasks.push(task);
+
+        task.status = 'printing';
+
+        await taskRepo.save(task);
+
+        // Commit the existing stock out transaction
+        await materialService.stockOut({
+            quantity: task.stockTransaction.quantity,
+            projectId: task.project.id,
+            taskId: task.id,
+            userId: userId,
+            transactionId: task.stockTransactionId
+        } as StockOutCommitTransactionDto);
+
+        res.json({
+            message: `Successfully assigned printer to task and started print job`
+        });
+    } catch(e) {
+        res.status(500).json({
+            message: `Failed to assign printer to task: ${e}`
+        });
+    }
+});
+
+router.put("/:id/unassign-printer", async (req, res) => {
+    const taskId = Number(req.params.id);
+
+    const status = req.body.status;
+
+    try {
+        const task = await taskRepo.findOne({
+            where: { id: taskId }
+        });
+
+        if (!task) {
+            res.status(404).json({
+                message: `Task not found`
+            });
+            return;
+        }
+
+        if (!task.printerId) {
+            res.status(404).json({
+                message: `No Printer assigned to unassign`
+            });
+            return;
+        }
+
+        if (!task.printer) {
+            res.status(404).json({
+                message: `Printer not found`
+            });
+            return;
+        }
+
+        task.printerId = null;
+
+        task.printer.currentTaskId = null;
+
+        task.status = status;
+
+        await taskRepo.save(task);
+
+        res.json({
+            message: `Successfully unassigned printer to task and started print job`
+        });
+    } catch(e) {
+        res.status(500).json({
+            message: `Failed to assign printer to task: ${e}`
+        });
     }
 });
 

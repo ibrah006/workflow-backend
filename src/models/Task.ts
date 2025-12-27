@@ -67,12 +67,12 @@ export class Task {
     progressLogs!: ProgressLog[];
 
     // The printer that this job(task) was completed on
-    @Column("character varying")
-    printerId!: string;
+    @Column("character varying", { nullable: true })
+    printerId?: string | null;
 
-    @ManyToOne(() => Printer, (printer)=> printer.tasks)
+    @ManyToOne(() => Printer, (printer)=> printer.tasks, { nullable: true })
     @JoinColumn({ name: 'printerId' })
-    printer!: Printer;
+    printer?: Printer;
 
     // Repeat of this task - How many times this task is supposed to repeat
     @Column({ default: 1 })
@@ -82,8 +82,15 @@ export class Task {
     @Column({ nullable: true })
     productionDuration?: number;
 
+    // Estimated start time
     @Column({ type: 'timestamptz', nullable: true })
     productionStartTime?: Date | null;
+
+    @Column({ type: 'timestamptz', nullable: true })
+    actualProductionStartTime?: Date | null;
+
+    @Column({ type: 'timestamptz', nullable: true })
+    actualProductionEndTime?: Date | null;
 
     /**
      * @deprecated
