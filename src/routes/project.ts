@@ -433,7 +433,8 @@ async function checkAndBlockTasksForMaterial(
     const tasks = await queryRunner.manager.find(Task, {
         where: {
             materialId: materialId,
-            status: Not(In(['completed', 'blocked'])),
+            // status: Not(In(['completed', 'blocked'])),
+            status: In(['pending', 'blocked'])
         },
         order: {
             priority: 'DESC', // Higher priority first (4, 3, 2, 1)
@@ -454,8 +455,8 @@ async function checkAndBlockTasksForMaterial(
         // Add this task's demand to cumulative
         cumulativeDemand += taskQuantity;
 
-        // Check if cumulative demand exceeds available stock
-        if (cumulativeDemand > Number(material.currentStock)) {
+        // Check if task production quantity exceeds available stock
+        if (taskQuantity > Number(material.currentStock)) {
             // Block this task due to insufficient stock
             if (task.status !== 'blocked') {
                 task.status = 'blocked';

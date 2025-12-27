@@ -424,7 +424,7 @@ export class MaterialService {
 
   /**
    * Checks all PENDING tasks for a material
-   * and blocks them if cumulative demand exceeds current stock
+   * and blocks them if insufficient stock
    */
   private async checkAndBlockTasksForMaterial(
     materialId: string,
@@ -444,7 +444,7 @@ export class MaterialService {
       where: {
         materialId: materialId,
         // status: Not(In(['completed', 'blocked'])),
-        status: 'pending'
+        status: In(['pending', 'blocked'])
       },
       order: {
         priority: 'DESC', // Higher priority first
@@ -465,11 +465,17 @@ export class MaterialService {
       // Add this task's demand to cumulative
       cumulativeDemand += taskQuantity;
 
-      // Check if cumulative demand exceeds available stock
-      if (cumulativeDemand > Number(material.currentStock)) {
+      // Check if task production quantity exceeds available stock
+      if (taskQuantity > Number(material.currentStock)) {
         // Block this task due to insufficient stock
         task.status = 'blocked';
         await queryRunner.manager.save(task);
+      } else {
+        // If task was previously blocked due to stock and now has sufficient stock, unblock it
+          if (task.status === 'blocked') {
+              task.status = 'pending'; // or whatever default active status you use
+              await queryRunner.manager.save(task);
+          }
       }
     }
 
