@@ -9,6 +9,7 @@ import { Project } from "../models/Project";
 import { authMiddleware } from "../middleware/authMiddleware";
 import taskController from '../controller/task';
 import { MaterialService, StockOutCommitTransactionDto } from "../services/materialService";
+import { Printer, PrinterStatus } from "../models/Printer";
 
 const router = Router();
 
@@ -21,6 +22,8 @@ const attendanceLogRepo = AppDataSource.getRepository(AttendanceLog);
 const projectRepo = AppDataSource.getRepository(Project);
 
 const materialService = new MaterialService()
+
+const printerRepo = AppDataSource.getRepository(Printer);
 
 // --- define any task relations you want eagerly loaded
 export const TASK_RELATIONS = ["assignees", "project", "progressLogs", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task", 'material', 'stockTransaction'];
@@ -391,23 +394,64 @@ router.put("/:id/assign-printer", async (req, res) => {
             return;
         }
 
-        task.printerId = printerId;
-        task.printer!.currentTaskId = task.id;
-        task.actualProductionStartTime = new Date();
-        task.printer!.tasks.push(task);
+        // Find the printer
+        const printer = await printerRepo.findOne({
+            where: { id: printerId }
+        });
+    
+        if (!printer) {
+            res.status(404).json({
+            message: `Printer not found`
+            });
+            return;
+        }
 
-        task.status = 'printing';
+        // Check if printer is available
+        if (printer.status !== PrinterStatus.ACTIVE) {
+            res.status(400).json({
+            message: `Printer is not available (status: ${printer.status})`
+            });
+            return;
+        }
 
-        await taskRepo.save(task);
-
-        // Commit the existing stock out transaction
-        await materialService.stockOut({
-            quantity: task.stockTransaction.quantity,
-            projectId: task.project.id,
-            taskId: task.id,
-            userId: userId,
-            transactionId: task.stockTransactionId
-        } as StockOutCommitTransactionDto);
+        // Using transaction to ensure atomicity
+        await AppDataSource.transaction(async (transactionalEntityManager) => {
+            // Update task
+            task.printerId = printerId;
+            task.actualProductionStartTime = new Date();
+            task.status = 'printing';
+            await transactionalEntityManager.save(task);
+    
+            // Update printer
+            printer.currentTaskId = task.id;
+            printer.taskAssignedAt = new Date(); // Track when task was assigned
+            await transactionalEntityManager.save(printer);
+        });
+        
+        try {
+            // Commit the existing stock out transaction
+            await materialService.stockOut({
+                quantity: task.stockTransaction.quantity,
+                projectId: task.project.id,
+                taskId: task.id,
+                userId: userId,
+                transactionId: task.stockTransactionId
+            } as StockOutCommitTransactionDto);
+        } catch(err) {
+            await AppDataSource.transaction(async (transactionalEntityManager) => {
+                // Update task
+                task.printerId = null;
+                task.actualProductionStartTime = null;
+                task.status = 'pending';
+                await transactionalEntityManager.save(task);
+        
+                // Update printer
+                printer.currentTaskId = null;
+                printer.taskAssignedAt = null; // Track when task was assigned
+                await transactionalEntityManager.save(printer);
+            });
+            throw `Issue: ${err}`;
+        }
 
         res.json({
             message: `Successfully assigned printer to task and started print job`

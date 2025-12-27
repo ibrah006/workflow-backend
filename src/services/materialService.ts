@@ -58,8 +58,7 @@ function isStockOutCommitTransactionDto(
     typeof v.userId === "string" &&
     typeof v.transactionId === "string" &&
     (v.projectId === undefined || typeof v.projectId === "string") &&
-    (v.taskId === undefined || typeof v.taskId === "number") &&
-    (v.notes === undefined || typeof v.notes === "string")
+    (v.taskId === undefined || typeof v.taskId === "number")
   );
 }
 
@@ -387,6 +386,7 @@ export class MaterialService {
       if (isExistingTransaction) {
         transaction = stockTransaction;
       } else {
+        console.log("is not existing transaction");
         transaction = this.transactionRepo.create({
           materialId: material.id,
           type: TransactionType.STOCK_OUT,
