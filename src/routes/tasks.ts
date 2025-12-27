@@ -459,7 +459,7 @@ router.put("/:id/unassign-printer", async (req, res) => {
 
         task.printerId = null;
         task.printer.currentTaskId = null;
-        task.actualProductionEndTime = new Date();
+        task.actualProductionStartTime = new Date();
         task.status = status;
 
         await taskRepo.save(task);
