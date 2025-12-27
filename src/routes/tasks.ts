@@ -391,17 +391,10 @@ router.put("/:id/assign-printer", async (req, res) => {
             return;
         }
 
-        if (!task.printer) {
-            res.status(404).json({
-                message: `Printer not found`
-            });
-            return;
-        }
-
         task.printerId = printerId;
-        task.printer.currentTaskId = task.id;
+        task.printer!.currentTaskId = task.id;
         task.actualProductionStartTime = new Date();
-        task.printer.tasks.push(task);
+        task.printer!.tasks.push(task);
 
         task.status = 'printing';
 
