@@ -481,6 +481,7 @@ function entityField(key: string, value: any | null): {} {
     return value !== undefined ? {[key]: value} : {};
 }
 
+// Update task endpoint
 router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<any>=> {
     const taskId = parseInt(req.params.taskId);
     const updatedTaskData = req.body;

@@ -47,20 +47,11 @@ export interface StockOutCommitTransactionDto {
 }
 
 function isStockOutCommitTransactionDto(
-  value: unknown
-): value is StockOutCommitTransactionDto {
-  if (typeof value !== "object" || value === null) return false;
-
-  const v = value as Record<string, unknown>;
-
-  return (
-    typeof v.quantity === "number" &&
-    typeof v.userId === "string" &&
-    typeof v.transactionId === "string" &&
-    (v.projectId === undefined || typeof v.projectId === "string") &&
-    (v.taskId === undefined || typeof v.taskId === "number")
-  );
+  data: StockOutDto | StockOutCommitTransactionDto
+): data is StockOutCommitTransactionDto {
+  return 'commitTransactionId' in data;
 }
+
 
 export class MaterialService {
   private materialRepo: Repository<Material>;
