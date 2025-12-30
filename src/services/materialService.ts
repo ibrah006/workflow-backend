@@ -49,7 +49,7 @@ export interface StockOutCommitTransactionDto {
 function isStockOutCommitTransactionDto(
   data: StockOutDto | StockOutCommitTransactionDto
 ): data is StockOutCommitTransactionDto {
-  return 'commitTransactionId' in data;
+  return 'transactionId' in data;
 }
 
 
@@ -354,9 +354,11 @@ export class MaterialService {
         throw new Error('Quantity must be greater than 0');
       }
 
+      console.log("About to check material stock sufficiency");
       if (Number(material.currentStock) < Number(data.quantity)) {
         throw new Error(`Insufficient stock, available limit: ${material.currentStock}`);
       }
+      console.log("Checked material stock sufficiency ✅");
 
       // If projectId provided, verify it exists
       if (data.projectId) {
