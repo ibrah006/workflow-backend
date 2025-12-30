@@ -438,6 +438,7 @@ router.put("/:id/assign-printer", async (req, res) => {
                 transactionId: task.stockTransactionId
             } as StockOutCommitTransactionDto);
         } catch(err) {
+            // Rollback
             await AppDataSource.transaction(async (transactionalEntityManager) => {
                 // Update task
                 task.printerId = null;
