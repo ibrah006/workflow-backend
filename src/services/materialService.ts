@@ -331,7 +331,8 @@ export class MaterialService {
       if (isExistingTransaction) {
         // Checking to see if the stock out transaction exists
         stockTransaction = await this.transactionRepo.findOne({
-          where: { id: data.transactionId }
+          where: { id: data.transactionId },
+          relations: ['material', 'createdBy', 'material.organization', 'material.createdBy']
         });
       } else {
         // Checking to see if the stock (in) transaction exists with this barcode
@@ -354,7 +355,7 @@ export class MaterialService {
         throw new Error('Quantity must be greater than 0');
       }
 
-      console.log("About to check material stock sufficiency");
+      console.log("About to check material stock sufficiency, material:", material);
       if (Number(material.currentStock) < Number(data.quantity)) {
         throw new Error(`Insufficient stock, available limit: ${material.currentStock}`);
       }
