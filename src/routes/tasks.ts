@@ -401,7 +401,12 @@ router.put("/:id/assign-printer", async (req, res) => {
     
         if (!printer) {
             res.status(404).json({
-            message: `Printer not found`
+                message: `Printer not found`
+            });
+            return;
+        } else if (printer.currentTaskId != null) {
+            res.status(400).json({
+                message: `Printer busy with another Job`
             });
             return;
         }
@@ -480,7 +485,7 @@ router.put("/:id/unassign-printer", async (req, res) => {
             });
             return;
         }
-
+        
         if (!task.printerId) {
             res.status(404).json({
                 message: `No Printer assigned to unassign`
@@ -497,7 +502,7 @@ router.put("/:id/unassign-printer", async (req, res) => {
 
         task.printerId = null;
         task.printer.currentTaskId = null;
-        task.actualProductionStartTime = new Date();
+        task.actualProductionEndTime = new Date();
         task.status = status;
 
         await taskRepo.save(task);
