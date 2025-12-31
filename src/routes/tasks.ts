@@ -476,7 +476,8 @@ router.put("/:id/unassign-printer", async (req, res) => {
 
     try {
         const task = await taskRepo.findOne({
-            where: { id: taskId }
+            where: { id: taskId },
+            relations: ['printer', 'printer.currentTask']
         });
 
         if (!task) {
@@ -502,6 +503,7 @@ router.put("/:id/unassign-printer", async (req, res) => {
 
         task.printerId = null;
         task.printer.currentTaskId = null;
+        task.printer.currentTask = undefined;
         task.actualProductionEndTime = new Date();
         task.status = status;
 
