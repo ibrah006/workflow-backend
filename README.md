@@ -21,9 +21,7 @@ This is the Express.js + TypeScript backend for **Work Flow**, a productivity an
 ## 🛠️ Tech Stack
 - Node.js + Express.js
 - TypeScript
-- MongoDB with Mongoose
 - JWT Auth
-- Zod for validation
 
 ## 📦 Getting Started
 ```bash
