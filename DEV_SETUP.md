@@ -85,42 +85,6 @@ npm run dev
 npm test
 ```
 
-## API Documentation
-
-### Invitations
-
-#### Send Invitation
-```http
-POST /api/invitations
-Content-Type: application/json
-
-{
-  "email": "user@example.com",
-  "organizationId": "uuid",
-  "role": "member"
-}
-```
-
-#### Get Organization Invitations
-```http
-GET /api/invitations/organization/:organizationId?status=PENDING
-```
-
-#### Accept Invitation
-```http
-POST /api/invitations/:token/accept
-```
-
-#### Cancel Invitation
-```http
-DELETE /api/invitations/:invitationId
-```
-
-#### Get User Pending Invitations
-```http
-GET /api/invitations/user/:email
-```
-
 ## Project Structure
 
 ```
@@ -143,20 +107,6 @@ workflow-backend/
 ├── tsconfig.json
 └── README.md
 ```
-
-## Database Schema
-
-### Invitation Entity
-- `id` - Unique identifier
-- `email` - Invitee email address
-- `organizationId` - Organization reference
-- `invitedById` - User who sent the invitation
-- `token` - Unique invitation token
-- `role` - User role in organization
-- `status` - PENDING | ACCEPTED | CANCELLED | EXPIRED
-- `expiresAt` - Invitation expiration date
-- `createdAt` - Creation timestamp
-- `updatedAt` - Last update timestamp
 
 ## Contributing
 
