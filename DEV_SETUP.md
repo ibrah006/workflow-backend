@@ -125,8 +125,6 @@ GET /api/invitations/user/:email
 ```
 workflow-backend/
 ├── src/
-│   ├── config/          # Configuration files
-│   │   └── database.ts
 │   ├── entities/        # TypeORM entities
 │   │   ├── User.ts
 │   │   ├── Organization.ts
