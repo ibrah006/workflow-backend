@@ -21,9 +21,9 @@ A robust backend service for managing organizational workflows, user invitations
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
-- Node.js (v16 or higher)
+- <a href="https://nodejs.org/en/download">Node.js</a> (v16 or higher)
 - npm or yarn
-- PostgreSQL (or your chosen database)
+- <a href="https://www.enterprisedb.com/download-postgresql-binaries">PostgreSQL (Please download v17.7 for best compatibility)</a>
 
 ## Installation
 
