@@ -65,7 +65,7 @@ IS_PRODUCTION=false
 
 # ONLY FOR PRODUCTION
 # Ignore this
-...
+# ...
 ```
 
 4. Run database migrations:
