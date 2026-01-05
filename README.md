@@ -94,3 +94,13 @@ Run Migration
 ```bash
 npm run typeorm -- migration:run -d src/data-source.ts
 ```
+
+
+## 🔒 License
+
+This project is **proprietary / source-available**.
+
+The source code is visible for evaluation purposes only.
+Unauthorized use, redistribution, or commercial use is prohibited.
+
+See the [LICENSE](./LICENSE) file for details.
