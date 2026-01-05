@@ -63,9 +63,9 @@ JWT_EXPIRES_IN=99d
 # Do not edit this for local setup
 IS_PRODUCTION=false
 
-# PRODUCTION
-DB_HOST_PRODUCTION=production_host
-DB_URL=production_db_url
+# ONLY FOR PRODUCTION
+# Ignore this
+...
 ```
 
 4. Run database migrations:
