@@ -79,12 +79,6 @@ npm run migration:run
 npm run dev
 ```
 
-### Production
-```bash
-npm run build
-npm start
-```
-
 ### Testing
 ```bash
 npm test
