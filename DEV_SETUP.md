@@ -47,24 +47,25 @@ Edit `.env` with your configuration:
 ```env
 # Database
 DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=your_username
+PORT=5432
+DB_USER=your_username
 DB_PASSWORD=your_password
-DB_DATABASE=workflow_db
+DB_DATABASE=workflow
 
 # Application
 PORT=3000
 NODE_ENV=development
 
-# JWT (if applicable)
-JWT_SECRET=your_secret_key
-JWT_EXPIRES_IN=7d
+# JWT
+JWT_SECRET=secret_key
+JWT_EXPIRES_IN=99d
 
-# Email (for invitations)
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your_email
-SMTP_PASS=your_password
+# Do not edit this for local setup
+IS_PRODUCTION=false
+
+# PRODUCTION
+DB_HOST_PRODUCTION=production_host
+DB_URL=production_db_url
 ```
 
 4. Run database migrations:
