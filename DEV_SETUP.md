@@ -70,7 +70,7 @@ IS_PRODUCTION=false
 
 4. Run database migrations:
 ```bash
-npm run migration:run
+npm run typeorm -- migration:run -d src/data-source.ts
 ```
 
 ## Usage
