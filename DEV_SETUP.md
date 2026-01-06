@@ -80,11 +80,6 @@ npm run migration:run
 npm run dev
 ```
 
-### Testing
-```bash
-npm test
-```
-
 ## Project Structure
 
 ```
