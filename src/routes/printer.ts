@@ -40,6 +40,9 @@ printerRouter.post('/', async (req, res) => {
 });
 
 // Assign Task for Printer
+/**
+ * @deprecated
+ */
 printerRouter.post('/:id/assign/:taskId', async (req, res) : Promise<any> => {
   const organizationId = (req as any).user.organizationId;
 
