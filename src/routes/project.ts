@@ -647,7 +647,7 @@ router.get("/overall-status", async (req, res) => {
             where: {
                 organizationId,
                 status: Not(In(['cancelled', 'finished'])),
-                estimatedProductionStart: MoreThanOrEqual(todayDate),
+                // estimatedProductionStart: MoreThanOrEqual(todayDate),
             },
             order: {
                 createdAt: 'DESC',
