@@ -39,7 +39,7 @@ export class AddBarcodeToMaterials1762700525909 implements MigrationInterface {
         //   material_number_seq
         await queryRunner.query(`
             SELECT setval(
-                'material_number_seq',
+            'material_number_seq',
                 GREATEST(
                     (SELECT COALESCE(MAX("materialNumber"), 1) FROM "materials"),
                     1
