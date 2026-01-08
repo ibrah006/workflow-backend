@@ -37,16 +37,16 @@ export class AddBarcodeToMaterials1762700525909 implements MigrationInterface {
         //     (SELECT COALESCE(MAX("materialNumber"), 0) FROM "materials")
         //   );
         //   material_number_seq
-        await queryRunner.query(`
-            SELECT setval(
-            'material_number_seq',
-                GREATEST(
-                    (SELECT COALESCE(MAX("materialNumber"), 1) FROM "materials"),
-                    1
-                )
-            );
-            material_number_seq
-        `);
+        // await queryRunner.query(`
+        //     SELECT setval(
+        //     'material_number_seq',
+        //         GREATEST(
+        //             (SELECT COALESCE(MAX("materialNumber"), 1) FROM "materials"),
+        //             1
+        //         )
+        //     );
+        //     material_number_seq
+        // `);
         
 
         // BARCODE - Populate existing rows (oldest first)
