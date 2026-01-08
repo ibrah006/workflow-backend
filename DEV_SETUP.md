@@ -56,47 +56,48 @@ import 'reflect-metadata';
 
 ## Setup basic Auth (JWT & Bcrypt)
 ```bash
-npm install bcrypt jsonwebtoken
-npm install --save-dev @types/bcrypt @types/jsonwebtoken
-```
-
-# Dev Env Setup on Different OSs
-
-## MacOS
-
-### Setup PostgreSQL in just 2 steps!
-1. Install Postgresql
-```bash
-brew install postgresql
-# Start postgresql service
-brew services start postgresql
-```
-Check brew services status
-```bash
-brew services list
-```
-
-2. Create DB user and DB
-```bash
-psql postgres
-# Then inside the psql shell:
-CREATE USER myuser WITH PASSWORD 'mypassword';
-CREATE DATABASE mydb OWNER myuser;
-\q
-```
-
-Generate Migration
-```bash
-npm run migration:generate src/migrations/MigrationName
-```
-
-Run Migration
-```bash
 npm run typeorm -- migration:run -d src/data-source.ts
 ```
 
+## Usage
 
-## 🔒 License
+### Development
+```bash
+npm run dev
+```
+
+## Project Structure
+
+```
+workflow-backend/
+├── src/
+│   ├── entities/        # TypeORM entities
+│   │   ├── User.ts
+│   │   ├── Organization.ts
+│   │   └── Invitation.ts
+│   ├── services/        # Business logic
+│   │   └── InvitationService.ts
+│   ├── controllers/     # Request handlers
+│   ├── routes/          # API routes
+│   ├── middleware/      # Custom middleware
+│   ├── utils/           # Utility functions
+│   └── index.ts         # Application entry point
+├── tests/               # Test files
+├── .env.example         # Example environment variables
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
 
 This project is **proprietary / source-available**.
 
