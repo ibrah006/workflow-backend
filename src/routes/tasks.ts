@@ -507,13 +507,22 @@ router.put("/:id/unassign-printer", async (req, res) => {
             return;
         }
 
+        const printerId = task.printerId;
+
         task.printerId = null;
-        task.printer.currentTaskId = null;
-        task.printer.currentTask = undefined;
         task.actualProductionEndTime = new Date();
         task.status = status;
 
         await taskRepo.save(task);
+
+        const printer = await printerRepo.findOne({
+            where: { id: printerId }
+        });
+
+        if (printer) {
+            printer.currentTaskId = null;
+            printer.currentTask = undefined;
+        }
 
         res.json({
             message: `Successfully unassigned printer to task and started print job`
