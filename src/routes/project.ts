@@ -271,7 +271,9 @@ router.post("/:id/tasks", async (req, res): Promise<any> => {
                 status: requestFromDepartment
             }
         };
+        console.log("progress request before calling create progressLog:", progressRequest);
         const createProgressResponse = await projectController.createProgressLog(progressRequest);
+        console.log("createProgressResponse:", createProgressResponse);
 
         let progressLog = createProgressResponse.progressLog;
         if (Math.floor(createProgressResponse.statusCode / 100) !== 2) {

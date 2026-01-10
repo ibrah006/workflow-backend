@@ -6,6 +6,7 @@ import { Printer, PrinterStatus } from '../models/Printer';
 import { CreatePrinterDto } from '../dtos/create-printer.dto';
 import { PrinterService } from '../services/printerService';
 import { Task } from '../models/Task';
+import task from '../controller/task';
 
 const printerRouter = Router();
 
@@ -87,7 +88,7 @@ printerRouter.put('/:id', async (req, res) : Promise<any> => {
 
     const printer = await printerRepo.findOne({
       where: { id: req.params.id, organization: { id: organizationId } },
-      relations: ['currentTask']
+      relations: ['currentTask', 'currentTask.printer']
     });
 
     if (!printer) {
@@ -99,13 +100,16 @@ printerRouter.put('/:id', async (req, res) : Promise<any> => {
     // If Printer status change requested while printer is busy
     if (statusChange && printer.currentTaskId) {
       const assignedTask = await taskRepo.findOne({
-        where: { id: printer.currentTaskId }
+        where: { id: printer.currentTaskId },
+        relations: ['printer']
       });
 
       if (assignedTask) {
         assignedTask.actualProductionEndTime = new Date();
         assignedTask.printerId = null;
         assignedTask.status = 'blocked';
+
+        await taskRepo.save(assignedTask);
       }
 
       // in case task assigned to printer NOT FOUND:
