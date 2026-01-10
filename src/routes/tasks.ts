@@ -451,15 +451,17 @@ router.put("/:id/assign-printer", async (req, res) => {
                 await AppDataSource.transaction(async (transactionalEntityManager) => {
                     // Update task
                     task.printerId = null;
-                    task.actualProductionStartTime = rollbackProductionStartTime;
+                    task.actualProductionStartTime = null;
                     task.status = 'pending';
                     await transactionalEntityManager.save(task);
             
                     // Update printer
                     printer.currentTaskId = null;
-                    printer.taskAssignedAt = rollbackProductionStartTime; // Track when task was assigned
+                    printer.taskAssignedAt = null; // Track when task was assigned
                     await transactionalEntityManager.save(printer);
                 });
+                
+                throw `Issue: ${err}`;
             }
         }
 
