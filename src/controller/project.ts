@@ -477,7 +477,7 @@ export default {
         try {
             const log = progressLogRepo.create(body);
             console.log("log BEFORE save: ", log);
-            // savedLog = await progressLogRepo.save(log);
+            savedLog = await progressLogRepo.save(log);
     
             // Update project status
             project.status = log.status;
