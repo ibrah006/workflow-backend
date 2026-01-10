@@ -420,6 +420,7 @@ router.put("/:id/assign-printer", async (req, res) => {
         }
 
         const isJobResume = task.status === "paused";
+        const rollbackProductionStartTime = task.actualProductionStartTime;
 
         // Using transaction to ensure atomicity
         await AppDataSource.transaction(async (transactionalEntityManager) => {
@@ -450,16 +451,15 @@ router.put("/:id/assign-printer", async (req, res) => {
                 await AppDataSource.transaction(async (transactionalEntityManager) => {
                     // Update task
                     task.printerId = null;
-                    task.actualProductionStartTime = null;
+                    task.actualProductionStartTime = rollbackProductionStartTime;
                     task.status = 'pending';
                     await transactionalEntityManager.save(task);
             
                     // Update printer
                     printer.currentTaskId = null;
-                    printer.taskAssignedAt = null; // Track when task was assigned
+                    printer.taskAssignedAt = rollbackProductionStartTime; // Track when task was assigned
                     await transactionalEntityManager.save(printer);
                 });
-                throw `Issue: ${err}`;
             }
         }
 
