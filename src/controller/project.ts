@@ -2,7 +2,7 @@ import { AppDataSource } from "../data-source";
 import { ProgressLog } from "../models/ProgressLog";
 
 import { Request, Response } from "express";
-import { PROGRESS_RELATIONS } from "./progressLog";
+import progressLog, { PROGRESS_RELATIONS } from "./progressLog";
 import { Project } from "../models/Project";
 import { MoreThan } from "typeorm";
 import { Task } from "../models/Task";
@@ -466,10 +466,24 @@ export default {
             return { statusCode: 400, project };
         }
         delete body.updatedAt;
-    
+        
         if (project.status === body.status) {
-            return {
-                statusCode: 209, project
+            // check to see if the progress log exists
+            const log = await progressLogRepo.findOne({
+                where: {
+                    projectId: projectId
+                },
+                order: {
+                    createdAt: "DESC"
+                }
+            });
+
+            if (log) {
+                // the last Progress Log is already the one that is being currently requested
+                // So do not create another progress log as we don't want consecutive progress logs for a project on the same stage
+                return {
+                    statusCode: 209, project
+                }
             }
         }
     
