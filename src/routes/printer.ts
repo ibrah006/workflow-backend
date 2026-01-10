@@ -63,9 +63,9 @@ printerRouter.post('/:id/assign/:taskId', async (req, res) : Promise<any> => {
 
 // --------------------------------------------------
 // UPDATE PRINTER (PARTIAL UPDATE)
-// PATCH /printers/:id
+// PUT /printers/:id
 // --------------------------------------------------
-printerRouter.patch('/:id', async (req, res) : Promise<any> => {
+printerRouter.put('/:id', async (req, res) : Promise<any> => {
   
   const organizationId = (req as any).user.organizationId;
 
