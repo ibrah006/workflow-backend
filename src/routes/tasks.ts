@@ -419,6 +419,8 @@ router.put("/:id/assign-printer", async (req, res) => {
             return;
         }
 
+        const isJobResume = task.status === "paused";
+
         // Using transaction to ensure atomicity
         await AppDataSource.transaction(async (transactionalEntityManager) => {
             // Update task
@@ -433,30 +435,32 @@ router.put("/:id/assign-printer", async (req, res) => {
             await transactionalEntityManager.save(printer);
         });
         
-        try {
-            // Commit the existing stock out transaction
-            await materialService.stockOut({
-                quantity: task.stockTransaction.quantity,
-                projectId: task.project.id,
-                taskId: task.id,
-                userId: userId,
-                transactionId: task.stockTransactionId
-            } as StockOutCommitTransactionDto);
-        } catch(err) {
-            // Rollback
-            await AppDataSource.transaction(async (transactionalEntityManager) => {
-                // Update task
-                task.printerId = null;
-                task.actualProductionStartTime = null;
-                task.status = 'pending';
-                await transactionalEntityManager.save(task);
-        
-                // Update printer
-                printer.currentTaskId = null;
-                printer.taskAssignedAt = null; // Track when task was assigned
-                await transactionalEntityManager.save(printer);
-            });
-            throw `Issue: ${err}`;
+        if (!isJobResume) {
+            try {
+                // Commit the existing stock out transaction
+                await materialService.stockOut({
+                    quantity: task.stockTransaction.quantity,
+                    projectId: task.project.id,
+                    taskId: task.id,
+                    userId: userId,
+                    transactionId: task.stockTransactionId
+                } as StockOutCommitTransactionDto);
+            } catch(err) {
+                // Rollback
+                await AppDataSource.transaction(async (transactionalEntityManager) => {
+                    // Update task
+                    task.printerId = null;
+                    task.actualProductionStartTime = null;
+                    task.status = 'pending';
+                    await transactionalEntityManager.save(task);
+            
+                    // Update printer
+                    printer.currentTaskId = null;
+                    printer.taskAssignedAt = null; // Track when task was assigned
+                    await transactionalEntityManager.save(printer);
+                });
+                throw `Issue: ${err}`;
+            }
         }
 
         res.json({

@@ -107,7 +107,7 @@ printerRouter.put('/:id', async (req, res) : Promise<any> => {
       if (assignedTask) {
         assignedTask.actualProductionEndTime = new Date();
         assignedTask.printerId = null;
-        assignedTask.status = 'blocked';
+        assignedTask.status = 'paused';
 
         await taskRepo.save(assignedTask);
       }
