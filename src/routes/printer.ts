@@ -5,12 +5,15 @@ import { UpdatePrinterDto } from '../dtos/update-printer.dto';
 import { Printer, PrinterStatus } from '../models/Printer';
 import { CreatePrinterDto } from '../dtos/create-printer.dto';
 import { PrinterService } from '../services/printerService';
+import { Task } from '../models/Task';
 
 const printerRouter = Router();
 
 const printerService = new PrinterService();
 
 const printerRepo = AppDataSource.getRepository(Printer);
+
+const taskRepo = AppDataSource.getRepository(Task);
 
 // --------------------------------------------------
 // CREATE PRINTER
@@ -69,16 +72,46 @@ printerRouter.put('/:id', async (req, res) : Promise<any> => {
   
   const organizationId = (req as any).user.organizationId;
 
+  const {
+    name,
+    nickname,
+    location,
+    status,
+    maxWidth,
+    printSpeed
+  } = req.body;
+
   try {
     const dto = Object.assign(new UpdatePrinterDto(), req.body);
     await validateOrReject(dto);
 
     const printer = await printerRepo.findOne({
       where: { id: req.params.id, organization: { id: organizationId } },
+      relations: ['currentTask']
     });
 
     if (!printer) {
       return res.status(404).json({ message: 'Printer not found' });
+    }
+
+    const statusChange = status !== printer.status;
+
+    // If Printer status change requested while printer is busy
+    if (statusChange && printer.currentTaskId) {
+      const assignedTask = await taskRepo.findOne({
+        where: { id: printer.currentTaskId }
+      });
+
+      if (assignedTask) {
+        assignedTask.actualProductionEndTime = new Date();
+        assignedTask.printerId = null;
+        assignedTask.status = 'blocked';
+      }
+
+      // in case task assigned to printer NOT FOUND:
+      // Unassign task from printer anyways
+      printer.currentTask = undefined;
+      printer.currentTaskId = null;
     }
 
     Object.assign(printer, {  
