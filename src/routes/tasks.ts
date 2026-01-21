@@ -10,6 +10,7 @@ import { authMiddleware } from "../middleware/authMiddleware";
 import taskController from '../controller/task';
 import { MaterialService, StockOutCommitTransactionDto } from "../services/materialService";
 import { Printer, PrinterStatus } from "../models/Printer";
+import { Organization } from "../models/Organization";
 
 const router = Router();
 
@@ -24,6 +25,7 @@ const projectRepo = AppDataSource.getRepository(Project);
 const materialService = new MaterialService()
 
 const printerRepo = AppDataSource.getRepository(Printer);
+const organizationRepo = AppDataSource.getRepository(Organization);
 
 // --- define any task relations you want eagerly loaded
 export const TASK_RELATIONS = ["assignees", "project", "progressLogs", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task", 'material', 'stockTransaction'];
@@ -532,6 +534,51 @@ router.put("/:id/unassign-printer", async (req, res) => {
             message: `Failed to assign printer to task: ${e}`
         });
     }
+});
+
+router.put("/:id/progress-stage", async (req, res)=> {
+    const taskId = Number(req.params.id);
+    const organizationId = (req.body as any).user.organizationId;
+
+    const newStatus = req.body.newStatus;
+
+    if (!newStatus) {
+        res.status(400).json({
+            message: "New Status required"
+        })
+        return;
+    }
+
+    if (!organizationId) {
+        res.status(401).json({
+            message: "FORBIDDEN ACCESS"
+        })
+        return;
+    }
+
+    const task = await taskRepo.findOne({
+        where: {
+            id: taskId,
+            project: {
+                organizationId: organizationId!
+            }
+        },
+    });
+
+    if (!task) {
+        res.status(403).json({
+            message: "FORBIDDEN ACCESS OR TASK NOT FOUND"
+        })
+        return;
+    }
+
+    taskRepo.update(
+        taskId,
+        {
+            status: newStatus
+        }
+    );
+
 });
 
 export default router;
