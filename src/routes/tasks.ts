@@ -561,8 +561,9 @@ router.put("/:id/progress-stage", async (req, res)=> {
             id: taskId,
             project: {
                 organizationId: organizationId!
-            }
+            },            
         },
+        relations: ['project']
     });
 
     if (!task) {
@@ -572,13 +573,16 @@ router.put("/:id/progress-stage", async (req, res)=> {
         return;
     }
 
-    taskRepo.update(
+    await taskRepo.update(
         taskId,
         {
             status: newStatus
         }
     );
 
+    res.status(200).json({
+        task
+    })
 });
 
 export default router;
