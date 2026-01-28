@@ -233,23 +233,11 @@ router.post("/:id/tasks", async (req, res): Promise<any> => {
         status,
         assignees: assigneeIds,
         dateCompleted,
-        printerId,
-        estimatedDuration,
-        materialId,
-        productionStartTime,
-        progressStage,
-        runs,
-        productionQuantity,
-        barcode,
         priority
     } = req.body;
 
     if (!organizationId) {
         return res.status(401).json({ message: 'Organization context required' });
-    }
-
-    if (productionQuantity <= 0) {
-        return res.status(400).json({ message: 'Production Quantity must be greater than 0' });
     }
 
     // Start database transaction
@@ -258,48 +246,18 @@ router.post("/:id/tasks", async (req, res): Promise<any> => {
     await queryRunner.startTransaction();
 
     try {
-        // Get the department of the User
-        const requestFromDepartment = progressStage;
-
-        console.log("status passed in:", requestFromDepartment);
-
-        const progressRequest = {
-            params: { id: projectId },
-            user: (req as any).user,
-            body: {
-                id: uuidv4(),
-                status: requestFromDepartment
+        // Fetch the project
+        const project = await queryRunner.manager.findOne(Project, {
+            where: { 
+                id: projectId,
+                organization: { id: organizationId }
             }
-        };
-        console.log("progress request before calling create progressLog:", progressRequest);
-        const createProgressResponse = await projectController.createProgressLog(progressRequest);
-        console.log("createProgressResponse:", createProgressResponse);
+        });
 
-        let progressLog = createProgressResponse.progressLog;
-        if (Math.floor(createProgressResponse.statusCode / 100) !== 2) {
+        if (!project) {
             await queryRunner.rollbackTransaction();
-            return res.status(createProgressResponse.statusCode).json({ message: "Error Occurred." });
-        } else if (createProgressResponse.statusCode === 209) {
-            progressLog = (await progressLogRepo
-                .createQueryBuilder("log")
-                .innerJoin("log.project", "project")
-                .where("project.id = :projectId", { projectId })
-                .andWhere("log.status = :status", { status: requestFromDepartment })
-                .orderBy("log.startDate", "DESC")
-                .addOrderBy("log.createdAt", "DESC")
-                .limit(1)
-                .getOne()) ?? undefined;
-
-            if (!progressLog) {
-                await queryRunner.rollbackTransaction();
-                return res.status(createProgressResponse.statusCode).json({ 
-                    message: "Unexpected Error Occurred. Please try again." 
-                });
-            }
+            return res.status(404).json({ message: 'Project not found' });
         }
-
-        progressLog = progressLog!;
-        const project = createProgressResponse.project;
 
         // Fetch User entities from the assigneeIds
         let assignees: User[] = [];
@@ -319,84 +277,25 @@ router.post("/:id/tasks", async (req, res): Promise<any> => {
             }
         }
 
-        const material = await queryRunner.manager.findOne(Material, {
-            where: { id: materialId }
-        });
-
-        if (!material) {
-            await queryRunner.rollbackTransaction();
-            return res.status(400).json({
-                message: "Material not found"
-            });
-        }
-
-        // Update material stock demand
-        const updatedStockDemand = Number(material.stockDemand || 0) + Number(productionQuantity);
-        material.stockDemand = updatedStockDemand;
-
-        // Determine initial task status based on stock availability
-        let initialStatus = status || 'pending';
-        
-        // Check if this new task would exceed available stock
-        if (updatedStockDemand > Number(material.currentStock)) {
-            initialStatus = 'blocked';
-        }
-
-        // Save material with updated demand
-        await queryRunner.manager.save(material);
-
-        // Create uncommitted stock transaction record
-        const transaction = queryRunner.manager.create(StockTransaction, {
-            materialId: materialId,
-            type: TransactionType.STOCK_OUT,
-            quantity: productionQuantity,
-            balanceAfter: material.currentStock, // Balance doesn't change yet since not committed
-            projectId: projectId,
-            notes: "",
-            createdById: user.id,
-            barcode: barcode,
-            committed: false // Key: not committed yet
-        });
-
-        await queryRunner.manager.save(transaction);
-
-        // Create new task with resolved relations
+        // Create new task with basic information
         const newTask = queryRunner.manager.create(Task, {
             name,
             description,
             dueDate,
-            status: initialStatus, // Use calculated status
+            status: status || 'pending',
             dateCompleted,
             project,
             assignees,
-            progressLogs: [progressLog],
-            printerId,
-            productionDuration: estimatedDuration,
-            materialId,
-            productionStartTime,
-            runs,
-            productionQuantity,
-            priority: priority || 1, // Default priority if not provided
-            stockTransaction: transaction
+            priority: priority || 1
         });
 
         const savedTask = await queryRunner.manager.save(newTask);
-
-        // Set inverse relation
-        transaction.task = savedTask;
-        transaction.taskId = savedTask.id;
-        await queryRunner.manager.save(transaction);
-
-        // Re-evaluate all other non-completed/non-blocked tasks for this material
-        await checkAndBlockTasksForMaterial(materialId, queryRunner);
 
         await queryRunner.commitTransaction();
 
         res.status(201).json({
             message: `Task created successfully for project ${projectId}`,
-            taskId: savedTask.id,
-            status: initialStatus,
-            wasBlocked: initialStatus === 'blocked'
+            taskId: savedTask.id
         });
 
     } catch (err) {

@@ -95,15 +95,15 @@ export class Task {
     /**
      * @deprecated
      */
-    @Column({ type: 'decimal' })
-    productionQuantity!: number;
+    @Column({ type: 'decimal', nullable: true })
+    productionQuantity?: number;
 
     // All the Material logs initiated for this task
     // @OneToMany(()=> MaterialLog, (log)=> log.task)
     // materialLogs!: MaterialLog[];
-
-    @Column()
-    materialId!: string;
+    
+    @Column({ nullable: true })
+    materialId?: string;
 
     // Material used for this task
     @ManyToOne(()=> Material)
