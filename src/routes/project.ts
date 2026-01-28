@@ -11,7 +11,6 @@ import projectController, { PROJECT_GET_RELATIONS } from "../controller/project"
 import { notifyProjectAboutLastTaskChange } from "./tasks";
 import { Company } from "../models/Company";
 import { Organization } from "../models/Organization";
-import { v4 as uuidv4 } from 'uuid';
 import { Material } from "../models/Material";
 import { MaterialService, StockOutCommitTransactionDto, StockOutDto } from "../services/materialService";
 import { StockTransaction, TransactionType } from "../models/StockTransaction";
@@ -309,73 +308,6 @@ router.post("/:id/tasks", async (req, res): Promise<any> => {
         await queryRunner.release();
     }
 });
-
-/**
- * Helper function to check and block tasks based on material stock availability
- * Should be placed in a shared location or service
- */
-async function checkAndBlockTasksForMaterial(
-    materialId: string,
-    queryRunner: any
-): Promise<void> {
-    const { Not, In } = require('typeorm');
-    
-    // Get the material with current stock
-    const material = await queryRunner.manager.findOne(Material, {
-        where: { id: materialId },
-    });
-
-    if (!material) {
-        throw new Error('Material not found');
-    }
-
-    // Get all relevant tasks, ordered by priority (higher number = higher priority = first)
-    // Only tasks that are NOT completed and NOT already blocked
-    const tasks = await queryRunner.manager.find(Task, {
-        where: {
-            materialId: materialId,
-            // status: Not(In(['completed', 'blocked'])),
-            status: In(['pending', 'blocked'])
-        },
-        order: {
-            priority: 'DESC', // Higher priority first (4, 3, 2, 1)
-            createdAt: 'ASC',  // If same priority, older tasks first
-        },
-    });
-
-    if (tasks.length === 0) {
-        return;
-    }
-
-    // Calculate cumulative demand and block tasks as needed
-    let cumulativeDemand = 0;
-
-    for (const task of tasks) {
-        const taskQuantity = Number(task.productionQuantity || 0);
-        
-        // Add this task's demand to cumulative
-        cumulativeDemand += taskQuantity;
-
-        // Check if task production quantity exceeds available stock
-        if (taskQuantity > Number(material.currentStock)) {
-            // Block this task due to insufficient stock
-            if (task.status !== 'blocked') {
-                task.status = 'blocked';
-                await queryRunner.manager.save(task);
-            }
-        } else {
-            // If task was previously blocked due to stock and now has sufficient stock, unblock it
-            if (task.status === 'blocked') {
-                task.status = 'pending'; // or whatever default active status you use
-                await queryRunner.manager.save(task);
-            }
-        }
-    }
-
-    // Update material's total stock demand with all non-completed tasks
-    material.stockDemand = cumulativeDemand;
-    await queryRunner.manager.save(material);
-}
 
 // Edit Task endpoint
 function entityField(key: string, value: any | null): {} {

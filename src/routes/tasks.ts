@@ -6,11 +6,14 @@ import { WorkActivityLog } from "../models/WorkActivityLog";
 import { Between, IsNull, MoreThan } from "typeorm";
 import { AttendanceLog } from "../models/AttendanceLog";
 import { Project } from "../models/Project";
-import { authMiddleware } from "../middleware/authMiddleware";
 import taskController from '../controller/task';
 import { MaterialService, StockOutCommitTransactionDto } from "../services/materialService";
 import { Printer, PrinterStatus } from "../models/Printer";
-import { Organization } from "../models/Organization";
+import { v4 as uuidv4 } from 'uuid';
+import projectController, { PROJECT_GET_RELATIONS } from "../controller/project";
+import { StockTransaction, TransactionType } from "../models/StockTransaction";
+import { Material } from "../models/Material";
+import { ProgressLog } from "../models/ProgressLog";
 
 const router = Router();
 
@@ -25,7 +28,8 @@ const projectRepo = AppDataSource.getRepository(Project);
 const materialService = new MaterialService()
 
 const printerRepo = AppDataSource.getRepository(Printer);
-const organizationRepo = AppDataSource.getRepository(Organization);
+
+const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 
 // --- define any task relations you want eagerly loaded
 export const TASK_RELATIONS = ["assignees", "project", "progressLogs", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task", 'material', 'stockTransaction'];
@@ -584,5 +588,251 @@ router.put("/:id/progress-stage", async (req, res)=> {
         task
     })
 });
+
+// Schedule print for task with ID: [params.id]
+router.post("/:id/schedule-print", async (req, res): Promise<any> => {
+    const taskId = Number(req.params.id);
+    const user = (req as any).user;
+    const organizationId = user.organizationId;
+
+    const {
+        printerId,
+        estimatedDuration,
+        materialId,
+        productionStartTime,
+        progressStage,
+        runs,
+        productionQuantity,
+        barcode
+    } = req.body;
+
+    if (!organizationId) {
+        return res.status(401).json({ message: 'Organization context required' });
+    }
+
+    if (!productionQuantity || productionQuantity <= 0) {
+        return res.status(400).json({ message: 'Production Quantity must be greater than 0' });
+    }
+
+    if (!materialId) {
+        return res.status(400).json({ message: 'Material ID is required' });
+    }
+
+    // Start database transaction
+    const queryRunner = AppDataSource.createQueryRunner();
+    await queryRunner.connect();
+    await queryRunner.startTransaction();
+
+    try {
+        // Fetch the task with its project
+        const task = await queryRunner.manager.findOne(Task, {
+            where: { id: taskId },
+            relations: ['project', 'project.organization']
+        });
+
+        if (!task) {
+            await queryRunner.rollbackTransaction();
+            return res.status(404).json({ message: 'Task not found' });
+        }
+
+        // Verify organization access
+        if (task.project.organization.id !== organizationId) {
+            await queryRunner.rollbackTransaction();
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        const projectId = task.project.id;
+
+        // Get the department of the User / Create progress log
+        const requestFromDepartment = progressStage;
+
+        console.log("status passed in:", requestFromDepartment);
+
+        const progressRequest = {
+            params: { id: projectId },
+            user: (req as any).user,
+            body: {
+                id: uuidv4(),
+                status: requestFromDepartment
+            }
+        };
+        
+        console.log("progress request before calling create progressLog:", progressRequest);
+        const createProgressResponse = await projectController.createProgressLog(progressRequest);
+        console.log("createProgressResponse:", createProgressResponse);
+
+        let progressLog = createProgressResponse.progressLog;
+        if (Math.floor(createProgressResponse.statusCode / 100) !== 2) {
+            await queryRunner.rollbackTransaction();
+            return res.status(createProgressResponse.statusCode).json({ message: "Error Occurred." });
+        } else if (createProgressResponse.statusCode === 209) {
+            progressLog = (await progressLogRepo
+                .createQueryBuilder("log")
+                .innerJoin("log.project", "project")
+                .where("project.id = :projectId", { projectId })
+                .andWhere("log.status = :status", { status: requestFromDepartment })
+                .orderBy("log.startDate", "DESC")
+                .addOrderBy("log.createdAt", "DESC")
+                .limit(1)
+                .getOne()) ?? undefined;
+
+            if (!progressLog) {
+                await queryRunner.rollbackTransaction();
+                return res.status(createProgressResponse.statusCode).json({ 
+                    message: "Unexpected Error Occurred. Please try again." 
+                });
+            }
+        }
+
+        progressLog = progressLog!;
+
+        // Fetch material
+        const material = await queryRunner.manager.findOne(Material, {
+            where: { id: materialId }
+        });
+
+        if (!material) {
+            await queryRunner.rollbackTransaction();
+            return res.status(400).json({
+                message: "Material not found"
+            });
+        }
+
+        // Update material stock demand
+        const updatedStockDemand = Number(material.stockDemand || 0) + Number(productionQuantity);
+        material.stockDemand = updatedStockDemand;
+
+        // Determine task status based on stock availability
+        let taskStatus = task.status;
+        
+        // Check if this production would exceed available stock
+        if (updatedStockDemand > Number(material.currentStock)) {
+            taskStatus = 'blocked';
+        }
+
+        // Save material with updated demand
+        await queryRunner.manager.save(material);
+
+        // Create uncommitted stock transaction record
+        const transaction = queryRunner.manager.create(StockTransaction, {
+            materialId: materialId,
+            type: TransactionType.STOCK_OUT,
+            quantity: productionQuantity,
+            balanceAfter: material.currentStock, // Balance doesn't change yet since not committed
+            projectId: projectId,
+            notes: "",
+            createdById: user.id,
+            barcode: barcode,
+            committed: false, // Key: not committed yet
+            task: task,
+            taskId: task.id
+        });
+
+        await queryRunner.manager.save(transaction);
+
+        // Update task with production details
+        task.status = taskStatus;
+        task.printerId = printerId;
+        task.productionDuration = estimatedDuration;
+        task.materialId = materialId;
+        task.productionStartTime = productionStartTime;
+        task.runs = runs;
+        task.productionQuantity = productionQuantity;
+        task.stockTransaction = transaction;
+        task.progressLogs = [...(task.progressLogs || []), progressLog];
+
+        const savedTask = await queryRunner.manager.save(task);
+
+        // Re-evaluate all other non-completed/non-blocked tasks for this material
+        await checkAndBlockTasksForMaterial(materialId, queryRunner);
+
+        await queryRunner.commitTransaction();
+
+        res.status(200).json({
+            message: `Print scheduled successfully for task ${taskId}`,
+            taskId: savedTask.id,
+            status: taskStatus,
+            wasBlocked: taskStatus === 'blocked'
+        });
+
+    } catch (err) {
+        await queryRunner.rollbackTransaction();
+        console.error(err);
+        res.status(400).json({
+            message: `Failed to schedule print for task ${taskId}`,
+            error: err instanceof Error ? err.message : 'Unknown error',
+        });
+    } finally {
+        await queryRunner.release();
+    }
+});
+
+
+/**
+ * Helper function to check and block tasks based on material stock availability
+ * Should be placed in a shared location or service
+ */
+async function checkAndBlockTasksForMaterial(
+    materialId: string,
+    queryRunner: any
+): Promise<void> {
+    const { Not, In } = require('typeorm');
+    
+    // Get the material with current stock
+    const material = await queryRunner.manager.findOne(Material, {
+        where: { id: materialId },
+    });
+
+    if (!material) {
+        throw new Error('Material not found');
+    }
+
+    // Get all relevant tasks, ordered by priority (higher number = higher priority = first)
+    // Only tasks that are NOT completed and NOT already blocked
+    const tasks = await queryRunner.manager.find(Task, {
+        where: {
+            materialId: materialId,
+            // status: Not(In(['completed', 'blocked'])),
+            status: In(['pending', 'blocked'])
+        },
+        order: {
+            priority: 'DESC', // Higher priority first (4, 3, 2, 1)
+            createdAt: 'ASC',  // If same priority, older tasks first
+        },
+    });
+
+    if (tasks.length === 0) {
+        return;
+    }
+
+    // Calculate cumulative demand and block tasks as needed
+    let cumulativeDemand = 0;
+
+    for (const task of tasks) {
+        const taskQuantity = Number(task.productionQuantity || 0);
+        
+        // Add this task's demand to cumulative
+        cumulativeDemand += taskQuantity;
+
+        // Check if task production quantity exceeds available stock
+        if (taskQuantity > Number(material.currentStock)) {
+            // Block this task due to insufficient stock
+            if (task.status !== 'blocked') {
+                task.status = 'blocked';
+                await queryRunner.manager.save(task);
+            }
+        } else {
+            // If task was previously blocked due to stock and now has sufficient stock, unblock it
+            if (task.status === 'blocked') {
+                task.status = 'pending'; // or whatever default active status you use
+                await queryRunner.manager.save(task);
+            }
+        }
+    }
+
+    // Update material's total stock demand with all non-completed tasks
+    material.stockDemand = cumulativeDemand;
+    await queryRunner.manager.save(material);
+}
 
 export default router;
