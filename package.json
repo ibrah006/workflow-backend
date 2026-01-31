@@ -22,6 +22,8 @@
     "dotenv": "^16.5.0",
     "express": "^5.1.0",
     "express-validator": "^7.3.0",
+    "helmet": "^8.1.0",
+    "http-proxy-middleware": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.14.1",
     "supertest": "^7.1.0",

@@ -22,6 +22,8 @@ import reportsRoutes from './routes/reports';
 
 import os from 'os';
 import printerRoutes from './routes/printer';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import helmet from "helmet";
 
 
 const app = express();
@@ -78,6 +80,66 @@ app.use('/material', authMiddleware, materialRoutes);
 app.use('/printers', authMiddleware, printerRoutes);
 // Reports routes
 app.use('/reports', authMiddleware, reportsRoutes);
+
+app.use(helmet({
+  frameguard: false  // Disables X-Frame-Options
+}));
+
+app.use((req, res, next) => {
+  res.removeHeader('X-Frame-Options');
+  // Or allow specific origins:
+  // res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  next();
+});
+
+app.get("/_api/preview", async (req, res) => {
+  const url = (req.query.url)?.toString();
+  if (!url) {
+    res.status(400).json({message: "Missing url"});
+    return;
+  }
+  const previewName = req.query.previewName;
+
+  const targetUrl = new URL(url);
+  const response = await fetch(targetUrl.href);
+  let html = await response.text();
+
+  const baseTag = `<base href="${targetUrl.origin}/">`;
+  html = html.replace("<head>", `<head>${baseTag}`);
+
+  // Inject widget script
+  // const widgetScript = `
+  //   <script src="http://localhost:3333/_api/widget?preview=true&previewName=${previewName}"></script>
+  // `;
+  // html = html.replace("</body>", `${widgetScript}</body>`);
+
+  res.set("Content-Type", "text/html");
+  res.send(html);
+});
+
+app.use('/proxy', (req, res, next) => {
+  const targetUrl = req.query.url?.toString();
+  
+  if (!targetUrl) {
+      res.status(400).send('Missing url parameter');
+      return;
+  }
+  
+  // Optional: Validate the URL for security
+  try {
+      new URL(targetUrl);
+  } catch (e) {
+      res.status(400).send('Invalid URL');
+      return;
+  }
+  
+  createProxyMiddleware({
+      target: targetUrl,
+      changeOrigin: true,
+  })(req, res, next);
+});
+
+
 
 app.listen(PORT, () => {
   const ip = getLocalExternalIp();
