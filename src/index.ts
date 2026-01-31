@@ -139,11 +139,29 @@ app.use('/proxy', (req, res, next) => {
   })(req, res, next);
 });
 
+let browser: any = null;
+
+async function getBrowser() {
+  if (!browser) {
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-gpu"
+      ]
+    });
+  }
+  return browser;
+}
+
 async function takeScreenshot(url: string) {
-  const browser = await puppeteer.launch({
-    // headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"]
-  });
+  const browser = await getBrowser();
+  // const browser = await puppeteer.launch({
+  //   // headless: true,
+  //   args: ["--no-sandbox", "--disable-setuid-sandbox"]
+  // });
 
   const page = await browser.newPage();
 
