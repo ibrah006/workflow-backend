@@ -24,7 +24,7 @@ import os from 'os';
 import printerRoutes from './routes/printer';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import helmet from "helmet";
-import puppeteer from "puppeteer";
+import puppeteer, { executablePath } from "puppeteer";
 
 const app = express();
 
@@ -144,13 +144,15 @@ let browser: any = null;
 async function getBrowser() {
   if (!browser) {
     browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-gpu"
-      ]
+      headless: "new",
+      executablePath: "/usr/bin/google-chrome",
+      // args: [
+      //   "--no-sandbox",
+      //   "--disable-setuid-sandbox",
+      //   "--disable-dev-shm-usage",
+      //   "--disable-gpu"
+      // ]
+      args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
   }
   return browser;
