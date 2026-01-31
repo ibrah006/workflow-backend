@@ -168,7 +168,8 @@ async function takeScreenshot(url: string) {
 
 
 app.post("/_api/ss-preview", async (req, res) => {
-  const { url } = req.body as { url?: string };
+  // const { url } = req.body;
+  const url = req.query.url as string;
 
   if (!url || !url.startsWith("http")) {
     res.status(400).json({ error: "Invalid URL" });
