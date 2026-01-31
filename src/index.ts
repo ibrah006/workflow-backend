@@ -144,7 +144,7 @@ let browser: any = null;
 async function getBrowser() {
   if (!browser) {
     browser = await puppeteer.launch({
-      headless: "new",
+      headless: false,
       executablePath: "/usr/bin/google-chrome",
       // args: [
       //   "--no-sandbox",
@@ -203,7 +203,7 @@ app.post("/_api/ss-preview", async (req, res) => {
     res.send(image);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Failed to generate preview" });
+    res.status(500).json({ error: "Failed to generate preview", message: err });
   }
 });
 
