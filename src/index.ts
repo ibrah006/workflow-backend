@@ -24,7 +24,7 @@ import os from 'os';
 import printerRoutes from './routes/printer';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import helmet from "helmet";
-import puppeteer, { executablePath } from "puppeteer";
+import { chromium } from 'playwright';
 
 const app = express();
 
@@ -143,16 +143,9 @@ let browser: any = null;
 
 async function getBrowser() {
   if (!browser) {
-    browser = await puppeteer.launch({
-      headless: false,
-      executablePath: "/usr/bin/google-chrome",
-      // args: [
-      //   "--no-sandbox",
-      //   "--disable-setuid-sandbox",
-      //   "--disable-dev-shm-usage",
-      //   "--disable-gpu"
-      // ]
-      args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    browser = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
   }
   return browser;
@@ -167,22 +160,23 @@ async function takeScreenshot(url: string) {
 
   const page = await browser.newPage();
 
-  await page.setViewport({
-    width: 1280,
-    height: 800
-  });
+  // await page.setViewport({
+  //   width: 1280,
+  //   height: 800
+  // });
 
   // Load the site
   await page.goto(url, {
-    waitUntil: "networkidle2",
+    waitUntil: 'networkidle',
     timeout: 30000
   });
-
+  
   const screenshot = await page.screenshot({
-    fullPage: true
+    fullPage: true,
+    type: 'png'
   });
-
-  await browser.close();
+  
+  await page.close();
   return screenshot;
 }
 
