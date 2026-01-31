@@ -13,8 +13,8 @@ COPY . .
 RUN npm run build
 
 # 4️⃣ Runtime config
-ENV PORT=3000
-EXPOSE 3000
+ENV PORT=3001
+EXPOSE 3001
 
 # 5️⃣ Start the server
 CMD ["npm", "run", "start"]
