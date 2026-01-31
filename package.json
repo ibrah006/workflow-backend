@@ -26,6 +26,7 @@
     "http-proxy-middleware": "^3.0.5",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.14.1",
+    "puppeteer": "^24.36.1",
     "supertest": "^7.1.0",
     "typeorm": "^0.3.22",
     "uuid": "^13.0.0"

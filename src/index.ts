@@ -24,7 +24,7 @@ import os from 'os';
 import printerRoutes from './routes/printer';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import helmet from "helmet";
-
+import puppeteer from "puppeteer";
 
 const app = express();
 
@@ -139,6 +139,52 @@ app.use('/proxy', (req, res, next) => {
   })(req, res, next);
 });
 
+async function takeScreenshot(url: string) {
+  const browser = await puppeteer.launch({
+    headless: "new",
+    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+  });
+
+  const page = await browser.newPage();
+
+  await page.setViewport({
+    width: 1280,
+    height: 800
+  });
+
+  // Load the site
+  await page.goto(url, {
+    waitUntil: "networkidle2",
+    timeout: 30000
+  });
+
+  const screenshot = await page.screenshot({
+    fullPage: true
+  });
+
+  await browser.close();
+  return screenshot;
+}
+
+
+app.post("/_api/ss-preview", async (req, res) => {
+  const { url } = req.body as { url?: string };
+
+  if (!url || !url.startsWith("http")) {
+    res.status(400).json({ error: "Invalid URL" });
+    return;
+  }
+
+  try {
+    const image = await takeScreenshot(url);
+
+    res.set("Content-Type", "image/png");
+    res.send(image);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to generate preview" });
+  }
+});
 
 
 app.listen(PORT, () => {
