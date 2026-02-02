@@ -75,8 +75,8 @@ export class Task {
     printer?: Printer;
 
     // Repeat of this task - How many times this task is supposed to repeat
-    @Column({ default: 1 })
-    runs!: number;
+    @Column({ default: 1, nullable: true })
+    runs?: number;
 
     // Estimated production duration in minutes
     @Column({ nullable: true })
@@ -106,9 +106,9 @@ export class Task {
     materialId?: string;
 
     // Material used for this task
-    @ManyToOne(()=> Material)
+    @ManyToOne(()=> Material, { nullable: true })
     @JoinColumn({ name: 'materialId' })
-    material!: Material;
+    material?: Material;
 
     @Column({ default: 1 })
     priority!: number;
