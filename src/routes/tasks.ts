@@ -542,7 +542,7 @@ router.put("/:id/unassign-printer", async (req, res) => {
 
 router.put("/:id/progress-stage", async (req, res)=> {
     const taskId = Number(req.params.id);
-    const organizationId = (req.body as any).user.organizationId;
+    const organizationId = (req as any).user.organizationId;
 
     const newStatus = req.body.newStatus;
 
