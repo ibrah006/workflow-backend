@@ -528,6 +528,7 @@ router.put("/:id/unassign-printer", async (req, res) => {
         if (printer) {
             printer.currentTaskId = null;
             printer.currentTask = undefined;
+            await printerRepo.save(printer);
         }
 
         res.json({
