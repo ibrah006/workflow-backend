@@ -547,7 +547,7 @@ router.put("/:id/unassign-printer", async (req, res) => {
         });
 
         res.json({
-            message: `Successfully unassigned printer to task and started print job`
+            message: `Successfully unassigned printer to task`
         });
     } catch(e) {
         res.status(500).json({
