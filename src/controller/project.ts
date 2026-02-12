@@ -425,7 +425,7 @@ export default {
      * 400: Invalid body params, check the ProjectLog schema
      * 404: Project not found
      * 209: Can't update project to the existing status
-     * 20: Successfully created - no issues
+     * 200: Successfully created - no issues
      * 500: Unexpected error from server side
      * @returns progressLog when status code === 200
      * When status code === 209 => currently in same progress as requested (e.g. already in production progress, can't start another production progress because two progress with same status cannot come consecutively)
@@ -490,12 +490,13 @@ export default {
         let savedLog;
         try {
             const log = progressLogRepo.create(body);
-            console.log("log BEFORE save: ", log);
-            savedLog = await progressLogRepo.save(log);
-    
+
             // Update project status
             project.status = log.status;
             await projectRepo.save(project);
+
+            log.project = project;
+            savedLog = await progressLogRepo.save(log);
         } catch(err) {
             console.error(err);
             return { statusCode: 500, project };

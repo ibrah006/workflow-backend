@@ -657,7 +657,8 @@ router.post("/:id/schedule-print", async (req, res): Promise<any> => {
             user: (req as any).user,
             body: {
                 id: uuidv4(),
-                status: requestFromDepartment
+                status: requestFromDepartment,
+                projectId: projectId
             }
         };
         
