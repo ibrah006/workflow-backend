@@ -594,7 +594,7 @@ router.put("/:id/progress-stage", async (req, res)=> {
 });
 
 // Schedule print for task with ID: [params.id]
-router.post("/:id/schedule-print", async (req, res): Promise<any> => {
+router.post("/:id/schedule-job", async (req, res): Promise<any> => {
     const taskId = Number(req.params.id);
     const user = (req as any).user;
     const organizationId = user.organizationId;
@@ -737,7 +737,7 @@ router.post("/:id/schedule-print", async (req, res): Promise<any> => {
 
         // Update task with production details
         task.status = taskStatus;
-        task.printerId = printerId;
+        if (printerId) task.printerId = printerId;
         task.productionDuration = estimatedDuration;
         task.materialId = materialId;
         task.productionStartTime = productionStartTime;
@@ -747,6 +747,27 @@ router.post("/:id/schedule-print", async (req, res): Promise<any> => {
         task.progressLogs = [...(task.progressLogs || []), progressLog];
 
         const savedTask = await queryRunner.manager.save(task);
+
+        if (printerId) {
+            const printer = (await queryRunner.manager.findOne(Printer,{
+                where: { id: printerId }
+            }));
+
+            if (printer?.currentTaskId != null) {
+                // Provided printer Id for print job already has another task assigned to it
+                await queryRunner.rollbackTransaction();
+                res.status(400).json({
+                    message: `This printer already has another task assigned to it`,
+                    error: `Failed to schedule print for task ${taskId}`,
+                    printer: printer
+                });
+            }
+    
+            // Update printer
+            printer!.currentTaskId = task.id;
+            printer!.taskAssignedAt = new Date(); // Track when task was assigned
+            await queryRunner.manager.save(printer!);
+        }
 
         // Re-evaluate all other non-completed/non-blocked tasks for this material
         await checkAndBlockTasksForMaterial(materialId, queryRunner);
