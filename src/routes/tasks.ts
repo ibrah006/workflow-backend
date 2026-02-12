@@ -708,12 +708,12 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
         material.stockDemand = updatedStockDemand;
 
         // Determine task status based on stock availability
-        let taskStatus = task.status;
+        let taskStatus = 'printing';
         
         // Check if this production would exceed available stock
-        if (updatedStockDemand > Number(material.currentStock)) {
-            taskStatus = 'blocked';
-        }
+        // if (updatedStockDemand > Number(material.currentStock)) {
+        //     taskStatus = 'blocked';
+        // }
 
         // Save material with updated demand
         await queryRunner.manager.save(material);
