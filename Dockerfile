@@ -2,23 +2,19 @@ FROM mcr.microsoft.com/playwright:v1.41.0-jammy
 
 WORKDIR /app
 
-# 1️⃣ Install dependencies first (cache-friendly)
+# 1️⃣ Install dependencies
 COPY package*.json ./
 RUN npm install
-RUN npm install socket.io
 
 # 2️⃣ Copy source
-COPY ...
+COPY . .
 
-# Migration
-RUN npm run migration:run
-
-# 3️⃣ Build your app (TypeScript / Vite / etc.)
+# 3️⃣ Build app
 RUN npm run build
 
 # 4️⃣ Runtime config
 ENV PORT=3001
 EXPOSE 3001
 
-# 5️⃣ Start the server
-CMD ["npm", "run", "start"]
+# 5️⃣ Run migrations THEN start server
+CMD ["sh", "-c", "npm run migration:run && npm run start"]
