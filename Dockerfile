@@ -5,6 +5,7 @@ WORKDIR /app
 # 1️⃣ Install dependencies first (cache-friendly)
 COPY package*.json ./
 RUN npm install
+RUN npm install socket.io
 
 # 2️⃣ Copy source
 COPY . .
