@@ -32,5 +32,5 @@ export const AppDataSource = isProduction? new DataSource({
   migrations: ['src/migrations/*.ts'],
   subscribers: ['src/subscribers/*.ts'],
   // synchronize: true,
-  logging: false,
+  logging: ["error"],
 });
