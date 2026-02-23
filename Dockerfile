@@ -8,7 +8,7 @@ RUN npm install
 RUN npm install socket.io
 
 # 2️⃣ Copy source
-COPY . .
+COPY ...
 
 # Migration
 RUN npm run migration:run
