@@ -7,11 +7,11 @@ COPY package*.json ./
 RUN npm install
 RUN npm install socket.io
 
-# Migration
-RUN npm run migration:run
-
 # 2️⃣ Copy source
 COPY . .
+
+# Migration
+RUN npm run migration:run
 
 # 3️⃣ Build your app (TypeScript / Vite / etc.)
 RUN npm run build
