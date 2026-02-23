@@ -13,6 +13,9 @@ COPY . .
 # 3️⃣ Build your app (TypeScript / Vite / etc.)
 RUN npm run build
 
+# Migration
+RUN npm run migration:run
+
 # 4️⃣ Runtime config
 ENV PORT=3001
 EXPOSE 3001
