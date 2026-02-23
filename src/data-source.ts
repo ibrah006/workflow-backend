@@ -15,12 +15,12 @@ export const AppDataSource = isProduction? new DataSource({
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     url: process.env.DB_URL,
-    entities: ["dist/models/*.js"],
-    migrations: ["dist/migrations/*.js"],
+    entities: ["src/models/*.ts"], //dist original build folder
+    migrations: ["src/migrations/*.ts"],
     ssl: {
         rejectUnauthorized: false
     },
-    subscribers: ['dist/subscribers/*.js'],
+    subscribers: ['src/subscribers/*.ts'],
 }) : new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST_DEV,
