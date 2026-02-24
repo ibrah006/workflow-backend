@@ -48,5 +48,14 @@ export class Company {
     
     @Column('uuid')
     organizationId!: string;
+
+    @Column({ nullable: true })
+    email?: string;
+
+    @Column({ nullable: true })
+    industry?: string;
+
+    @Column({ nullable: true })
+    phone?: string;
 }
   
