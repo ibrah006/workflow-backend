@@ -61,7 +61,7 @@ export class CompanyWebSocketService {
         }
 
         // Verify JWT token
-        const decoded = verify(token, process.env.JWT_SECRET || 'your-secret-key') as any;
+        const decoded = verify(token, process.env.JWT_SECRET!) as any;
 
         // Fetch user details
         const user = await this.userRepo.findOne({
