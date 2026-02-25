@@ -75,4 +75,55 @@ router.post("/", async (req, res) : Promise<any> => {
     } 
 });
 
+router.put("/:id", async (req, res) : Promise<any> => {
+
+    const organizationId = (req as any).user?.organizationId;
+
+    if (!organizationId) {
+        res.status(401).json({ message: 'Organization context required' });
+        return;
+    }
+
+    try {
+      const { id } = req.params;
+  
+      const {
+        name,
+        description,
+        isActive,
+        email,
+        industry,
+        phone,
+        contactName,
+        color,
+      } = req.body;
+  
+      // Check if company exists
+      const company = await companyRepo.findOneBy({ id, organizationId });
+  
+      if (!company) {
+        return res.status(404).json({ message: "Company not found" });
+      }
+  
+      // Update only allowed fields
+      await companyRepo.update(id, {
+        name,
+        description,
+        isActive,
+        email,
+        industry,
+        phone,
+        contactName,
+        color,
+      });
+  
+      const updatedCompany = await companyRepo.findOneBy({ id });
+  
+      return res.json(updatedCompany);
+    } catch (error) {
+      console.error("Update company error:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
 export default router;
