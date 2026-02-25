@@ -1,7 +1,7 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
 import { Repository } from 'typeorm';
-import { Task } from '../models/Task';
+import { Company } from '../models/Company';
 import { User } from '../models/User';
 import { verify } from 'jsonwebtoken';
 import { AppDataSource } from '../data-source';
@@ -14,31 +14,34 @@ interface AuthenticatedSocket extends Socket {
   };
 }
 
-export interface TaskChangeEvent {
-  type: 'created' | 'updated' | 'deleted' | 'status_changed' | 'assignee_added' | 'assignee_removed';
-  taskId: number;
-  task?: Partial<Task>;
+export interface CompanyChangeEvent {
+  type: 'created' | 'updated' | 'deleted' | 'status_changed' | 'activated' | 'deactivated';
+  companyId: string;
+  company?: Partial<Company>;
   changedBy?: string;
   timestamp: Date;
   changes?: Record<string, any>;
 }
 
-export class TaskWebSocketService {
+export class CompanyWebSocketService {
   private io: SocketIOServer;
-  private taskRepo: Repository<Task>;
+  private companyRepo: Repository<Company>;
   private userRepo: Repository<User>;
   private organizationRooms: Map<string, Set<string>> = new Map();
 
   constructor(httpServer: HTTPServer) {
     this.io = new SocketIOServer(httpServer, {
-      cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-        credentials: true,
-      },
-      path: '/ws/tasks',
+        cors: {
+            // Allow all origins for Flutter mobile/desktop apps
+            // For production, you can specify allowed origins or use a validation function
+            origin: process.env.FRONTEND_URL || '*',
+            credentials: true,
+            methods: ['GET', 'POST'],
+        },
+      path: '/ws/companies',
     });
 
-    this.taskRepo = AppDataSource.getRepository(Task);
+    this.companyRepo = AppDataSource.getRepository(Company);
     this.userRepo = AppDataSource.getRepository(User);
 
     this.setupMiddleware();
@@ -73,7 +76,7 @@ export class TaskWebSocketService {
         // Attach user info to socket
         socket.user = {
           id: user.id,
-          organizationId: user.organization.id,
+          organizationId: user?.organization?.id,
           email: user.email,
         };
 
@@ -89,7 +92,7 @@ export class TaskWebSocketService {
    */
   private setupEventHandlers(): void {
     this.io.on('connection', (socket: AuthenticatedSocket) => {
-      console.log(`Client connected: ${socket.id}, User: ${socket.user?.id}`);
+      console.log(`Client connected to companies: ${socket.id}, User: ${socket.user?.id}`);
 
       // Join organization-specific room
       if (socket.user?.organizationId) {
@@ -102,7 +105,7 @@ export class TaskWebSocketService {
         }
         this.organizationRooms.get(socket.user.organizationId)?.add(socket.id);
 
-        console.log(`User ${socket.user.id} joined organization room: ${roomName}`);
+        console.log(`User ${socket.user.id} joined company organization room: ${roomName}`);
 
         // Notify others in the organization
         socket.to(roomName).emit('user:connected', {
@@ -112,30 +115,30 @@ export class TaskWebSocketService {
         });
       }
 
-      // Handle subscription to specific tasks
-      socket.on('task:subscribe', (taskId: number) => {
-        this.handleTaskSubscription(socket, taskId);
+      // Handle subscription to specific company
+      socket.on('company:subscribe', (companyId: string) => {
+        this.handleCompanySubscription(socket, companyId);
       });
 
-      // Handle unsubscription from specific tasks
-      socket.on('task:unsubscribe', (taskId: number) => {
-        socket.leave(`task:${taskId}`);
-        console.log(`Socket ${socket.id} unsubscribed from task ${taskId}`);
+      // Handle unsubscription from specific company
+      socket.on('company:unsubscribe', (companyId: string) => {
+        socket.leave(`company:${companyId}`);
+        console.log(`Socket ${socket.id} unsubscribed from company ${companyId}`);
       });
 
-      // Handle requesting current task data
-      socket.on('task:get', async (taskId: number) => {
-        await this.handleGetTask(socket, taskId);
+      // Handle requesting current company data
+      socket.on('company:get', async (companyId: string) => {
+        await this.handleGetCompany(socket, companyId);
       });
 
-      // Handle requesting all organization tasks
-      socket.on('tasks:list', async (filters?: any) => {
-        await this.handleListTasks(socket, filters);
+      // Handle requesting all organization companies
+      socket.on('companies:list', async (filters?: any) => {
+        await this.handleListCompanies(socket, filters);
       });
 
       // Handle manual refresh request
-      socket.on('tasks:refresh', async () => {
-        await this.handleListTasks(socket);
+      socket.on('companies:refresh', async () => {
+        await this.handleListCompanies(socket);
       });
 
       // Handle disconnect
@@ -145,7 +148,7 @@ export class TaskWebSocketService {
 
       // Send initial connection success event
       socket.emit('connected', {
-        message: 'Successfully connected to task updates',
+        message: 'Successfully connected to company updates',
         organizationId: socket.user?.organizationId,
         timestamp: new Date(),
       });
@@ -153,105 +156,103 @@ export class TaskWebSocketService {
   }
 
   /**
-   * Subscribe to specific task updates
+   * Subscribe to specific company updates
    */
-  private async handleTaskSubscription(socket: AuthenticatedSocket, taskId: number): Promise<void> {
+  private async handleCompanySubscription(socket: AuthenticatedSocket, companyId: string): Promise<void> {
     try {
-      const task = await this.taskRepo.findOne({
-        where: { id: taskId },
-        relations: ['project', 'project.organization'],
+      const company = await this.companyRepo.findOne({
+        where: { id: companyId },
+        relations: ['organization'],
       });
 
-      if (!task || task.project?.organization?.id !== socket.user?.organizationId) {
+      if (!company || company.organizationId !== socket.user?.organizationId) {
         socket.emit('error', {
-          message: 'Task not found or access denied',
-          taskId,
+          message: 'Company not found or access denied',
+          companyId,
         });
         return;
       }
 
-      socket.join(`task:${taskId}`);
-      console.log(`Socket ${socket.id} subscribed to task ${taskId}`);
+      socket.join(`company:${companyId}`);
+      console.log(`Socket ${socket.id} subscribed to company ${companyId}`);
 
-      socket.emit('task:subscribed', {
-        taskId,
+      socket.emit('company:subscribed', {
+        companyId,
         timestamp: new Date(),
       });
     } catch (error) {
-      console.error('Error subscribing to task:', error);
+      console.error('Error subscribing to company:', error);
       socket.emit('error', {
-        message: 'Failed to subscribe to task',
-        taskId,
+        message: 'Failed to subscribe to company',
+        companyId,
       });
     }
   }
 
   /**
-   * Get single task data
+   * Get single company data
    */
-  private async handleGetTask(socket: AuthenticatedSocket, taskId: number): Promise<void> {
+  private async handleGetCompany(socket: AuthenticatedSocket, companyId: string): Promise<void> {
     try {
-      const task = await this.taskRepo.findOne({
-        where: { id: taskId },
-        relations: ['project', 'project.organization', 'assignees', 'printer', 'material'],
+      const company = await this.companyRepo.findOne({
+        where: { id: companyId },
+        relations: ['organization', 'createdBy', 'projects'],
       });
 
-      if (!task || task.project?.organization?.id !== socket.user?.organizationId) {
+      if (!company || company.organizationId !== socket.user?.organizationId) {
         socket.emit('error', {
-          message: 'Task not found or access denied',
-          taskId,
+          message: 'Company not found or access denied',
+          companyId,
         });
         return;
       }
 
-      socket.emit('task:data', {
-        task,
+      socket.emit('company:data', {
+        company,
         timestamp: new Date(),
       });
     } catch (error) {
-      console.error('Error fetching task:', error);
+      console.error('Error fetching company:', error);
       socket.emit('error', {
-        message: 'Failed to fetch task',
-        taskId,
+        message: 'Failed to fetch company',
+        companyId,
       });
     }
   }
 
   /**
-   * List all tasks for the organization
+   * List all companies for the organization
    */
-  private async handleListTasks(socket: AuthenticatedSocket, filters?: any): Promise<void> {
+  private async handleListCompanies(socket: AuthenticatedSocket, filters?: any): Promise<void> {
     try {
       const where: any = {
-        project: {
-          organizationId: socket.user?.organizationId,
-        },
+        organizationId: socket.user?.organizationId,
       };
 
       // Apply filters if provided
-      if (filters?.status) {
-        where.status = filters.status;
+      if (filters?.isActive !== undefined) {
+        where.isActive = filters.isActive;
       }
-      if (filters?.projectId) {
-        where.project = { id: filters.projectId };
+      if (filters?.industry) {
+        where.industry = filters.industry;
       }
 
-      const tasks = await this.taskRepo.find({
+      const companies = await this.companyRepo.find({
         where,
-        relations: ['project', 'assignees', 'printer', 'material'],
+        relations: ['createdBy', 'organization'],
         order: { createdAt: 'DESC' },
       });
 
-      socket.emit('tasks:list', {
-        tasks,
-        count: tasks.length,
+      socket.emit('companies:list', {
+        companies,
+        count: companies.length,
         filters,
         timestamp: new Date(),
       });
     } catch (error) {
-      console.error('Error listing tasks:', error);
+      console.error('Error listing companies:', error);
       socket.emit('error', {
-        message: 'Failed to fetch tasks',
+        message: 'Failed to fetch companies',
       });
     }
   }
@@ -260,7 +261,7 @@ export class TaskWebSocketService {
    * Handle client disconnect
    */
   private handleDisconnect(socket: AuthenticatedSocket): void {
-    console.log(`Client disconnected: ${socket.id}`);
+    console.log(`Client disconnected from companies: ${socket.id}`);
 
     if (socket.user?.organizationId) {
       const roomName = `org:${socket.user.organizationId}`;
@@ -282,51 +283,51 @@ export class TaskWebSocketService {
   }
 
   /**
-   * Broadcast task change to organization members
+   * Broadcast company change to organization members
    */
-  public broadcastTaskChange(
+  public broadcastCompanyChange(
     organizationId: string,
-    event: TaskChangeEvent
+    event: CompanyChangeEvent
   ): void {
     const roomName = `org:${organizationId}`;
-    this.io.to(roomName).emit('task:changed', event);
+    this.io.to(roomName).emit('company:changed', event);
 
-    // Also emit to specific task room if exists
-    if (event.taskId) {
-      this.io.to(`task:${event.taskId}`).emit('task:updated', event);
+    // Also emit to specific company room if exists
+    if (event.companyId) {
+      this.io.to(`company:${event.companyId}`).emit('company:updated', event);
     }
   }
 
   /**
-   * Broadcast task creation
+   * Broadcast company creation
    */
-  public broadcastTaskCreated(
+  public broadcastCompanyCreated(
     organizationId: string,
-    task: Task,
+    company: Company,
     createdBy: string
   ): void {
-    this.broadcastTaskChange(organizationId, {
+    this.broadcastCompanyChange(organizationId, {
       type: 'created',
-      taskId: task.id,
-      task: this.sanitizeTask(task),
+      companyId: company.id,
+      company: this.sanitizeCompany(company),
       changedBy: createdBy,
       timestamp: new Date(),
     });
   }
 
   /**
-   * Broadcast task update
+   * Broadcast company update
    */
-  public broadcastTaskUpdated(
+  public broadcastCompanyUpdated(
     organizationId: string,
-    task: Task,
+    company: Company,
     updatedBy: string,
     changes?: Record<string, any>
   ): void {
-    this.broadcastTaskChange(organizationId, {
+    this.broadcastCompanyChange(organizationId, {
       type: 'updated',
-      taskId: task.id,
-      task: this.sanitizeTask(task),
+      companyId: company.id,
+      company: this.sanitizeCompany(company),
       changedBy: updatedBy,
       changes,
       timestamp: new Date(),
@@ -334,74 +335,55 @@ export class TaskWebSocketService {
   }
 
   /**
-   * Broadcast task status change
+   * Broadcast company status change (activated/deactivated)
    */
-  public broadcastTaskStatusChanged(
+  public broadcastCompanyStatusChanged(
     organizationId: string,
-    taskId: number,
-    oldStatus: string,
-    newStatus: string,
+    companyId: string,
+    isActive: boolean,
     changedBy: string
   ): void {
-    this.broadcastTaskChange(organizationId, {
-      type: 'status_changed',
-      taskId,
+    this.broadcastCompanyChange(organizationId, {
+      type: isActive ? 'activated' : 'deactivated',
+      companyId,
       changedBy,
-      changes: { oldStatus, newStatus },
+      changes: { isActive },
       timestamp: new Date(),
     });
   }
 
   /**
-   * Broadcast task deletion
+   * Broadcast company deletion
    */
-  public broadcastTaskDeleted(
+  public broadcastCompanyDeleted(
     organizationId: string,
-    taskId: number,
+    companyId: string,
     deletedBy: string
   ): void {
-    this.broadcastTaskChange(organizationId, {
+    this.broadcastCompanyChange(organizationId, {
       type: 'deleted',
-      taskId,
+      companyId,
       changedBy: deletedBy,
       timestamp: new Date(),
     });
   }
 
   /**
-   * Broadcast assignee changes
+   * Sanitize company data before broadcasting
    */
-  public broadcastAssigneeChange(
-    organizationId: string,
-    taskId: number,
-    type: 'assignee_added' | 'assignee_removed',
-    assigneeId: string,
-    changedBy: string
-  ): void {
-    this.broadcastTaskChange(organizationId, {
-      type,
-      taskId,
-      changedBy,
-      changes: { assigneeId },
-      timestamp: new Date(),
-    });
-  }
-
-  /**
-   * Sanitize task data before broadcasting
-   */
-  private sanitizeTask(task: Task): Partial<Task> {
+  private sanitizeCompany(company: Company): Partial<Company> {
     // Return only necessary fields to reduce payload size
     return {
-      id: task.id,
-      name: task.name,
-      description: task.description,
-      status: task.status,
-      dueDate: task.dueDate,
-      priority: task.priority,
-      updatedAt: task.updatedAt,
-      createdAt: task.createdAt,
-      completedAt: task.completedAt,
+      id: company.id,
+      name: company.name,
+      description: company.description,
+      isActive: company.isActive,
+      email: company.email,
+      industry: company.industry,
+      phone: company.phone,
+      contactName: company.contactName,
+      updatedAt: company.updatedAt,
+      createdAt: company.createdAt,
     };
   }
 
@@ -418,7 +400,7 @@ export class TaskWebSocketService {
   public async shutdown(): Promise<void> {
     return new Promise((resolve) => {
       this.io.close(() => {
-        console.log('WebSocket server closed');
+        console.log('Company WebSocket server closed');
         resolve();
       });
     });

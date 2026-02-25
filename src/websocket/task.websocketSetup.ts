@@ -1,6 +1,6 @@
 import { Server as HTTPServer } from 'http';
 import express from 'express';
-import { TaskWebSocketService } from './websocketservice/task.websocketservice';
+import { TaskWebSocketService } from './task.websocketservice';
 
 let taskWebSocketService: TaskWebSocketService;
 

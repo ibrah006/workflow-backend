@@ -2,8 +2,9 @@ import { Repository } from 'typeorm';
 import { Task } from '../models/Task';
 import { Project } from '../models/Project';
 import { User } from '../models/User';
-import { getTaskWebSocketService } from '../websocketSetup';
+// import { getTaskWebSocketService } from '../websocketservice/taskWebsocketSetup';
 import { AppDataSource } from '../data-source';
+import { getTaskWebSocketService } from '../websocket/task.websocketSetup';
 
 export class TaskServiceWebsocket {
   private taskRepo: Repository<Task>;
