@@ -61,6 +61,7 @@ export class Company {
     @Column({ nullable: true })
     contactName?: string;
 
-    @
+    @Column({ nullable: true, length: '7' })
+    color?: string;
 }
   
