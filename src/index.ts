@@ -84,15 +84,19 @@ app.use('/printers', authMiddleware, printerRoutes);
 // Reports routes
 app.use('/reports', authMiddleware, reportsRoutes);
 
-app.use(helmet({
-  frameguard: false  // Disables X-Frame-Options
-}));
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date() });
+});
 
-app.use((req, res, next) => {
-  res.removeHeader('X-Frame-Options');
-  // Or allow specific origins:
-  // res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-  next();
+// Error handler
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal server error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
+  });
 });
 
 // Create HTTP server
