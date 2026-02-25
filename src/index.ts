@@ -27,6 +27,7 @@ import helmet from "helmet";
 import { chromium } from 'playwright';
 import { createServer } from 'http';
 import { initializeWebSocket } from './websocket/task.websocketSetup';
+import { initializeCompanyWebSocket } from './websocket/company.websocketSetup';
 
 const app = express();
 

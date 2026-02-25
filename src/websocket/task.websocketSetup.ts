@@ -28,11 +28,11 @@ export function getTaskWebSocketService(): TaskWebSocketService {
 /**
  * Example Express app setup
  */
-export function setupTaskWebSocketServer(app: express.Application): HTTPServer {
-  const httpServer = require('http').createServer(app);
+// export function setupTaskWebSocketServer(app: express.Application): HTTPServer {
+//   const httpServer = require('http').createServer(app);
   
-  // Initialize WebSocket
-  initializeWebSocket(httpServer);
+//   // Initialize WebSocket
+//   initializeWebSocket(httpServer);
   
-  return httpServer;
-}
+//   return httpServer;
+// }
