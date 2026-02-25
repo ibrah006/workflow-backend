@@ -19,7 +19,7 @@ router.get("/", async (req, res) => {
         res.status(401).json({ message: 'Organization context required' });
         return;
     }
-    
+
     const companyRepo = AppDataSource.getRepository(Company);
 
     const companies = await companyRepo.find(
@@ -53,6 +53,7 @@ router.post(
         }
     });
 
+// Update company
 router.put(
     "/:id",
     async (req, res) : Promise<any> => {
