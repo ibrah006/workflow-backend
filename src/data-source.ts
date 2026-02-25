@@ -21,6 +21,7 @@ export const AppDataSource = isProduction? new DataSource({
         rejectUnauthorized: false
     },
     subscribers: ['dist/subscribers/*.js'],
+    logging: ["error"],
 }) : new DataSource({
   type: 'postgres',
   host: process.env.DB_HOST_DEV,
