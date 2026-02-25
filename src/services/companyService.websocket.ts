@@ -101,7 +101,6 @@ export class CompanyService {
       if (key in company && updates[key as keyof Company] !== undefined) {
         const oldValue = company[key as keyof Company];
         const newValue = updates[key as keyof Company];
-        console.log(`key: ${key}, old value: ${oldValue}, newValue: ${newValue}, -nq: ${oldValue !== newValue}`);
         if (oldValue !== newValue) {
           changes[key] = { old: oldValue, new: newValue };
           (company as any)[key] = newValue;
