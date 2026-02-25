@@ -28,7 +28,7 @@ export function getTaskWebSocketService(): TaskWebSocketService {
 /**
  * Example Express app setup
  */
-export function setupWebSocketServer(app: express.Application): HTTPServer {
+export function setupTaskWebSocketServer(app: express.Application): HTTPServer {
   const httpServer = require('http').createServer(app);
   
   // Initialize WebSocket
