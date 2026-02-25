@@ -61,10 +61,18 @@ router.put(
         const { id: companyId } = req.params;
         const userId = (req as any).user.id;
         const organizationId = (req as any).user.organizationId;
+
+        console.log("update requested:", req.body);
+
+        const updated = {
+            ...req.body,
+        };
+
+        delete updated["createdBy"];
     
         const updatedCompany = await companyService.updateCompany(
             companyId,
-            req.body,
+            updated,
             userId,
             organizationId
         );
