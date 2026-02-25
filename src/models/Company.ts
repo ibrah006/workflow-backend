@@ -60,5 +60,7 @@ export class Company {
 
     @Column({ nullable: true })
     contactName?: string;
+
+    @
 }
   
