@@ -91,7 +91,7 @@ export class CompanyWebSocketService {
    * Setup WebSocket event handlers
    */
   private setupEventHandlers(): void {
-    this.io.on('connection', (socket: AuthenticatedSocket) => {
+    this.io.on('connection', async (socket: AuthenticatedSocket) =>  {
       console.log(`Client connected to companies: ${socket.id}, User: ${socket.user?.id}`);
 
       // Join organization-specific room
@@ -113,6 +113,9 @@ export class CompanyWebSocketService {
           email: socket.user.email,
           timestamp: new Date(),
         });
+
+        // Automatically send companies list on connect
+        await this.handleListCompanies(socket);
       }
 
       // Handle subscription to specific company
