@@ -119,7 +119,6 @@ const socketIOServer = new SocketIOServer(httpServer, {
 initializeCompanyWebSocket(socketIOServer); // Company WebSocket
 initializeMemberWebSocket(socketIOServer); // Member WebSocket
 
-
 httpServer.listen(PORT, () => {
   const ip = getLocalExternalIp();
   console.log(`Server is running at http://${ip || 'localhost'}:${PORT}`);

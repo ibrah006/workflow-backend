@@ -34,7 +34,7 @@ export class MemberWebSocketService {
     // httpServer: HTTPServer
     io: SocketIOServer
   ) {
-    this.io = io.of('/ws/members');
+    this.io = io.of('/members');
     // new SocketIOServer(httpServer, {
     //   cors: {
     //     origin: process.env.FRONTEND_URL || '*',

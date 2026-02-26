@@ -33,7 +33,7 @@ export class CompanyWebSocketService {
     // httpServer: HTTPServer
     io: SocketIOServer
   ) {
-    this.io = io.of('/ws/companies');
+    this.io = io.of('/companies');
     // new SocketIOServer(httpServer, {
     //     cors: {
     //         // Allow all origins for Flutter mobile/desktop apps
