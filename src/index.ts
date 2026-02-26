@@ -28,6 +28,7 @@ import { chromium } from 'playwright';
 import { createServer } from 'http';
 import { initializeWebSocket } from './websocket/task.websocketSetup';
 import { initializeCompanyWebSocket } from './websocket/company.websocketSetup';
+import { initializeMemberWebSocket } from './websocket/member.websocketSetup';
 
 const app = express();
 
@@ -105,6 +106,7 @@ const httpServer = createServer(app);
 // Initialize WebSocket servers
 initializeWebSocket(httpServer); // Task WebSocket
 initializeCompanyWebSocket(httpServer); // Company WebSocket
+initializeMemberWebSocket(httpServer); // Member WebSocket
 
 
 httpServer.listen(PORT, () => {
