@@ -30,6 +30,8 @@ import { initializeWebSocket } from './websocket/task.websocketSetup';
 import { initializeCompanyWebSocket } from './websocket/company.websocketSetup';
 import { initializeMemberWebSocket } from './websocket/member.websocketSetup';
 
+import { Server as SocketIOServer } from 'socket.io';
+
 const app = express();
 
 dotenv.config();
@@ -103,10 +105,19 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Create HTTP server
 const httpServer = createServer(app);
 
+// Create One Server
+const socketIOServer = new SocketIOServer(httpServer, {
+  cors: {
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true,
+    methods: ['GET', 'POST'],
+  },
+});
+
 // Initialize WebSocket servers
-initializeWebSocket(httpServer); // Task WebSocket
-initializeCompanyWebSocket(httpServer); // Company WebSocket
-initializeMemberWebSocket(httpServer); // Member WebSocket
+// initializeWebSocket(httpServer); // Task WebSocket
+initializeCompanyWebSocket(socketIOServer); // Company WebSocket
+initializeMemberWebSocket(socketIOServer); // Member WebSocket
 
 
 httpServer.listen(PORT, () => {
@@ -120,7 +131,7 @@ httpServer.listen(PORT, () => {
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully...');
   httpServer.close(() => {
-    console.log('HTTP server closed');
+    console.log('company HTTP server closed');
   });
   await AppDataSource.destroy();
   process.exit(0);

@@ -25,20 +25,24 @@ export interface MemberChangeEvent {
 }
 
 export class MemberWebSocketService {
-  private io: SocketIOServer;
+  private io;
   private userRepo: Repository<User>;
   private organizationRepo: Repository<Organization>;
   private organizationRooms: Map<string, Set<string>> = new Map();
 
-  constructor(httpServer: HTTPServer) {
-    this.io = new SocketIOServer(httpServer, {
-      cors: {
-        origin: process.env.FRONTEND_URL || '*',
-        credentials: true,
-        methods: ['GET', 'POST'],
-      },
-      path: '/ws/members',
-    });
+  constructor(
+    // httpServer: HTTPServer
+    io: SocketIOServer
+  ) {
+    this.io = io.of('/members');
+    // new SocketIOServer(httpServer, {
+    //   cors: {
+    //     origin: process.env.FRONTEND_URL || '*',
+    //     credentials: true,
+    //     methods: ['GET', 'POST'],
+    //   },
+    //   path: '/ws/members',
+    // });
 
     this.userRepo = AppDataSource.getRepository(User);
     this.organizationRepo = AppDataSource.getRepository(Organization);
@@ -432,12 +436,12 @@ export class MemberWebSocketService {
   /**
    * Shutdown the WebSocket server
    */
-  public async shutdown(): Promise<void> {
-    return new Promise((resolve) => {
-      this.io.close(() => {
-        console.log('Member WebSocket server closed');
-        resolve();
-      });
-    });
-  }
+  // public async shutdown(): Promise<void> {
+  //   return new Promise((resolve) => {
+  //     this.io.close(() => {
+  //       console.log('Member WebSocket server closed');
+  //       resolve();
+  //     });
+  //   });
+  // }
 }

@@ -24,22 +24,26 @@ export interface CompanyChangeEvent {
 }
 
 export class CompanyWebSocketService {
-  private io: SocketIOServer;
+  private io;
   private companyRepo: Repository<Company>;
   private userRepo: Repository<User>;
   private organizationRooms: Map<string, Set<string>> = new Map();
 
-  constructor(httpServer: HTTPServer) {
-    this.io = new SocketIOServer(httpServer, {
-        cors: {
-            // Allow all origins for Flutter mobile/desktop apps
-            // For production, you can specify allowed origins or use a validation function
-            origin: process.env.FRONTEND_URL || '*',
-            credentials: true,
-            methods: ['GET', 'POST'],
-        },
-      path: '/ws/companies',
-    });
+  constructor(
+    // httpServer: HTTPServer
+    io: SocketIOServer
+  ) {
+    this.io = io.of('/companies');
+    // new SocketIOServer(httpServer, {
+    //     cors: {
+    //         // Allow all origins for Flutter mobile/desktop apps
+    //         // For production, you can specify allowed origins or use a validation function
+    //         origin: process.env.FRONTEND_URL || '*',
+    //         credentials: true,
+    //         methods: ['GET', 'POST'],
+    //     },
+    //   path: '/ws/companies',
+    // });
 
     this.companyRepo = AppDataSource.getRepository(Company);
     this.userRepo = AppDataSource.getRepository(User);
@@ -400,12 +404,12 @@ export class CompanyWebSocketService {
   /**
    * Shutdown the WebSocket server
    */
-  public async shutdown(): Promise<void> {
-    return new Promise((resolve) => {
-      this.io.close(() => {
-        console.log('Company WebSocket server closed');
-        resolve();
-      });
-    });
-  }
+  // public async shutdown(): Promise<void> {
+  //   return new Promise((resolve) => {
+  //     this.io.close(() => {
+  //       console.log('Company WebSocket server closed');
+  //       resolve();
+  //     });
+  //   });
+  // }
 }

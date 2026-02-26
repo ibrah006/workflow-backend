@@ -1,14 +1,18 @@
 import { Server as HTTPServer } from 'http';
 import { CompanyWebSocketService } from './company.websocketservice';
+import { Server as SocketIOServer } from 'socket.io';
 
 let companyWebSocketService: CompanyWebSocketService;
 
 /**
  * Initialize Company WebSocket server
  */
-export function initializeCompanyWebSocket(httpServer: HTTPServer): CompanyWebSocketService {
+export function initializeCompanyWebSocket(
+  // httpServer: HTTPServer
+  io: SocketIOServer
+): CompanyWebSocketService {
   if (!companyWebSocketService) {
-    companyWebSocketService = new CompanyWebSocketService(httpServer);
+    companyWebSocketService = new CompanyWebSocketService(io);
     console.log('Company WebSocket server initialized');
   }
   return companyWebSocketService;
