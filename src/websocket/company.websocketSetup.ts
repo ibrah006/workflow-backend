@@ -13,7 +13,6 @@ export function initializeCompanyWebSocket(
 ): CompanyWebSocketService {
   if (!companyWebSocketService) {
     companyWebSocketService = new CompanyWebSocketService(io);
-    console.log('Company WebSocket server initialized');
   }
   return companyWebSocketService;
 }

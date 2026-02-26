@@ -45,6 +45,10 @@ export class CompanyWebSocketService {
     //   path: '/ws/companies',
     // });
 
+    this.io.on('connection', (socket) => {
+      console.log('Company socket connected');
+    });
+
     this.companyRepo = AppDataSource.getRepository(Company);
     this.userRepo = AppDataSource.getRepository(User);
 

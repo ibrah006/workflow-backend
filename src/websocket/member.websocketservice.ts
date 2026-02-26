@@ -44,6 +44,10 @@ export class MemberWebSocketService {
     //   path: '/ws/members',
     // });
 
+    this.io.on('connection', (socket) => {
+      console.log('Member socket connected');
+    });
+
     this.userRepo = AppDataSource.getRepository(User);
     this.organizationRepo = AppDataSource.getRepository(Organization);
 
