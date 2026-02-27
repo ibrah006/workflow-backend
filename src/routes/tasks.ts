@@ -580,13 +580,36 @@ router.put("/:id/progress-stage", async (req, res)=> {
         })
         return;
     }
+    
+    // If progressing back from printing, then unassign printer
+    if (task.printerId != null && (newStatus === 'waitingPrinting' || newStatus === 'waitingApproval')) {
+        const printerId = task.printerId;
+        task.printerId = null;
+        task.actualProductionEndTime = new Date();
+        task.status = status;
 
-    await taskRepo.update(
-        taskId,
-        {
-            status: newStatus
+        await taskRepo.save(task);
+        
+        
+        const printer = await printerRepo.findOne({
+            where: { id: printerId }
+        });
+
+        console.log("debug log 101, printer:", printer);
+
+        if (printer) {
+            printer.currentTaskId = null;
+            printer.currentTask = undefined;
+            await printerRepo.save(printer);
         }
-    );
+    } else {
+        await taskRepo.update(
+            taskId,
+            {
+                status: newStatus
+            }
+        );
+    }
 
     res.status(200).json({
         task
