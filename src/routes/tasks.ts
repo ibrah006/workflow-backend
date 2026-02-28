@@ -825,13 +825,18 @@ router.put("/:id", async (req, res)=> {
             ref,
             size,
             quantity,
+        }: {
+            billingStatus?: string,
+            ref?: string,
+            size?: string,
+            quantity?: number
         } = req.body;
 
         await taskRepo.update(taskId, {
-            ...billingStatus? {billingStatus} : {},
-            ...ref? {ref} : {},
-            ...size? {size} : {},
-            ...quantity? {quantity} : {},
+            ...billingStatus ? {billingStatus: billingStatus === ""? undefined : billingStatus } : {},
+            ...ref? {ref: ref === ""? undefined : ref } : {},
+            ...size? {size: size === ""? undefined : size } : {},
+            ...quantity? {quantity: quantity === 0? undefined : quantity } : {},
         });
 
         res.status(200).json({
