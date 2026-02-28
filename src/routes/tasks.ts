@@ -814,6 +814,36 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
     }
 });
 
+// Update task
+// Update other task attributes endpoint
+router.put("/:id", async (req, res)=> {
+    const taskId = req.params.id;
+
+    try {
+        const {
+            billingStatus,
+            ref,
+            size,
+            quantity,
+        } = req.body;
+
+        await taskRepo.update(taskId, {
+            ...billingStatus!=null? {billingStatus} : {},
+            ...ref!=null? {ref} : {},
+            ...size!=null? {size} : {},
+            ...quantity!=null? {quantity} : {},
+        });
+
+        res.status(200).json({
+            message: `Task ${taskId} state successfully updated`,
+        });
+    } catch(e) {
+        res.status(400).json({
+            message: `Failed to update task state`,
+        });
+    }
+});
+
 
 /**
  * Helper function to check and block tasks based on material stock availability
