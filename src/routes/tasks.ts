@@ -595,8 +595,6 @@ router.put("/:id/progress-stage", async (req, res)=> {
             where: { id: printerId }
         });
 
-        console.log("debug log 101, printer:", printer);
-
         if (printer) {
             printer.currentTaskId = null;
             printer.currentTask = undefined;
