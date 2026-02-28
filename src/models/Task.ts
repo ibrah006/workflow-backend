@@ -120,6 +120,16 @@ export class Task {
     @JoinColumn({ name: 'stockTransactionId' })
     stockTransaction!: StockTransaction;
 
+    @Column({nullable: true})
+    ref?: string;
+
+    @Column({nullable: true})
+    size?: string;
+
+    // This is the quantity (to be) produced for this job
+    @Column({nullable: true})
+    quantity?: string;
+
     // derived attributes (NOTE FOR THE FRONT-END):
     // task efficiency
 
