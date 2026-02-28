@@ -1,12 +1,12 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AdditionalFeildsForTask1772264823118 implements MigrationInterface {
-    name = 'AdditionalFeildsForTask1772264823118'
+export class AdditionalFeildsForTask1772264987113 implements MigrationInterface {
+    name = 'AdditionalFeildsForTask1772264987113'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "task" ADD "ref" character varying`);
         await queryRunner.query(`ALTER TABLE "task" ADD "size" character varying`);
-        await queryRunner.query(`ALTER TABLE "task" ADD "quantity" character varying`);
+        await queryRunner.query(`ALTER TABLE "task" ADD "quantity" integer`);
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {

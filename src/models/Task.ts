@@ -128,7 +128,7 @@ export class Task {
 
     // This is the quantity (to be) produced for this job
     @Column({nullable: true})
-    quantity?: string;
+    quantity?: number;
 
     // derived attributes (NOTE FOR THE FRONT-END):
     // task efficiency
