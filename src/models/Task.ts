@@ -130,6 +130,9 @@ export class Task {
     @Column({nullable: true})
     quantity?: number;
 
+    @Column({nullable: true})
+    billingStatus?: string;
+
     // derived attributes (NOTE FOR THE FRONT-END):
     // task efficiency
 

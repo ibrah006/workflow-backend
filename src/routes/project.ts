@@ -235,7 +235,8 @@ router.post("/:id/tasks", async (req, res): Promise<any> => {
         priority,
         ref,
         size,
-        quantity
+        quantity,
+        billingStatus
     } = req.body;
 
     if (!organizationId) {
@@ -291,7 +292,8 @@ router.post("/:id/tasks", async (req, res): Promise<any> => {
             priority: priority || 1,
             ref,
             size,
-            quantity
+            quantity,
+            billingStatus
         });
 
         const savedTask = await queryRunner.manager.save(newTask);
