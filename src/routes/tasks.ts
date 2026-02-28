@@ -828,10 +828,10 @@ router.put("/:id", async (req, res)=> {
         } = req.body;
 
         await taskRepo.update(taskId, {
-            ...billingStatus!=null? {billingStatus} : {},
-            ...ref!=null? {ref} : {},
-            ...size!=null? {size} : {},
-            ...quantity!=null? {quantity} : {},
+            ...billingStatus? {billingStatus} : {},
+            ...ref? {ref} : {},
+            ...size? {size} : {},
+            ...quantity? {quantity} : {},
         });
 
         res.status(200).json({
