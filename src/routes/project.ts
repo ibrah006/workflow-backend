@@ -232,7 +232,10 @@ router.post("/:id/tasks", async (req, res): Promise<any> => {
         status,
         assignees: assigneeIds,
         dateCompleted,
-        priority
+        priority,
+        ref,
+        size,
+        quantity
     } = req.body;
 
     if (!organizationId) {
@@ -285,7 +288,10 @@ router.post("/:id/tasks", async (req, res): Promise<any> => {
             dateCompleted,
             project,
             assignees,
-            priority: priority || 1
+            priority: priority || 1,
+            ref,
+            size,
+            quantity
         });
 
         const savedTask = await queryRunner.manager.save(newTask);
