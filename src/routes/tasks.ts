@@ -831,7 +831,7 @@ router.put("/:id", async (req, res)=> {
             size?: string,
             quantity?: number
         } = req.body;
-
+        
         await taskRepo.update(taskId, {
             ...billingStatus ? {billingStatus: billingStatus === ""? undefined : billingStatus } : {},
             ...ref? {ref: ref === ""? undefined : ref } : {},
