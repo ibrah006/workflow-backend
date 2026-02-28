@@ -586,7 +586,7 @@ router.put("/:id/progress-stage", async (req, res)=> {
         const printerId = task.printerId;
         task.printerId = null;
         task.actualProductionEndTime = new Date();
-        task.status = status;
+        task.status = newStatus;
 
         await taskRepo.save(task);
         
