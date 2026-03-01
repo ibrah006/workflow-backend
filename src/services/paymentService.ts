@@ -1,7 +1,7 @@
 // src/services/PaymentService.ts
 import { Repository } from 'typeorm';
 import { Payment, PaymentMethod } from '../models/Payment';
-import { Invoice, InvoiceStatus } from '../models/invoice';
+import { Invoice, InvoiceStatus } from '../models/Invoice';
 import { AppDataSource } from '../data-source';
 import { RecordPaymentDto, PaymentQueryDto } from '../dtos/payment.dto';
 

@@ -16,7 +16,7 @@ import {
     ArrayMinSize,
   } from 'class-validator';
   import { Type } from 'class-transformer';
-  import { InvoiceStatus } from '../models/invoice';
+  import { InvoiceStatus } from '../models/Invoice';
   
   // ─── LINE ITEM ────────────────────────────────────────────────────────────────
   
