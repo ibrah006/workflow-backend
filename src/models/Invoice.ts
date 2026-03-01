@@ -7,11 +7,11 @@ import {
     ManyToOne,
     OneToMany,
     JoinColumn,
-  } from 'typeorm';
-  import { Organization } from './Organization';
-  import { User } from './User';
+} from 'typeorm';
+import { Organization } from './Organization';
+import { User } from './User';
 import { Payment } from './Payment';
-import { InvoiceLineItem } from './InvoicelineItem';
+import { InvoiceLineItem } from './InvoiceLineItem';
   
   export enum InvoiceStatus {
     DRAFT          = 'draft',

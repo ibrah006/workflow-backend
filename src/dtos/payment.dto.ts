@@ -8,7 +8,7 @@ import {
     IsPositive,
     IsUUID,
   } from 'class-validator';
-  import { PaymentMethod } from '../models/payment';
+  import { PaymentMethod } from '../models/Payment';
   
   // ─── RECORD PAYMENT ───────────────────────────────────────────────────────────
   
