@@ -1,8 +1,8 @@
 // src/controllers/PaymentController.ts
 import { Request, Response } from 'express';
 import { PaymentService } from '../services/paymentService';
-import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import { RecordPaymentDto, PaymentQueryDto } from '../dtos/payment.dto';
+import { AuthenticatedRequest } from '../middleware/auth.middleware';
 
 export class PaymentController {
   private paymentService: PaymentService;
@@ -27,7 +27,7 @@ export class PaymentController {
 
       res.status(201).json({
         success: true,
-        message: `Payment recorded — Receipt: ${payment.receiptNumber}`,
+        message: `Payment recorded — Receipt: ${payment?.receiptNumber}`,
         data:    payment,
       });
     } catch (err: any) {

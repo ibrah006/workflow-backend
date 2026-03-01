@@ -1,7 +1,8 @@
 // src/controllers/InvoiceController.ts
 import { Request, Response } from 'express';
 import { InvoiceService } from '../services/invoiceService';
-import { CreateInvoiceDto, UpdateInvoiceDto, InvoiceQueryDto } from '../dto/invoice.dto';
+import { AuthenticatedRequest } from '../middleware/auth.middleware';
+import { CreateInvoiceDto, UpdateInvoiceDto, InvoiceQueryDto } from '../dtos/invoice.dto';
 
 export class InvoiceController {
   private invoiceService: InvoiceService;
