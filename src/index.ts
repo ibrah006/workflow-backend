@@ -19,6 +19,8 @@ import invitationRoutes from './routes/invitation';
 import sampleOrganizationRoutes from './routes/sampleOrganization';
 import materialRoutes from './routes/material';
 import reportsRoutes from './routes/reports';
+import invoiceRoutes from './routes/invoice';
+import paymentRoutes from './routes/payment';
 
 import os from 'os';
 import printerRoutes from './routes/printer';
@@ -86,6 +88,9 @@ app.use('/material', authMiddleware, materialRoutes);
 app.use('/printers', authMiddleware, printerRoutes);
 // Reports routes
 app.use('/reports', authMiddleware, reportsRoutes);
+
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
