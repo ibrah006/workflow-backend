@@ -54,7 +54,7 @@ import 'reflect-metadata';
 ```
 
 
-## Setup basic Auth (JWT & Bcrypt)
+## Run Migrations
 ```bash
 npm run typeorm -- migration:run:dev -d src/data-source.ts
 ```
