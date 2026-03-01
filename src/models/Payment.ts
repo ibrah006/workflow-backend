@@ -7,7 +7,7 @@ import {
     ManyToOne,
     JoinColumn,
   } from 'typeorm';
-  import { Invoice } from './invoice';
+  import { Invoice } from './Invoice';
   import { User } from './User';
   
   export enum PaymentMethod {
