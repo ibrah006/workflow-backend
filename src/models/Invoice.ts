@@ -10,8 +10,8 @@ import {
   } from 'typeorm';
   import { Organization } from './Organization';
   import { User } from './User';
-  import { InvoiceLineItem } from './InvoicelineItem';
-  import { Payment } from './payment';
+  import { InvoiceLineItem } from './InvoicelineItem'
+import { Payment } from './Payment';
   
   export enum InvoiceStatus {
     DRAFT          = 'draft',

@@ -1,11 +1,12 @@
 // src/services/InvoiceService.ts
 import { Repository, DataSource, ILike, FindOptionsWhere, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
-import { Invoice, InvoiceStatus } from '../models/invoice';
+// import { Invoice, InvoiceStatus } from '../models/invoice';
 import { InvoiceLineItem } from '../models/InvoicelineItem';
-import { Payment } from '../models/payment';
 import { Organization } from '../models/Organization';
 import { AppDataSource } from '../data-source';
 import { CreateInvoiceDto, UpdateInvoiceDto, InvoiceQueryDto, LineItemDto } from '../dtos/invoice.dto';
+import { Payment } from '../models/Payment';
+import { Invoice, InvoiceStatus } from '../models/invoice';
 
 export class InvoiceService {
   private invoiceRepo: Repository<Invoice>;
