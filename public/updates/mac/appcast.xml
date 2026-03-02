@@ -4,11 +4,11 @@
     <title>Smooflow Updates</title>
     <link>https://workflow-backend-production.up.railway.app/updates/mac</link>
     <item>
-      <title>Version 1.0.2</title>
+      <title>Version 1.0.3</title>
       <!-- <sparkle:releaseNotesLink>https://your-server.local/updates/release-notes-1.0.1.html</sparkle:releaseNotesLink> -->
-      <pubDate>Mon, 02 Mar 2026 17:42:00 +0400</pubDate>
+      <pubDate>Mon, 02 Mar 2026 19:18:00 +0400</pubDate>
       <sparkle:minimumSystemVersion>10.14</sparkle:minimumSystemVersion>
-      <enclosure url="https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.0.2.zip" sparkle:version="102" type="application/octet-stream"/>
+      <enclosure url="https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.0.1.zip" sparkle:version="103" type="application/octet-stream"/>
     </item>
   </channel>
 </rss>
