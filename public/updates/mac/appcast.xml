@@ -6,7 +6,7 @@
     <item>
       <title>Version 1.0.3</title>
       <!-- <sparkle:releaseNotesLink>https://your-server.local/updates/release-notes-1.0.1.html</sparkle:releaseNotesLink> -->
-      <pubDate>Mon, 02 Mar 2026 19:18:00 +0400</pubDate>
+      <pubDate>Mon, 02 Mar 2026 20:30:00 +0400</pubDate>
       <sparkle:minimumSystemVersion>10.14</sparkle:minimumSystemVersion>
       <enclosure url="https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.0.3.zip" sparkle:version="103" type="application/octet-stream"/>
     </item>
