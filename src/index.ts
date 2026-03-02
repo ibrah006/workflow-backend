@@ -105,6 +105,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
+// Serve the 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
+
 // UPDATES
 app.get('/updates/mac/:file', (req, res) => {
   const filePath = path.join(__dirname, 'public/updates', req.params.file);

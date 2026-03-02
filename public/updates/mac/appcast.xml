@@ -2,11 +2,11 @@
 <rss version="2.0" xmlns:sparkle="http://www.smooflow-ibrahim.org/xml-namespaces/sparkle">
   <channel>
     <title>Smooflow Updates</title>
-    <link>https://workflow-backend-production.up.railway.app/updates</link>
+    <link>https://workflow-backend-production.up.railway.app/updates/mac</link>
     <item>
       <title>Version 1.0.1</title>
       <sparkle:releaseNotesLink>https://your-server.local/updates/release-notes-1.0.1.html</sparkle:releaseNotesLink>
       <enclosure url="https://workflow-backend-production.up.railway.app/updates/mac/MyApp-1.0.1.zip" sparkle:version="101" type="application/octet-stream"/>
     </item>
   </channel>
-</rss>
+</rss>a
