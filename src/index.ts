@@ -24,13 +24,11 @@ import paymentRoutes from './routes/payment';
 
 import os from 'os';
 import printerRoutes from './routes/printer';
-import { createProxyMiddleware } from 'http-proxy-middleware';
-import helmet from "helmet";
-import { chromium } from 'playwright';
 import { createServer } from 'http';
-import { initializeWebSocket } from './websocket/task.websocketSetup';
 import { initializeCompanyWebSocket } from './websocket/company.websocketSetup';
 import { initializeMemberWebSocket } from './websocket/member.websocketSetup';
+import mime from 'mime-types';
+import path from 'path';
 
 import { Server as SocketIOServer } from 'socket.io';
 
@@ -105,6 +103,14 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
     message: err.message || 'Internal server error',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
+});
+
+// UPDATES
+app.get('/updates/mac/:file', (req, res) => {
+  const filePath = path.join(__dirname, 'public/updates', req.params.file);
+  const contentType = mime.lookup(filePath) || 'application/octet-stream';
+  res.type(contentType);
+  res.sendFile(filePath);
 });
 
 // Create HTTP server
