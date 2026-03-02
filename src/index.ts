@@ -105,12 +105,12 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// Serve the 'public' folder
-app.use(express.static(path.join(__dirname, 'src', 'public')));
+// Server static files
+app.use(express.static(path.join(__dirname, '../public')));
 
-// UPDATES
+// Updates
 app.get('/updates/mac/:file', (req, res) => {
-  const filePath = path.join(__dirname, 'src/public/updates/mac', req.params.file);
+  const filePath = path.join(__dirname, '../public/updates/mac', req.params.file);
   const contentType = mime.lookup(filePath) || 'application/octet-stream';
   res.type(contentType);
   res.sendFile(filePath);
