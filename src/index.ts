@@ -110,7 +110,7 @@ app.use(express.static(path.join(__dirname, 'src', 'public')));
 
 // UPDATES
 app.get('/updates/mac/:file', (req, res) => {
-  const filePath = path.join(__dirname, 'public/updates/mac', req.params.file);
+  const filePath = path.join(__dirname, 'src/public/updates/mac', req.params.file);
   const contentType = mime.lookup(filePath) || 'application/octet-stream';
   res.type(contentType);
   res.sendFile(filePath);
