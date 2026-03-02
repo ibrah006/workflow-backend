@@ -6,6 +6,7 @@
     <item>
       <title>Version 1.0.1</title>
       <sparkle:releaseNotesLink>https://your-server.local/updates/release-notes-1.0.1.html</sparkle:releaseNotesLink>
+      <pubDate>Mon, 02 Mar 2026 12:00:00 +0400</pubDate>
       <sparkle:minimumSystemVersion>10.14</sparkle:minimumSystemVersion>
       <enclosure url="https://workflow-backend-production.up.railway.app/updates/mac/MyApp-1.0.1.zip" sparkle:version="101" type="application/octet-stream"/>
     </item>
