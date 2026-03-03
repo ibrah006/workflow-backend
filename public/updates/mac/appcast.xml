@@ -5,7 +5,6 @@
     <link>https://workflow-backend-production.up.railway.app/updates/mac</link>
     <item>
       <title>Version 1.1.0</title>
-      <sparkle:releaseNotesLink>https://example.com</sparkle:releaseNotesLink>
       <pubDate>Mon, 02 Mar 2026 20:30:00 +0400</pubDate>
       <sparkle:version>1.1</sparkle:version>
       <description>
@@ -20,8 +19,8 @@
           - Minor performance and auto-update reliability improvements.
         ]]>
       </description>
-      <enclosure url="https://raw.githubusercontent.com/ibrah006/workflow-backend/main/public/updates/mac/smooflow-1.0.3.zip" sparkle:version="1.1.0" type="application/octet-stream"/>
-      <!-- https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.0.3.zip -->
+      <enclosure url="https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.0.3.zip" sparkle:version="1.1.0" type="application/octet-stream"/>
+      <!-- https://raw.githubusercontent.com/ibrah006/workflow-backend/main/public/updates/mac/smooflow-1.0.3.zip -->
     </item>
   </channel>
 </rss>
