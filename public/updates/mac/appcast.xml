@@ -2,7 +2,7 @@
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
     <title>Smooflow Updates</title>
-    <link>https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.1.0.zip</link>
+    <link>https://workflow-backend-production.up.railway.app/updates/mac/</link>
     <item>
       <title>Version 1.1.0</title>
       <pubDate>Mon, 03 Mar 2026 11:30:00 +0400</pubDate>
