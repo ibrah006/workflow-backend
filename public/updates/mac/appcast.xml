@@ -18,7 +18,7 @@
       <enclosure
         url="https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.1.0.zip"
         length="12345678"
-        type="application/octet-stream"/> <!-- remove sparkle:edSignature for local testing -->
+        type="application/octet-stream"/>
       <pubDate>Tue, 03 Mar 2026 12:00:00 +0000</pubDate>
     </item>
   </channel>
