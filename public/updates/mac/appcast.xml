@@ -3,7 +3,7 @@
      xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>Smooflow Updates</title>
-    <link>https://workflow-backend-production.up.railway.app/releases</link> <!-- optional -->
+    <!-- <link>https://workflow-backend-production.up.railway.app/releases</link> -->
     <description>Latest updates for Smooflow</description>
 
     <item>
