@@ -8,7 +8,19 @@
       <sparkle:releaseNotesLink>https://example.com</sparkle:releaseNotesLink>
       <pubDate>Mon, 02 Mar 2026 20:30:00 +0400</pubDate>
       <sparkle:version>1.1</sparkle:version>
-      <enclosure url="https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.0.3.zip" sparkle:version="110" type="application/octet-stream"/>
+      <description>
+        <![CDATA[
+          # MyApp 1.2.3 (Build 42)
+          **Release Date:** March 3, 2026
+          ## 🐛 Bug Fixes
+          - Task table view is default rather than Board view.
+          - Navigating between projects made much easier.
+          - Resolved UI glitches in the task list.
+          ## ⚡ Stability Improvements
+          - Minor performance and auto-update reliability improvements.
+        ]]>
+      </description>
+      <enclosure url="https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.0.3.zip" sparkle:version="1.1.0" type="application/octet-stream"/>
     </item>
   </channel>
 </rss>
