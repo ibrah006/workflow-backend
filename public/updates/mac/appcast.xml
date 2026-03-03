@@ -3,12 +3,12 @@
      xmlns:dc="http://purl.org/dc/elements/1.1/">
   <channel>
     <title>Smooflow Updates</title>
-    <!-- <link>https://workflow-backend-production.up.railway.app/releases</link> -->
+    <link>https://workflow-backend-production.up.railway.app/updates/mac/</link>
     <description>Latest updates for Smooflow</description>
 
     <item>
       <title>Version 1.1.0</title>
-      <sparkle:version>5</sparkle:version> <!-- must be > CFBundleVersion -->
+      <sparkle:version>1.1.0</sparkle:version> <!-- must be > CFBundleVersion -->
       <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
       <description><![CDATA[
         ## 🐛 Bug Fixes
