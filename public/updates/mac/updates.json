@@ -3,7 +3,7 @@
   "description": "This is my app description",
   "items": [
       {
-          "version": "0.1.8",
+          "version": "1",
           "shortVersion": 9,
           "changes": [
               {
@@ -24,7 +24,7 @@
           "platform": "windows"
       },
       {
-          "version": "0.1.7",
+          "version": "1",
           "shortVersion": 8,
           "changes": [
               {
