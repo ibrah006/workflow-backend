@@ -41,7 +41,7 @@
           ],
           "date": "2025-01-10",
           "mandatory": true,
-          "url": "https://www.yourwebsite.com/archive/desktop_updater/0.1.6%2B7-macos",
+          "url": "https://workflow-backend-production.up.railway.app/updates/mac/smooflow.app",
           "platform": "macos"
       }
   ]
