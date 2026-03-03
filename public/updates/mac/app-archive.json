@@ -41,7 +41,7 @@
           ],
           "date": "2025-01-10",
           "mandatory": true,
-          "url": "https://workflow-backend-production.up.railway.app/updates/mac/",
+          "url": "https://workflow-backend-production.up.railway.app/updates/mac",
           "platform": "macos"
       }
   ]
