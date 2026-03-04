@@ -91,10 +91,12 @@ export class Project {
     @OneToMany(()=> MaterialLog, (log)=> log.project)
     materialLogs!: MaterialLog[];
 
+    @Column({ length: 7, nullable: true })
+    color?: string;
+
     // derived attributes (NOTE FOR THE FRONT-END):
     // project efficiency
 
     @OneToMany(()=> ProgressLog, log=> log.project)
     progressLogs?: ProgressLog[];
-    
 }
