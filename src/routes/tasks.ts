@@ -614,6 +614,17 @@ router.put("/:id/progress-stage", async (req, res)=> {
     })
 });
 
+
+// Issue 102
+// ---
+// Need to be fixed - currently has a temporary fix
+// Currently, we only have a one-one relation between task and
+// stock transaction which is a big issue when tasks are able to stage-back
+// from printing stages which would cause the same task to be reassigned
+// with another (new) stock transaction.
+// For now, we delete the relation with the old stock transaction with the
+// task and create new stock transaction and create relation to the task
+// ---
 // Schedule print for task with ID: [params.id]
 router.post("/:id/schedule-job", async (req, res): Promise<any> => {
     const taskId = Number(req.params.id);
@@ -738,6 +749,17 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
 
         // Save material with updated demand
         await queryRunner.manager.save(material);
+        
+        // Temp Fix for Issue 102
+        if (task.stockTransactionId != null) {
+            const stockTransactionRepo = AppDataSource.getRepository(StockTransaction);
+
+            await stockTransactionRepo
+                .createQueryBuilder()
+                .delete()
+                .where("taskId = :taskId", { taskId })
+                .execute();
+        }
 
         // Create uncommitted stock transaction record
         const transaction = queryRunner.manager.create(StockTransaction, {

@@ -62,7 +62,7 @@ import { Task } from './Task';
   
     @OneToOne(() => Task, (task)=> task.stockTransaction, { nullable: true })
     @JoinColumn({ name: 'taskId' })
-    task!: Task;
+    task?: Task;
 
     /**If true -> this transaction quantity reflects in the actual stock
      * If false -> this transaction quantity has not reflected the actual stock yet; This is scheduled to be used when a task is marked as completed (for example)
