@@ -125,7 +125,7 @@ printerRouter.put('/:id', async (req, res) : Promise<any> => {
     });
 
     // await printerRepo.save(printer);
-    await printerService.updatePrinterStatus(printer, dto.status);
+    await printerService.updatePrinterStatus(printer, status);
 
     res.json(printer);
   } catch (err) {
