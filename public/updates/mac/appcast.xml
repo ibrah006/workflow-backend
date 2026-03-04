@@ -21,10 +21,11 @@
       <enclosure
         url="https://workflow-backend-production.up.railway.app/updates/mac/smooflow-1.1.1.zip"
         sparkle:version="1.1.0"
-        type="application/octet-stream"
-        length="25171389"
-        sparkle:edSignature="9Kuvo2stO+K0DUesDkPuIHU17bjUxlwq4TYnqYU2sqJh590CX3lhVBsZaB+5hlGjOUr9EfmAa2yBidObCDl/DA=="/>
+        />
       <!-- https://raw.githubusercontent.com/ibrah006/workflow-backend/main/public/updates/mac/smooflow-1.0.3.zip -->
     </item>
   </channel>
 </rss>
+
+<!-- enclosure -->
+<!-- type="application/octet-stream" -->
