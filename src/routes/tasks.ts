@@ -754,11 +754,12 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
         if (task.stockTransactionId != null) {
             const stockTransactionRepo = AppDataSource.getRepository(StockTransaction);
 
-            await stockTransactionRepo
-                .createQueryBuilder()
-                .delete()
-                .where("taskId = :taskId", { taskId })
-                .execute();
+            await stockTransactionRepo.query(
+                `UPDATE "stock_transactions"
+                    SET "taskId" = NULL
+                    WHERE "taskId" = $1`,
+                [taskId]
+            );
         }
 
         // Create uncommitted stock transaction record
