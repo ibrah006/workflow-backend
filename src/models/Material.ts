@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
+  Unique,
 } from 'typeorm';
 import { Organization } from './Organization';
 import { User } from './User';
@@ -22,6 +23,7 @@ export enum MeasureType {
 }
 
 @Entity('materials')
+@Unique(["organizationId", "name"])
 export class Material {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
