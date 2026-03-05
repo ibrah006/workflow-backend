@@ -196,7 +196,7 @@ printerRouter.get('/active', async (req, res) => {
         where: { organizationId: organizationId }
       })
 
-      console.log("totalPrintersCount:", totalPrintersCount);
+      // console.log("totalPrintersCount:", totalPrintersCount);
   
       res.json({
         activePrinters: printers,
