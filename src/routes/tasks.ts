@@ -769,7 +769,7 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
             );
         }
 
-        // Create uncommitted stock transaction record
+        // Create committed stock transaction record
         const transaction = queryRunner.manager.create(StockTransaction, {
             materialId: materialId,
             type: TransactionType.STOCK_OUT,
