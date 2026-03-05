@@ -234,10 +234,10 @@ router.get('/transactions/barcode/:barcode',  async (req: Request, res: Response
   }
 });
 
-// Get transaction for current organization
+// Get transactions for current organization
 router.get('/transactions',  async (req: Request, res: Response) => {
   try {
-    const transaction = await materialService.getTransactions((req as any).organizationId);
+    const transaction = await materialService.getTransactions((req as any).user.organizationId);
     
     if (!transaction) {
       res.status(404).json({ error: 'Transactions not found' });
