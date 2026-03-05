@@ -191,7 +191,10 @@ export class MaterialController {
       where: { barcode: barcode, type: TransactionType.STOCK_IN },
     });
 
-    return { stockOut, updatedBatch };
+    return {
+      stockOut,
+      updatedBatch
+    };
   }
 
 }

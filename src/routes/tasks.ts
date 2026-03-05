@@ -14,6 +14,8 @@ import projectController, { PROJECT_GET_RELATIONS } from "../controller/project"
 import { StockTransaction, TransactionType } from "../models/StockTransaction";
 import { Material } from "../models/Material";
 import { ProgressLog } from "../models/ProgressLog";
+import { MaterialController } from "../controller/material";
+// import { recordStockOut } from '../controller/material';
 
 const router = Router();
 
@@ -30,6 +32,8 @@ const materialService = new MaterialService()
 const printerRepo = AppDataSource.getRepository(Printer);
 
 const progressLogRepo = AppDataSource.getRepository(ProgressLog);
+
+const materialController = new MaterialController(materialService);
 
 // --- define any task relations you want eagerly loaded
 export const TASK_RELATIONS = ["assignees", "project", "progressLogs", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task", 'material', 'stockTransaction'];
@@ -769,22 +773,35 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
             );
         }
 
-        // Create committed stock transaction record
-        const transaction = queryRunner.manager.create(StockTransaction, {
-            materialId: materialId,
-            type: TransactionType.STOCK_OUT,
-            quantity: productionQuantity,
-            balanceAfter: material.currentStock + productionQuantity,
-            projectId: projectId,
-            notes: "",
-            createdById: user.id,
-            barcode: barcode,
-            committed: true,
-            task: task,
-            taskId: task.id
-        });
+        // --- Create committed stock transaction record --- //
+        const stockQueryRunner = AppDataSource.createQueryRunner();
+        await stockQueryRunner.connect();
+        await stockQueryRunner.startTransaction();
+        var transaction: StockTransaction | undefined;
+        try {
+            const response = await materialController.recordStockOut(
+                stockQueryRunner,
+                {
+                    productionQuantity,
+                    projectId,
+                    barcode,
+                    // notes,
+                    task,
+                    user
+                }
+            );
+            transaction = response.stockOut;
 
-        await queryRunner.manager.save(transaction);
+            await stockQueryRunner.commitTransaction();
+        } catch (e) {
+            await stockQueryRunner.rollbackTransaction();
+            throw e;
+        } finally {
+            await stockQueryRunner.release();
+        }
+        // --- END - Create committed stock transaction record --- //
+
+        // await queryRunner.manager.save(transaction);
 
         // Update task with production details
         task.status = taskStatus;
@@ -794,7 +811,7 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
         task.productionStartTime = productionStartTime;
         task.runs = runs;
         task.productionQuantity = productionQuantity;
-        task.stockTransaction = transaction;
+        task.stockTransaction = transaction!;
         task.progressLogs = [...(task.progressLogs || []), progressLog];
 
         const savedTask = await queryRunner.manager.save(task);
@@ -829,7 +846,8 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
             message: `Print scheduled successfully for task ${taskId}`,
             taskId: savedTask.id,
             status: taskStatus,
-            wasBlocked: taskStatus === 'blocked'
+            wasBlocked: taskStatus === 'blocked',
+            stockOutTransaction: transaction
         });
 
     } catch (err) {
