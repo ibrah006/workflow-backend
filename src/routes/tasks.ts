@@ -625,6 +625,13 @@ router.put("/:id/progress-stage", async (req, res)=> {
 // For now, we delete the relation with the old stock transaction with the
 // task and create new stock transaction and create relation to the task
 // ---
+// Issue 103
+// Make sure stock out, stocks out that specific real item in stock by the specified quantity
+// Issue 104
+// Don't make changes to item in stock by getting the item and doing += -=
+// which can cause conflicted stock records when many users interact with
+// the same thing concurrently
+// ---
 // Schedule print for task with ID: [params.id]
 router.post("/:id/schedule-job", async (req, res): Promise<any> => {
     const taskId = Number(req.params.id);
@@ -767,12 +774,12 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
             materialId: materialId,
             type: TransactionType.STOCK_OUT,
             quantity: productionQuantity,
-            balanceAfter: material.currentStock, // Balance doesn't change yet since not committed
+            balanceAfter: material.currentStock + productionQuantity,
             projectId: projectId,
             notes: "",
             createdById: user.id,
             barcode: barcode,
-            committed: false, // Key: not committed yet
+            committed: true,
             task: task,
             taskId: task.id
         });
