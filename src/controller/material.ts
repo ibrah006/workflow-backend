@@ -123,7 +123,7 @@ export class MaterialController {
     // this same row until we commit or roll back.
     const sourceBatch = await queryRunner.manager.findOne(StockTransaction, {
       where: { barcode: barcode, type: TransactionType.STOCK_IN },
-      lock:  { mode: 'pessimistic_write' },
+      // lock:  { mode: 'pessimistic_write_or_fail' },
     });
 
     if (!sourceBatch) {
@@ -140,33 +140,49 @@ export class MaterialController {
     // ── 3. Decrement StockIn.quantity atomically ──────────────────────────────
     // Using SQL arithmetic instead of a JS-computed value eliminates any
     // residual race if a caller somehow bypasses the lock above.
+
+    // await queryRunner.manager
+    //   .createQueryBuilder()
+    //   .update(StockTransaction)
+    //   .set({ quantity: () => `quantity - ${productionQuantity}` })
+    //   .where('barcode = :barcode', { barcode: barcode })
+    //   .execute();
     await queryRunner.manager
       .createQueryBuilder()
       .update(StockTransaction)
       .set({ quantity: () => `quantity - ${productionQuantity}` })
-      .where('id = :id', { barcode: barcode })
+      .where('barcode = :barcode', { barcode })
+      .andWhere('type = :type', { type: TransactionType.STOCK_IN })
       .execute();
+
+    console.log("updated source batch for stock out");
 
     // ── 4. Decrement Material.currentStock atomically ─────────────────────────
     // Lock the Material row as well so concurrent stock-outs from *different*
     // batches of the same material don't race on currentStock.
     await queryRunner.manager.findOne(Material, {
       where: { id: sourceBatch.materialId },
-      lock:  { mode: 'pessimistic_write' },
+      // lock:  { mode: 'pessimistic_write_or_fail' },
     });
+
+    console.log("found & locked material corresponding to these transactions");
 
     await queryRunner.manager
       .createQueryBuilder()
       .update(Material)
-      .set({ currentStock: () => `current_stock - ${productionQuantity}` })
+      .set({ currentStock: () => `"currentStock" - ${productionQuantity}` })
       .where('id = :id', { id: sourceBatch.materialId })
       .execute();
+    
+    console.log("Updated the material stock level");
 
     // Re-read balanceAfter from the now-updated material row so the value
     // stored on the StockOut record is accurate.
     const updatedMaterial = await queryRunner.manager.findOneOrFail(Material, {
       where: { id: sourceBatch.materialId },
     });
+
+    console.log("fetched Updated material - stock out");
 
     // ── 5. Insert the StockOut transaction record ─────────────────────────────
     const stockOut = queryRunner.manager.create(StockTransaction, {
@@ -184,12 +200,18 @@ export class MaterialController {
       taskId:              task.id
     });
 
+    console.log("Successfully inserted stock out transaction");
+
     await queryRunner.manager.save(StockTransaction, stockOut);
+
+    console.log("saved the query runner - stock out");
 
     // Re-read the updated batch so the caller gets fresh data (not stale JS copy)
     const updatedBatch = await queryRunner.manager.findOneOrFail(StockTransaction, {
       where: { barcode: barcode, type: TransactionType.STOCK_IN },
     });
+
+    console.log("fetched updated source batch - stock out");
 
     return {
       stockOut,

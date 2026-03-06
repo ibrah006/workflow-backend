@@ -705,9 +705,9 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
             }
         };
         
-        console.log("progress request before calling create progressLog:", progressRequest);
+        // console.log("progress request before calling create progressLog:", progressRequest);
         const createProgressResponse = await projectController.createProgressLog(progressRequest);
-        console.log("createProgressResponse:", createProgressResponse);
+        // console.log("createProgressResponse:", createProgressResponse);
 
         let progressLog = createProgressResponse.progressLog;
         if (Math.floor(createProgressResponse.statusCode / 100) !== 2) {
@@ -801,7 +801,7 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
         }
         // --- END - Create committed stock transaction record --- //
 
-        // await queryRunner.manager.save(transaction);
+        await queryRunner.manager.save(transaction);
 
         // Update task with production details
         task.status = taskStatus;
