@@ -812,7 +812,9 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
         task.productionStartTime = productionStartTime;
         task.runs = runs;
         task.productionQuantity = productionQuantity;
-        task.stockTransaction = transaction!;
+        // Assign stock out transaction to this task
+        // task.stockTransaction = transaction!;
+        task.stockTransactions.push(transaction);
         task.progressLogs = [...(task.progressLogs || []), progressLog];
 
         const savedTask = await queryRunner.manager.save(task);
