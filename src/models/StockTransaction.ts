@@ -9,6 +9,7 @@ import {
     OneToMany,
     OneToOne,
     ManyToMany,
+    JoinTable,
   } from 'typeorm';
   import { Material } from './Material';
   import { User } from './User';
@@ -68,6 +69,7 @@ import { Task } from './Task';
     task?: Task;
 
     @ManyToMany(()=> Task, (task)=> task.stockTransactions)
+    @JoinTable()
     tasks!: Task[];
 
     /**If true -> this transaction quantity reflects in the actual stock
