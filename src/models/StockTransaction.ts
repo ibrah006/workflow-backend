@@ -59,18 +59,12 @@ import { Task } from './Task';
     @JoinColumn({ name: 'projectId' })
     project!: Project;
 
-    /** @deprecated to be completely replaced with task ids */
     @Column({ nullable: true })
     taskId!: number;
     
-    /** @deprecated to be completely replaced with task ids */
-    @OneToOne(() => Task, (task)=> task.stockTransaction, { nullable: true })
+    @ManyToOne(() => Task, (task)=> task.stockTransactions, { nullable: true })
     @JoinColumn({ name: 'taskId' })
     task?: Task;
-
-    @ManyToMany(()=> Task, (task)=> task.stockTransactions)
-    @JoinTable()
-    tasks!: Task[];
 
     /**If true -> this transaction quantity reflects in the actual stock
      * If false -> this transaction quantity has not reflected the actual stock yet; This is scheduled to be used when a task is marked as completed (for example)

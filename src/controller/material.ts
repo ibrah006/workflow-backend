@@ -141,19 +141,19 @@ export class MaterialController {
     // Using SQL arithmetic instead of a JS-computed value eliminates any
     // residual race if a caller somehow bypasses the lock above.
 
-    // await queryRunner.manager
-    //   .createQueryBuilder()
-    //   .update(StockTransaction)
-    //   .set({ quantity: () => `quantity - ${productionQuantity}` })
-    //   .where('barcode = :barcode', { barcode: barcode })
-    //   .execute();
     await queryRunner.manager
       .createQueryBuilder()
       .update(StockTransaction)
       .set({ quantity: () => `quantity - ${productionQuantity}` })
-      .where('barcode = :barcode', { barcode })
-      .andWhere('type = :type', { type: TransactionType.STOCK_IN })
+      .where('id = :id', { id: sourceBatch.id })
       .execute();
+    // await queryRunner.manager
+    //   .createQueryBuilder()
+    //   .update(StockTransaction)
+    //   .set({ quantity: () => `quantity - ${productionQuantity}` })
+    //   .where('barcode = :barcode', { barcode })
+    //   .andWhere('type = :type', { type: TransactionType.STOCK_IN })
+    //   .execute();
 
     console.log("updated source batch for stock out");
 
