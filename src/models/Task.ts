@@ -113,11 +113,11 @@ export class Task {
     @Column({ default: 1 })
     priority!: number;
 
-    /** @deprecated to be completely replaced with stock transaction ids */
+    /** @deprecated to be completely replaced with stock transaction */
     @Column({ nullable: true })
     stockTransactionId!: string;
     
-    /** @deprecated to be completely replaced with stock transaction ids */
+    /** @deprecated to be completely replaced with stock transaction */
     @OneToOne(() => StockTransaction, (stockTransaction)=> stockTransaction.task, { nullable: true })
     @JoinColumn({ name: 'stockTransactionId' })
     stockTransaction!: StockTransaction;
