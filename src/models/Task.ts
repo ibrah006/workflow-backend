@@ -122,6 +122,9 @@ export class Task {
     @JoinColumn({ name: 'stockTransactionId' })
     stockTransaction!: StockTransaction;
 
+    @ManyToMany(()=> StockTransaction, (stockTransaction)=> stockTransaction.tasks)
+    stockTransactions!: StockTransaction[];
+
     @Column({nullable: true})
     ref?: string;
 

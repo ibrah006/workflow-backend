@@ -57,9 +57,11 @@ import { Task } from './Task';
     @JoinColumn({ name: 'projectId' })
     project!: Project;
 
+    /** @deprecated to be completely replaced with task ids */
     @Column({ nullable: true })
     taskId!: number;
-  
+    
+    /** @deprecated to be completely replaced with task ids */
     @OneToOne(() => Task, (task)=> task.stockTransaction, { nullable: true })
     @JoinColumn({ name: 'taskId' })
     task?: Task;
