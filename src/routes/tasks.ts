@@ -774,13 +774,13 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
         }
 
         // --- Create committed stock transaction record --- //
-        const stockQueryRunner = AppDataSource.createQueryRunner();
-        await stockQueryRunner.connect();
-        await stockQueryRunner.startTransaction();
+        // const stockQueryRunner = AppDataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
         var transaction: StockTransaction | undefined;
-        try {
+        // try {
             const response = await materialController.recordStockOut(
-                stockQueryRunner,
+                queryRunner,
                 {
                     productionQuantity,
                     projectId,
@@ -792,16 +792,16 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
             );
             transaction = response.stockOut;
 
-            await stockQueryRunner.commitTransaction();
-        } catch (e) {
-            await stockQueryRunner.rollbackTransaction();
-            throw e;
-        } finally {
-            await stockQueryRunner.release();
-        }
+            // await queryRunner.commitTransaction();
+        // } catch (e) {
+        //     await stockQueryRunner.rollbackTransaction();
+        //     throw e;
+        // } finally {
+        //     await stockQueryRunner.release();
+        // }
         // --- END - Create committed stock transaction record --- //
 
-        await queryRunner.manager.save(transaction);
+        // await queryRunner.manager.save(transaction);
 
         // Update task with production details
         task.status = taskStatus;
@@ -837,8 +837,9 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
             await queryRunner.manager.save(printer!);
         }
 
+        // @Deprecated
         // Re-evaluate all other non-completed/non-blocked tasks for this material
-        await checkAndBlockTasksForMaterial(materialId, queryRunner);
+        // await checkAndBlockTasksForMaterial(materialId, queryRunner);
 
         await queryRunner.commitTransaction();
 
