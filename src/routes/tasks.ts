@@ -675,7 +675,7 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
         // Fetch the task with its project
         const task = await queryRunner.manager.findOne(Task, {
             where: { id: taskId },
-            relations: ['project', 'project.organization']
+            relations: ['project', 'project.organization', 'stockTransactions']
         });
 
         if (!task) {
