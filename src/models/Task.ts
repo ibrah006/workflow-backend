@@ -118,7 +118,7 @@ export class Task {
     stockTransactionId!: string;
     
     /** @deprecated to be completely replaced with stock transaction */
-    @OneToOne(() => StockTransaction, (stockTransaction)=> stockTransaction.task, { nullable: true })
+    @OneToOne(() => StockTransaction, { nullable: true })
     @JoinColumn({ name: 'stockTransactionId' })
     stockTransaction!: StockTransaction;
 
