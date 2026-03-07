@@ -36,7 +36,7 @@ const progressLogRepo = AppDataSource.getRepository(ProgressLog);
 const materialController = new MaterialController(materialService);
 
 // --- define any task relations you want eagerly loaded
-export const TASK_RELATIONS = ["assignees", "project", "progressLogs", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task", 'material', 'stockTransaction'];
+export const TASK_RELATIONS = ["assignees", "project", "progressLogs", "workActivityLogs", "workActivityLogs.user", "workActivityLogs.task", 'material', 'stockTransaction', 'stockTransactions'];
 
 export async function notifyProjectAboutLastTaskChange(projectId: string, lastModified: Date) : Promise<void> {
     await projectRepo.update(
