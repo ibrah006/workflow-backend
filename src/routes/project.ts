@@ -374,12 +374,12 @@ router.put("/tasks/:taskId", adminOnlyMiddleware, async (req, res) : Promise<any
             //     stockDemand: task.material.stockDemand - task.productionQuantity
             // })
 
-            await materialService.stockOut({
-                quantity: task.stockTransaction.quantity,
-                projectId: task.project.id,
-                taskId: task.id,
-                transactionId: task.stockTransactionId
-            } as StockOutCommitTransactionDto);
+            // await materialService.stockOut({
+            //     quantity: task.stockTransaction.quantity,
+            //     projectId: task.project.id,
+            //     taskId: task.id,
+            //     transactionId: task.stockTransactionId
+            // } as StockOutCommitTransactionDto);
         }
 
         // If assignees are passed, update relation

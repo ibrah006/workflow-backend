@@ -762,6 +762,7 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
         await queryRunner.manager.save(material);
         
         // Temp Fix for Issue 102
+        // To be removed
         if (task.stockTransactionId != null) {
             const stockTransactionRepo = AppDataSource.getRepository(StockTransaction);
 
@@ -775,8 +776,8 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
 
         // --- Create committed stock transaction record --- //
         // const stockQueryRunner = AppDataSource.createQueryRunner();
-        await queryRunner.connect();
-        await queryRunner.startTransaction();
+        // await queryRunner.connect();
+        // await queryRunner.startTransaction();
         var transaction: StockTransaction | undefined;
         // try {
             const response = await materialController.recordStockOut(
