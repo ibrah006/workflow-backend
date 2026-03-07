@@ -448,13 +448,14 @@ router.put("/:id/assign-printer", async (req, res) => {
         
         if (!isJobResume) {
             try {
+                throw "Unimplemented endpoint AFTER ISSUE 102";
                 // Commit the existing stock out transaction
                 await materialService.stockOut({
-                    quantity: task.stockTransaction.quantity,
-                    projectId: task.project.id,
-                    taskId: task.id,
+                    quantity: task!.stockTransaction.quantity,
+                    projectId: task!.project.id,
+                    taskId: task!.id,
                     userId: userId,
-                    transactionId: task.stockTransactionId
+                    transactionId: task!.stockTransactionId
                 } as StockOutCommitTransactionDto);
             } catch(err) {
                 // Rollback
@@ -762,17 +763,16 @@ router.post("/:id/schedule-job", async (req, res): Promise<any> => {
         await queryRunner.manager.save(material);
         
         // Temp Fix for Issue 102
-        // To be removed
-        if (task.stockTransactionId != null) {
-            const stockTransactionRepo = AppDataSource.getRepository(StockTransaction);
+        // if (task.stockTransactionId != null) {
+        //     const stockTransactionRepo = AppDataSource.getRepository(StockTransaction);
 
-            await stockTransactionRepo.query(
-                `UPDATE "stock_transactions"
-                    SET "taskId" = NULL
-                    WHERE "taskId" = $1`,
-                [taskId]
-            );
-        }
+        //     await stockTransactionRepo.query(
+        //         `UPDATE "stock_transactions"
+        //             SET "taskId" = NULL
+        //             WHERE "taskId" = $1`,
+        //         [taskId]
+        //     );
+        // }
 
         // --- Create committed stock transaction record --- //
         // const stockQueryRunner = AppDataSource.createQueryRunner();
