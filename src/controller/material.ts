@@ -196,7 +196,6 @@ export class MaterialController {
       createdById:         user.id,
       barcode,
       committed:           true,
-      task,
       taskId:              task.id
     });
 
