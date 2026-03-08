@@ -83,9 +83,9 @@ export class CompanyWebSocketService {
 
         // Attach user info to socket
         socket.user = {
-          id: user.id,
-          organizationId: user?.organization?.id,
-          email: user.email,
+          id: decoded.id,
+          organizationId: decoded.organization.Id,
+          email: decoded.email
         };
 
         next();
