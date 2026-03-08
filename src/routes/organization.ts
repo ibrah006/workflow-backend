@@ -388,9 +388,9 @@ router.put("/members/:userId/role", adminOnlyMiddleware, async (req, res) : Prom
         return res.status(401).json({ message: 'Organization context required' });
     }
 
-    if (!role || !['admin', 'manager', 'viewer'].includes(role)) {
+    if (!role || !['admin', 'manager'].includes(role)) {
         return res.status(400).json({ 
-            message: 'Invalid role. Must be one of: admin, manager, viewer' 
+            message: 'Invalid role. Must be one of: admin, manager' 
         });
     }
 
