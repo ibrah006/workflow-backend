@@ -82,11 +82,13 @@ export class MemberWebSocketService {
 
         // Attach user info to socket
         socket.user = {
-          id: user.id,
-          organizationId: user.organization.id,
-          email: user.email,
-          role: user.role,
+          id: decoded.id,
+          organizationId: decoded.organization.Id,
+          email: decoded.email,
+          role: decoded.role,
         };
+
+        console.log(`from middleware decoded: ${JSON.stringify(decoded)},\nuser ID: ${user.id}, org ID: ${user.organization.id}`);
 
         next();
       } catch (error) {
@@ -100,7 +102,7 @@ export class MemberWebSocketService {
    */
   private setupEventHandlers(): void {
     this.io.on('connection', async (socket: AuthenticatedSocket) => {
-      console.log(`Client connected to members: ${socket.id}, User: ${socket.user?.id}`);
+      console.log(`Client connected to members: ${socket.id}, User: ${socket.user?.id}, organization Id: ${socket.user?.organizationId}`);
 
       // Join organization-specific room
       if (socket.user?.organizationId) {
