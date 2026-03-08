@@ -82,14 +82,23 @@ export class CompanyWebSocketService {
         }
 
         // Attach user info to socket
+        // socket.user = {
+        //   id: user.id,
+        //   organizationId: user?.organization?.id,
+        //   email: user.email,
+        // };
+
+        console.log("decoded - clients:", JSON.stringify(decoded));
+
         socket.user = {
           id: decoded.id,
-          organizationId: decoded.organization.Id,
-          email: decoded.email
+          organizationId: decoded.organizationId,
+          email: decoded.email,
         };
 
         next();
       } catch (error) {
+        console.log("exact error - clients socket:", error);
         next(new Error('Invalid authentication token'));
       }
     });

@@ -83,7 +83,7 @@ export class MemberWebSocketService {
         // Attach user info to socket
         socket.user = {
           id: decoded.id,
-          organizationId: decoded.organization.Id,
+          organizationId: decoded.organizationId,
           email: decoded.email,
           role: decoded.role,
         };
@@ -92,6 +92,7 @@ export class MemberWebSocketService {
 
         next();
       } catch (error) {
+        console.log("exact error - members socker:", error);
         next(new Error('Invalid authentication token'));
       }
     });
