@@ -88,8 +88,6 @@ export class CompanyWebSocketService {
         //   email: user.email,
         // };
 
-        console.log("decoded - clients:", JSON.stringify(decoded));
-
         socket.user = {
           id: decoded.id,
           organizationId: decoded.organizationId,
@@ -98,7 +96,6 @@ export class CompanyWebSocketService {
 
         next();
       } catch (error) {
-        console.log("exact error - clients socket:", error);
         next(new Error('Invalid authentication token'));
       }
     });

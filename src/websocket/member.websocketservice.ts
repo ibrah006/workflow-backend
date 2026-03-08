@@ -88,11 +88,8 @@ export class MemberWebSocketService {
           role: decoded.role,
         };
 
-        console.log(`from middleware decoded: ${JSON.stringify(decoded)},\nuser ID: ${user.id}, org ID: ${user.organization.id}`);
-
         next();
       } catch (error) {
-        console.log("exact error - members socker:", error);
         next(new Error('Invalid authentication token'));
       }
     });
