@@ -20,7 +20,7 @@
             <title>Version 1.1.0</title>
             <pubDate>09 Mar 2026 12:00:00 +0400</pubDate>
             <enclosure url="https://workflow-backend-production.up.railway.app/updates/smooflow-1.0.0-windows-setup.exe"
-                       sparkle:dsaSignature="MD0CHCVU0W5bMamhooOU1lCxHqKeVSNu8yp6MC/pnRACHQDEYJdlFV1+5knOWIzEbEr8Bv31UnHlanIImDW7"
+                       sparkle:dsaSignature="MD0CHDv847qCclsUo6NduYyhKJvJIhVNCu6t+TL0FdgCHQCxhFVMaAQntis7FAhdRZ3+eYHVrdj8LqZfwInB"
                        sparkle:os="windows"
                        sparkle:version="1.1.1"
                        length="0"
