@@ -22,6 +22,7 @@
             <enclosure url="https://workflow-backend-production.up.railway.app/updates/win64.exe"
                        sparkle:dsaSignature="MD0CHCVU0W5bMamhooOU1lCxHqKeVSNu8yp6MC/pnRACHQDEYJdlFV1+5knOWIzEbEr8Bv31UnHlanIImDW7"
                        sparkle:os="windows"
+                       sparkle:version="1.0.0"
                        length="0"
                        type="application/octet-stream" />
         </item>
