@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+    <channel>
+        <title>auto_updater_example</title>
+        <description>Most recent updates to auto_updater_example</description>
+        <language>en</language>
+        <item>
+            <title>Version 1.1.0</title>
+            <!-- For the macOS item, it is recommended to add 'sparkle:version' and 'sparkle:shortVersionString' to the item node, rather than as part of the enclosure. -->
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <pubDate>09 Mar 2026 12:00:00 +0400</pubDate>
+            <enclosure url="https://workflow-backend-production.up.railway.app/updates/smooflow-mac-1.1.1.zip"
+                       sparkle:edSignature="pbdyPt92pnPkzLfQ7BhS9hbjcV9/ndkzSIlWjFQIUMcaCNbAFO2fzl0tISMNJApG2POTkZY0/kJQ2yZYOSVgAA=="
+                       sparkle:os="macos"
+                       length="13400992"
+                       type="application/octet-stream" />
+        </item>
+        <item>
+            <title>Version 1.1.0</title>
+            <pubDate>09 Mar 2026 12:00:00 +0400</pubDate>
+            <enclosure url="https://workflow-backend-production.up.railway.app/updates/smooflow-win-1.1.1.zip"
+                       sparkle:dsaSignature="MEUCIQCVbVzVID7H3aUzAY5znpi+ySZKznkukV8whlMFzKh66AIgREUGOmvavlcg6hwAwkb2o4IqVE/D56ipIBshIqCH8rk="
+                       sparkle:version="1.1.1+2"
+                       sparkle:os="windows"
+                       length="0"
+                       type="application/octet-stream" />
+        </item>
+    </channel>
+</rss>

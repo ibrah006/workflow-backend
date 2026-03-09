@@ -109,8 +109,8 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Updates
-app.get('/updates/mac/:file', (req, res) => {
-  const filePath = path.join(__dirname, '../public/updates/mac', req.params.file);
+app.get('/updates/:file', (req, res) => {
+  const filePath = path.join(__dirname, '../public/updates/', req.params.file);
   const contentType = mime.lookup(filePath) || 'application/octet-stream';
   res.type(contentType);
   res.sendFile(filePath);
