@@ -5,6 +5,7 @@ import { Task } from '../models/Task';
 import { User } from '../models/User';
 import { verify } from 'jsonwebtoken';
 import { AppDataSource } from '../data-source';
+import { TASK_RELATIONS } from '../routes/tasks';
 
 interface AuthenticatedSocket extends Socket {
   user?: {
@@ -170,7 +171,7 @@ export class TaskWebSocketService {
     try {
       const task = await this.taskRepo.findOne({
         where: { id: taskId },
-        relations: ['project', 'project.organization'],
+        relations: TASK_RELATIONS//['project', 'project.organization'],
       });
 
       if (!task || task.project?.organization?.id !== socket.user?.organizationId) {
@@ -204,7 +205,7 @@ export class TaskWebSocketService {
     try {
       const task = await this.taskRepo.findOne({
         where: { id: taskId },
-        relations: ['project', 'project.organization', 'assignees', 'printer', 'material'],
+        relations: TASK_RELATIONS//['project', 'project.organization', 'assignees', 'printer', 'material'],
       });
 
       if (!task || task.project?.organization?.id !== socket.user?.organizationId) {
@@ -249,7 +250,7 @@ export class TaskWebSocketService {
 
       const tasks = await this.taskRepo.find({
         where,
-        relations: ['project', 'assignees', 'printer', 'material'],
+        relations: TASK_RELATIONS,//['project', 'assignees', 'printer', 'material'],
         order: { createdAt: 'DESC' },
       });
 
