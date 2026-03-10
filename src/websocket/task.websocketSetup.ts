@@ -1,6 +1,7 @@
 import { Server as HTTPServer } from 'http';
 import express from 'express';
 import { TaskWebSocketService } from './task.websocketservice';
+import { Server as SocketIOServer } from 'socket.io';
 
 let taskWebSocketService: TaskWebSocketService;
 
@@ -8,10 +9,11 @@ let taskWebSocketService: TaskWebSocketService;
  * Initialize WebSocket server
  */
 export function initializeTaskWebSocket(
-  httpServer: HTTPServer
+  // httpServer: HTTPServer,
+  io: SocketIOServer
 ): TaskWebSocketService {
   if (!taskWebSocketService) {
-    taskWebSocketService = new TaskWebSocketService(httpServer);
+    taskWebSocketService = new TaskWebSocketService(io);
     console.log('WebSocket server initialized for task updates');
   }
   return taskWebSocketService;
