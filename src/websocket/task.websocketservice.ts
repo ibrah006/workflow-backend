@@ -79,13 +79,14 @@ export class TaskWebSocketService {
 
         // Attach user info to socket
         socket.user = {
-          id: user.id,
-          organizationId: user.organization.id,
-          email: user.email,
+          id: decoded.id,
+          organizationId: decoded.organizationId,
+          email: decoded.email,
         };
 
         next();
       } catch (error) {
+        console.log("actual error from task middleware:", error)
         next(new Error('Invalid authentication token'));
       }
     });
@@ -95,7 +96,7 @@ export class TaskWebSocketService {
    * Setup WebSocket event handlers
    */
   private setupEventHandlers(): void {
-    this.io.on('connection', (socket: AuthenticatedSocket) => {
+    this.io.on('connection', async (socket: AuthenticatedSocket) => {
       console.log(`Client connected: ${socket.id}, User: ${socket.user?.id}`);
 
       // Join organization-specific room
@@ -117,6 +118,9 @@ export class TaskWebSocketService {
           email: socket.user.email,
           timestamp: new Date(),
         });
+
+        // Automatically send tasks list on connect
+        await this.handleListTasks(socket);
       }
 
       // Handle subscription to specific tasks
