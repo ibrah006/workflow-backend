@@ -31,6 +31,7 @@ import mime from 'mime-types';
 import path from 'path';
 
 import { Server as SocketIOServer } from 'socket.io';
+import { initializeTaskWebSocket } from './websocket/task.websocketSetup';
 
 const app = express();
 
@@ -132,6 +133,7 @@ const socketIOServer = new SocketIOServer(httpServer, {
 // initializeWebSocket(httpServer); // Task WebSocket
 initializeCompanyWebSocket(socketIOServer); // Company WebSocket
 initializeMemberWebSocket(socketIOServer); // Member WebSocket
+initializeTaskWebSocket(socketIOServer);
 
 httpServer.listen(PORT, () => {
   const ip = getLocalExternalIp();

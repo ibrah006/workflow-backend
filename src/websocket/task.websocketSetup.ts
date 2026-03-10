@@ -7,7 +7,9 @@ let taskWebSocketService: TaskWebSocketService;
 /**
  * Initialize WebSocket server
  */
-export function initializeWebSocket(httpServer: HTTPServer): TaskWebSocketService {
+export function initializeTaskWebSocket(
+  httpServer: HTTPServer
+): TaskWebSocketService {
   if (!taskWebSocketService) {
     taskWebSocketService = new TaskWebSocketService(httpServer);
     console.log('WebSocket server initialized for task updates');
